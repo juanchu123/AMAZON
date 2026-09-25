@@ -1,2 +1,4 @@
 playwright>=1.40
 anthropic>=0.40
+numpy>=1.24
+scikit-learn>=1.3

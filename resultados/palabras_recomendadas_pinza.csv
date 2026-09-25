@@ -1,0 +1,6 @@
+﻿rank,palabra_clave,coincidencia_sugerida,prob_compra_por_clic,ctr_estimado,cpc_estimado_eur,acos_estimado_pct,palabras_sin_datos,motivo
+1,soporte móvil coche pinza 360,Frase,0.1117,0.0125,0.54,42.8,0,"suma: pinza, soporte, coche"
+2,soporte móvil coche pinza para espejo retrovisor,Frase,0.1186,0.0097,0.54,40.3,2,"suma: pinza, soporte, coche | sin datos (se prueba a ciegas): espejo, retrovisor"
+3,soporte teléfono coche pinza para salpicadero,Frase,0.0859,0.604,0.53,55.1,0,"suma: pinza, soporte, coche, salpicadero"
+4,sujeta móvil coche pinza para salpicadero,Frase,0.0786,0.133,0.53,60.1,0,"suma: pinza, coche, salpicadero | resta: sujeta"
+5,soporte teléfono coche pinza ajustable 360,Frase,0.0757,0.1541,0.53,62.8,1,"suma: pinza, soporte, coche | sin datos (se prueba a ciegas): ajustable"
