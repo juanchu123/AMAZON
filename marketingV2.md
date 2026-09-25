@@ -220,13 +220,13 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 
 - Datos: 9 keywords, 364 clics, 35 compras, ticket medio 11,24€, CPC medio 0,54€, ACOS real ≈ 41%.
 - Lo que el modelo ha aprendido: **"pinza"** y **"coche pinza"** son las palabras que más venden; **"sujeta"** y la coincidencia **Amplia** atraen clics que no compran.
-- Mejores frases para probar: *soporte móvil coche pinza 360*, *soporte móvil coche pinza para espejo retrovisor*, variantes con *salpicadero*. Todas se estiman alrededor del 40% de ACOS, **todavía por encima del objetivo del 30-35%**.
+- Mejores frases para probar: *soporte móvil coche pinza 360*, *soporte móvil coche pinza para espejo retrovisor*, variantes con *salpicadero*. Para quedar en ACOS 35%, la puja máxima de cada una va de **0,30€ a 0,47€**. Pujando el CPC medio actual (0,54€), todas quedarían por encima del objetivo.
 
 ---
 
 ## 7. Pendientes conocidos
 
-- [ ] **Corregir `keyword_ml.py`:** su modelo de CPC aprende de las pujas que ya pusiste, no de las palabras. Hay que quitarlo y ordenar por compra/clic, añadiendo la columna `puja_max_rentable_eur`. *Pendiente de confirmar el ACOS objetivo para calcularla (propuesto: 35%).*
+- [x] ~~Corregir `keyword_ml.py`~~: quitado el modelo de CPC (aprendía de las pujas, no de las palabras). Ahora ordena por compra/clic y da `puja_max_rentable_eur` con ACOS objetivo 35% (`--acos-objetivo` para cambiarlo). Descarta las frases cuya puja máxima no llega a la puja recomendada más baja de Amazon.
 - [ ] **Coste del producto y comisiones de Amazon**, para calcular el ACOS de equilibrio y el beneficio neto real.
 - [ ] **`Sponsored_Products_Target_Sep_25_2026 (3).csv`:** no cuadra con ningún anuncio. ¿Es un export repetido o un tercer grupo de la pinza?
 - [ ] **Falta el `.gitignore`:** su contenido está en un archivo llamado `download`. Hay que renombrarlo antes de capturar la sesión, para que `.auth/` nunca se suba.
