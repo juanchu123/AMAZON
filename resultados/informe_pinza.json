@@ -108,6 +108,11 @@
     "logloss_media": 0.37654658626698795,
     "mejora_pct": 7.359874928080911
   },
+  "validacion_cpc": {
+    "error_modelo_eur": 0.09771102218372035,
+    "error_media_eur": 0.16450140861107998,
+    "mejora_pct": 40.601710946602175
+  },
   "ticket_medio_eur": 11.24,
   "cpc_medio_eur": 0.54,
   "candidatas_generadas": 161,
@@ -133,5 +138,38 @@
     "b=sujeta_movil": -0.13,
     "w=sujeta": -0.13,
     "match=amplia": -0.168
+  },
+  "coeficientes_cpc": {
+    "w=pinza": -0.171,
+    "b=coche_pinza": -0.145,
+    "b=pinza_salpicadero": -0.065,
+    "w=salpicadero": -0.065,
+    "b=movil_pinza": -0.026,
+    "b=sujeta_movil": -0.026,
+    "w=sujeta": -0.026,
+    "n_palabras": -0.025,
+    "match=amplia": -0.024,
+    "b=soporte_telefono": -0.005,
+    "b=telefono_360": -0.005,
+    "w=360": -0.005,
+    "w=telefono": -0.005,
+    "b=pinza_coche": 0.006,
+    "match=exacta": 0.015,
+    "w=movil": 0.03,
+    "match=frase": 0.035,
+    "w=soporte": 0.052,
+    "b=movil_coche": 0.057,
+    "b=soporte_movil": 0.057,
+    "w=coche": 0.063
+  },
+  "efecto_palabra_en_acos": {
+    "pinza": -0.706,
+    "salpicadero": -0.125,
+    "soporte": -0.072,
+    "coche": -0.039,
+    "movil": -0.006,
+    "360": 0.038,
+    "telefono": 0.038,
+    "sujeta": 0.104
   }
 }

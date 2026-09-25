@@ -12,13 +12,15 @@ Qué hace, en orden:
      archivo es igual a los totales de un archivo de anuncios, son el mismo grupo de anuncios.
   4. Se queda SOLO con las palabras de los grupos cuyo producto principal es el elegido
      (--producto-contiene pinza, o --asin).
-  5. Entrena dos modelos (regresión logística regularizada sobre palabras y pares de palabras):
-       - P(compra | clic)      -> ¿convierte?
-       - P(clic | impresión)   -> ¿atrae clics?
+  5. Entrena dos modelos regularizados sobre palabras y pares de palabras:
+       - P(compra | clic)  (regresión logística) -> ¿cuántos clics hacen falta para vender?
+       - CPC               (regresión ridge)     -> ¿cuánto cuesta cada clic con esas palabras?
+     Juntos dan lo que importa: GASTO / VENTAS (ACOS) = CPC / (P(compra) × ticket).
+     Vender mucho no sirve si cada clic es caro: se ordena SOLO por ACOS, no por nº de ventas.
      La regularización es clave: con tan pocos datos, sin ella el modelo "memorizaría" ruido.
   6. Genera frases candidatas NUEVAS (combinando el vocabulario del título del producto y de
-     sus keywords), descarta las que ya existen en la cuenta, las puntúa con el modelo y
-     devuelve las mejores, evitando que salgan casi iguales entre sí.
+     sus keywords), descarta las que ya existen en la cuenta, las puntúa por ACOS estimado
+     (menor = mejor) y devuelve las mejores, evitando que salgan casi iguales entre sí.
 
 Salida: resultados/palabras_recomendadas_<producto>.csv  (+ resumen por pantalla)
 
@@ -43,11 +45,13 @@ from collections import defaultdict
 
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, Ridge
 
 STOPWORDS = {"para", "de", "con", "y", "el", "la", "los", "las", "por", "en", "a", "del", "al", "mas", "genérico", "generico"}
 TOTAL_KEYS = ("impresiones", "clics", "coste", "compras", "ventas")
 REGULARIZACION_C = 1.0          # más bajo = más prudente (más regularización)
+REGULARIZACION_CPC = 30.0       # alpha del ridge del CPC (en "clics"): más alto = más prudente
+PENALIZACION_A_CIEGAS = 1.15    # el ACOS estimado se multiplica por esto por cada palabra sin datos al ordenar
 NUCLEO = {"soporte", "movil", "coche", "pinza"}  # palabras que casi todas las frases comparten
 ACOS_MAX_RECOMENDABLE = 100.0   # por encima, cada venta cuesta más en ads de lo que ingresa
 MAX_REPETICION = 2              # veces que una misma palabra extra puede repetirse en el top
@@ -222,6 +226,43 @@ def predecir(vec, modelo, keyword, coincidencia):
     return float(modelo.predict_proba(vec.transform([features(keyword, coincidencia)]))[0, 1])
 
 
+def entrenar_cpc(filas):
+    """CPC de cada keyword a partir de sus palabras: aprende que las genéricas ('soporte móvil
+    coche') se pagan caras y las específicas ('pinza salpicadero') baratas. Se modela log(CPC)
+    relativo a la media, ponderado por clics (un CPC de 2 clics pesa poco)."""
+    datos = [f for f in filas if f["clics"] > 0]
+    tot_c, tot_n = sum(f["coste"] for f in datos), sum(f["clics"] for f in datos)
+    base = np.log(tot_c / tot_n)
+    vec = DictVectorizer()
+    X = vec.fit_transform([features(f["keyword"], f["coincidencia"]) for f in datos])
+    y = np.array([np.log(f["coste"] / f["clics"]) - base for f in datos])
+    w = np.array([f["clics"] for f in datos], dtype=float)
+    modelo = Ridge(alpha=REGULARIZACION_CPC, fit_intercept=False).fit(X, y, sample_weight=w)
+    return vec, modelo, base
+
+
+def predecir_cpc(vec, modelo, base, keyword, coincidencia):
+    return float(np.exp(base + modelo.predict(vec.transform([features(keyword, coincidencia)]))[0]))
+
+
+def validacion_cpc(filas):
+    """Error medio del CPC (en €/clic, ponderado por clics) dejando fuera cada keyword,
+    comparado con predecir siempre el CPC medio."""
+    datos = [f for f in filas if f["clics"] > 0]
+    err_m = err_b = peso = 0.0
+    for g in {firma(f["keyword"]) for f in datos}:
+        train = [f for f in datos if firma(f["keyword"]) != g]
+        if not train:
+            continue
+        vec, mod, base = entrenar_cpc(train)
+        for f in (f for f in datos if firma(f["keyword"]) == g):
+            real = f["coste"] / f["clics"]
+            err_m += f["clics"] * abs(predecir_cpc(vec, mod, base, f["keyword"], f["coincidencia"]) - real)
+            err_b += f["clics"] * abs(np.exp(base) - real)
+            peso += f["clics"]
+    return {"error_modelo_eur": err_m / peso, "error_media_eur": err_b / peso, "mejora_pct": 100 * (1 - err_m / err_b)} if peso else None
+
+
 def validacion_cruzada(filas, exito, intentos):
     """Deja fuera una keyword cada vez (todas sus coincidencias), entrena con el resto y
     compara el error (log-loss ponderado) del modelo contra predecir siempre la media.
@@ -285,21 +326,17 @@ def generar_candidatas(titulo, filas):
 
 def recomendar(filas, titulo, existentes, top, coincidencia="Frase"):
     vec_c, mod_c = entrenar(filas, "compras", "clics")
-    vec_t, mod_t = entrenar(filas, "clics", "impresiones")
+    vec_p, mod_p, base_p = entrenar_cpc(filas)
 
     tot = {k: sum(f[k] for f in filas) for k in ("clics", "coste", "compras", "ventas")}
     ticket = tot["ventas"] / tot["compras"] if tot["compras"] else 0.0
     cpc_global = tot["coste"] / tot["clics"] if tot["clics"] else 0.0
 
-    # CPC por palabra (lo que ya se paga cuando aparece esa palabra)
-    cpc_palabra = defaultdict(lambda: [0.0, 0.0])
-    for f in filas:
-        for w in set(tokens_contenido(f["keyword"])):
-            cpc_palabra[w][0] += f["coste"]
-            cpc_palabra[w][1] += f["clics"]
-
     vistos = {k.split("=", 1)[1] for k in vec_c.feature_names_ if k.startswith("w=")}
     coefs = dict(zip(vec_c.feature_names_, mod_c.coef_[0]))
+    coefs_cpc = dict(zip(vec_p.feature_names_, mod_p.coef_))
+    # efecto de cada palabra sobre log(ACOS) ≈ log(CPC) - log(P compra): positivo = encarece la venta
+    efecto_acos = {w: coefs_cpc.get(f"w={w}", 0.0) - coefs.get(f"w={w}", 0.0) for w in vistos}
 
     puntuadas = []
     for kw in generar_candidatas(titulo, filas):
@@ -307,37 +344,33 @@ def recomendar(filas, titulo, existentes, top, coincidencia="Frase"):
             continue
         toks = tokens_contenido(kw)
         p_compra = predecir(vec_c, mod_c, kw, coincidencia)
-        ctr = predecir(vec_t, mod_t, kw, coincidencia)
-        c_sum = sum(cpc_palabra[w][0] for w in toks if cpc_palabra[w][1] > 0)
-        n_sum = sum(cpc_palabra[w][1] for w in toks if cpc_palabra[w][1] > 0)
-        cpc = c_sum / n_sum if n_sum else cpc_global
+        cpc = predecir_cpc(vec_p, mod_p, base_p, kw, coincidencia)
         acos = cpc / (p_compra * ticket) if p_compra * ticket > 0 else float("inf")
         nuevas = [w for w in toks if w not in vistos]
-        aportes = sorted(((coefs.get(f"w={w}", 0.0), w) for w in toks if w in vistos), reverse=True)
+        aportes = sorted((efecto_acos[w], w) for w in toks if w in vistos)
         motivo = []
-        if aportes and aportes[0][0] > 0.05:
-            motivo.append("suma: " + ", ".join(w for c, w in aportes if c > 0.05))
-        if aportes and aportes[-1][0] < -0.05:
-            motivo.append("resta: " + ", ".join(w for c, w in aportes if c < -0.05))
+        if aportes and aportes[0][0] < -0.05:
+            motivo.append("abaratan la venta: " + ", ".join(w for e, w in aportes if e < -0.05))
+        if aportes and aportes[-1][0] > 0.05:
+            motivo.append("la encarecen: " + ", ".join(w for e, w in aportes if e > 0.05))
         if nuevas:
             motivo.append("sin datos (se prueba a ciegas): " + ", ".join(nuevas))
         puntuadas.append({
             "palabra_clave": kw,
             "coincidencia_sugerida": coincidencia,
-            "prob_compra_por_clic": round(p_compra, 4),
-            "ctr_estimado": round(ctr, 4),
-            "cpc_estimado_eur": round(cpc, 2),
             "acos_estimado_pct": round(100 * acos, 1),
+            "gasto_por_venta_eur": round(cpc / p_compra, 2) if p_compra > 0 else None,
+            "cpc_estimado_eur": round(cpc, 2),
+            "prob_compra_por_clic": round(p_compra, 4),
             "palabras_sin_datos": len(nuevas),
             "motivo": " | ".join(motivo),
-            # margen esperado por clic, penalizado por cada palabra sin datos.
-            # El CTR se muestra pero no puntúa: hay keywords con 4 impresiones y daría ruido.
-            "_score": (p_compra * ticket - cpc) * (0.85 ** len(nuevas)),
+            # se ordena por gasto/ventas (ACOS), no por nº de ventas; ir a ciegas penaliza
+            "_score": acos * PENALIZACION_A_CIEGAS ** len(nuevas),
         })
 
     # selección diversa: no dos frases casi iguales, y cada palabra "extra" (la que no es
     # soporte/móvil/coche/pinza) aparece como mucho en MAX_REPETICION frases de la lista.
-    puntuadas.sort(key=lambda r: r["_score"], reverse=True)
+    puntuadas.sort(key=lambda r: r["_score"])
     elegidas, usos = [], defaultdict(int)
     for r in puntuadas:
         if r["acos_estimado_pct"] > ACOS_MAX_RECOMENDABLE:
@@ -357,7 +390,9 @@ def recomendar(filas, titulo, existentes, top, coincidencia="Frase"):
         r["rank"] = i
         r.pop("_score")
     resumen = {"ticket_medio_eur": round(ticket, 2), "cpc_medio_eur": round(cpc_global, 2),
-               "candidatas_generadas": len(puntuadas), "coeficientes_conversion": {k: round(v, 3) for k, v in sorted(coefs.items(), key=lambda kv: -kv[1])}}
+               "candidatas_generadas": len(puntuadas), "coeficientes_conversion": {k: round(v, 3) for k, v in sorted(coefs.items(), key=lambda kv: -kv[1])},
+               "coeficientes_cpc": {k: round(v, 3) for k, v in sorted(coefs_cpc.items(), key=lambda kv: kv[1])},
+               "efecto_palabra_en_acos": {k: round(v, 3) for k, v in sorted(efecto_acos.items(), key=lambda kv: kv[1])}}
     return elegidas, resumen
 
 
@@ -399,6 +434,10 @@ def main():
     if cv:
         print(f"  Validación (dejando fuera cada keyword): modelo {cv['logloss_modelo']:.3f} vs media {cv['logloss_media']:.3f} "
               f"-> {'mejora' if cv['mejora_pct'] > 0 else 'NO mejora'} un {abs(cv['mejora_pct']):.1f}%")
+    cv_cpc = validacion_cpc(filas)
+    if cv_cpc:
+        print(f"  Validación CPC: error {cv_cpc['error_modelo_eur']:.3f}€/clic vs {cv_cpc['error_media_eur']:.3f}€ usando la media "
+              f"-> {'mejora' if cv_cpc['mejora_pct'] > 0 else 'NO mejora'} un {abs(cv_cpc['mejora_pct']):.1f}%")
 
     # nunca recomendar algo que ya exista en la cuenta (de cualquier producto)
     existentes = {firma(r["Palabra clave"]) for pt, pa, rows_t, _ in grupos for r in rows_t}
@@ -412,19 +451,19 @@ def main():
     os.makedirs(args.salida, exist_ok=True)
     slug = normalizar(args.asin or args.producto_contiene).replace(" ", "_")
     out = os.path.join(args.salida, f"palabras_recomendadas_{slug}.csv")
-    campos = ["rank", "palabra_clave", "coincidencia_sugerida", "prob_compra_por_clic", "ctr_estimado",
-              "cpc_estimado_eur", "acos_estimado_pct", "palabras_sin_datos", "motivo"]
+    campos = ["rank", "palabra_clave", "coincidencia_sugerida", "acos_estimado_pct", "gasto_por_venta_eur",
+              "cpc_estimado_eur", "prob_compra_por_clic", "palabras_sin_datos", "motivo"]
     with open(out, "w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=campos)
         w.writeheader()
         w.writerows(recs)
     with open(os.path.join(args.salida, f"informe_{slug}.json"), "w", encoding="utf-8") as f:
-        json.dump({"asin": asin, "informe_datos": informe, "validacion": cv, **resumen}, f, ensure_ascii=False, indent=2)
+        json.dump({"asin": asin, "informe_datos": informe, "validacion": cv, "validacion_cpc": cv_cpc, **resumen}, f, ensure_ascii=False, indent=2)
 
     print(f"\n=== 4. Palabras recomendadas para probar ({out}) ===")
     for r in recs:
-        print(f"  {r['rank']:2d}. {r['palabra_clave']:<48s} compra/clic {r['prob_compra_por_clic']:.1%}  "
-              f"ACOS≈{r['acos_estimado_pct']:.0f}%  CPC≈{r['cpc_estimado_eur']:.2f}€  {r['motivo']}")
+        print(f"  {r['rank']:2d}. {r['palabra_clave']:<48s} ACOS≈{r['acos_estimado_pct']:.0f}%  "
+              f"gasto/venta≈{r['gasto_por_venta_eur']:.2f}€  CPC≈{r['cpc_estimado_eur']:.2f}€  compra/clic {r['prob_compra_por_clic']:.1%}  {r['motivo']}")
 
 
 if __name__ == "__main__":
