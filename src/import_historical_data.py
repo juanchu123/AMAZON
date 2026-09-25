@@ -28,6 +28,7 @@ Nunca se mezclan como si fueran lo mismo.
 import argparse
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -49,6 +50,38 @@ COLUMN_MAP = {
 }
 
 
+def _normalize_column_name(col: str) -> str:
+    """Amazon a veces añade la unidad entre paréntesis al nombre de
+    columna (p.ej. "Coste total (EUR)" en vez de "Coste total", visto en
+    el export real de sept. 2026) — se quita antes de buscar en
+    COLUMN_MAP para no depender de si Amazon la incluye o no.
+    """
+    return re.sub(r"\([^)]*\)", "", col).strip().lower()
+
+
+def _parse_amount(value: str) -> float:
+    """Amazon no exporta siempre el mismo formato de número decimal: se ha
+    visto tanto "1.234,56 €" (punto de miles, coma decimal) como "17.4"
+    sin símbolo de moneda ni separador de miles, con punto decimal normal
+    (export real de sept. 2026). Tratar SIEMPRE el punto como separador
+    de miles asumiendo el primer formato rompía el segundo en silencio —
+    "17.4" se convertía en 174.0, un error de x10 que puede invertir una
+    decisión de ACOS. Se detecta el formato por los separadores presentes
+    en vez de asumir uno fijo.
+    """
+    value = value.replace("€", "").strip()
+    if not value or value == "—":
+        return 0.0
+    if "," in value and "." in value:
+        # "1.234,56" -> punto de miles, coma decimal
+        value = value.replace(".", "").replace(",", ".")
+    elif "," in value:
+        # "1234,56" -> coma decimal, sin separador de miles
+        value = value.replace(",", ".")
+    # si solo hay puntos (o ninguno), ya está en formato de punto decimal
+    return float(value)
+
+
 def _normalize_row(raw_row: dict) -> dict:
     """Convierte una fila del CSV (con nombres de columna en español, tal
     como los exporta Amazon) a nuestro esquema interno normalizado.
@@ -57,15 +90,13 @@ def _normalize_row(raw_row: dict) -> dict:
     """
     out = {}
     for col, value in raw_row.items():
-        key = COLUMN_MAP.get(col.strip().lower())
+        key = COLUMN_MAP.get(_normalize_column_name(col))
         if key is None:
             continue
         if key in ("impressions", "clicks", "orders"):
             out[key] = int(value.replace(".", "").replace(",", "")) if value and value != "—" else 0
         elif key in ("bid", "cost", "sales"):
-            # Amazon exporta con coma decimal y símbolo de euro: "1,30 €"
-            cleaned = value.replace("€", "").replace(".", "").replace(",", ".").strip()
-            out[key] = float(cleaned) if cleaned and cleaned != "—" else 0.0
+            out[key] = _parse_amount(value)
         else:
             out[key] = value.strip()
     return out
@@ -81,7 +112,7 @@ def import_csv(csv_path: str, producto: str, campana: str, ad_group: str = "") -
         row["campana"] = campana
         row["ad_group"] = ad_group
         if row.get("sales", 0) > 0:
-            row["acos"] = round(row["cost"] / row["sales"], 3)
+            row["acos"] = round(row.get("cost", 0.0) / row["sales"], 3)
         else:
             row["acos"] = None
 
