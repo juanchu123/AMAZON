@@ -39,9 +39,10 @@ from safety import (
     is_within_reset_window,
     capped_new_bid,
     budget_allows_bid_increase,
+    new_keyword_bid,
 )
 from commands import Command
-from analyzer import Action, ACOS_TARGET_MIN, ACOS_TARGET_MAX
+from analyzer import Action, ACOS_TARGET_MIN, ACOS_TARGET_MAX, decide_new_keyword_action
 from import_historical_data import load_historical_data
 
 MODEL = os.environ.get("MARKETING_AGENT_MODEL", "claude-sonnet-4-5")
@@ -226,6 +227,7 @@ def decide_with_ai(
 def sanitize_commands(
     raw_commands: list[Command],
     keyword_rows: list[KeywordRow],
+    search_term_rows: list[SearchTermRow],
     active_experiments: set,
     now: datetime,
     spend_so_far: float,
@@ -236,6 +238,7 @@ def sanitize_commands(
     ejecuta lo que pidió la IA tal cual sin pasar por esto.
     """
     by_key = {(r.product_sku, r.keyword_text): r for r in keyword_rows}
+    by_search_term = {(r.product_sku, r.search_term): r for r in search_term_rows}
     safe: list[Command] = []
     new_kw_count = 0
     new_exp_count = 0
@@ -266,8 +269,22 @@ def sanitize_commands(
         elif cmd.action == Action.AÑADIR_KEYWORD:
             if new_kw_count >= MAX_NEW_KEYWORDS_PER_DAY:
                 continue
-            if cmd.keyword in by_key or key in active_experiments:
+            if key in by_key or key in active_experiments:
                 continue  # ya existe, no se duplica
+            st_row = by_search_term.get(key)
+            if st_row is None:
+                continue  # la IA propuso un término que no aparece en los datos reales -> descartar
+            # Re-verificar con los datos REALES, nunca fiarse solo de lo
+            # que la IA dijo que veía — mismos criterios que el harvesting
+            # determinista (analyzer.decide_new_keyword_action).
+            real_decision = decide_new_keyword_action(
+                st_row.search_term, st_row.clicks, st_row.cost, st_row.sales,
+                st_row.orders, already_a_keyword=False,
+            )
+            if real_decision.action != Action.AÑADIR_KEYWORD:
+                continue  # los datos reales no respaldan la propuesta de la IA -> descartar
+            cmd.valor_despues = new_keyword_bid(st_row.avg_cpc)  # nunca la puja libre que proponga la IA
+            cmd.motivo = f"{cmd.motivo} | {real_decision.reason}"
             new_kw_count += 1
 
         elif cmd.action == Action.GENERAR_EXPERIMENTO:

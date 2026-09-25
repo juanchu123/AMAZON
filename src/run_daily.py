@@ -120,7 +120,7 @@ def main():
 
                 # --- 4. SE SANEA (límites duros, nunca se saltan) ---
                 safe_commands = sanitize_commands(
-                    proposed, keyword_rows, active_experiments, now, spend_so_far
+                    proposed, keyword_rows, search_term_rows, active_experiments, now, spend_so_far
                 )
                 descartadas = len(proposed) - len(safe_commands)
                 if descartadas:
