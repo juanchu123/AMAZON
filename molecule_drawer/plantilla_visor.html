@@ -254,6 +254,15 @@
     letter-spacing: 0.08em;
     color: var(--tenue);
   }
+  .grupo[data-grupo="Modelo ML"] h3 { color: var(--acento); }
+  .grupo[data-grupo="Modelo ML"] h3::after {
+    content: "entrenado con datos reales";
+    margin-left: 8px;
+    font-size: 0.92em;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--tenue);
+  }
   .fila {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -387,7 +396,7 @@
     }).join("");
   }
 
-  const GRUPOS = ["Absorción", "Distribución", "Metabolismo", "Excreción", "Toxicidad", "Tipo fármaco"];
+  const GRUPOS = ["Absorción", "Distribución", "Metabolismo", "Excreción", "Toxicidad", "Tipo fármaco", "Modelo ML"];
   const escapar = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   function pintarAdmet(a) {
@@ -396,7 +405,7 @@
     $("d-criterios").innerHTML = GRUPOS.map((g) => {
       const filas = a.criterios.filter((c) => c.grupo === g);
       if (!filas.length) return "";
-      return `<div class="grupo"><h3>${g}</h3>${filas.map((c) => `
+      return `<div class="grupo" data-grupo="${g}"><h3>${g}</h3>${filas.map((c) => `
         <div class="fila">
           <div><strong>${escapar(c.nombre)}</strong><small>${escapar(c.detalle)}</small></div>
           <span class="pastilla ${c.estado}">${escapar(c.valor)}</span>

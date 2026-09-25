@@ -1,0 +1,18 @@
+{
+  "solubilidad": {
+    "tipo": "regresion",
+    "n": 1128,
+    "R2_test": 0.695,
+    "RMSE_test": 1.201,
+    "unidad": "logS (mol/L)",
+    "dataset": "Delaney/ESOL"
+  },
+  "bhe": {
+    "tipo": "clasificacion",
+    "n": 2039,
+    "ROC_AUC_test": 0.945,
+    "positivos": 1560,
+    "salida": "probabilidad de cruzar la BHE",
+    "dataset": "BBBP"
+  }
+}

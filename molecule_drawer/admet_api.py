@@ -185,9 +185,21 @@ def predict_admet(smiles: str, modelo: ModeloADMET | None = None, incluir_featur
             "fingerprint_dim": FINGERPRINT_BITS,
         }
 
-    modelo = modelo or BackendDeepChem()
-    resultado["ml"] = modelo.predecir(smiles)
+    resultado["ml"] = (modelo or modelo_por_defecto()).predecir(smiles)
     return resultado
+
+
+def modelo_por_defecto() -> ModeloADMET:
+    """Elige el mejor backend disponible: scikit-learn si hay modelos, si no DeepChem."""
+    try:
+        from ml_model import BackendSklearn
+
+        backend = BackendSklearn()
+        if backend.disponible:
+            return backend
+    except ImportError:
+        pass
+    return BackendDeepChem()
 
 
 # --- API HTTP opcional -------------------------------------------------------

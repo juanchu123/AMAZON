@@ -234,7 +234,7 @@
     ["Cafeína", "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"],
     ["Paracetamol", "CC(=O)NC1=CC=C(O)C=C1"],
     ["Aspirina", "CC(=O)OC1=CC=CC=C1C(=O)O"],
-    ["Morfina", "CN1CCC23C4Oc5c(O)ccc(CC1C2C=CC4O)c35"],
+    ["Morfina", "CN1CC[C@]23[C@@H]4[C@H]1CC5=C2C(=C(C=C5)O)O[C@H]3[C@H](C=C4)O"],
     ["Etanol", "CCO"],
   ];
 
@@ -342,7 +342,10 @@
 
   function dibujar(mol) {
     const svg = mol.toSVG(360, 240, undefined, { autoCrop: true, autoCropMargin: 8, strokeWidth: 1.5, factorTextSize: 1.15 })
-      .replace(/rgb\(0,0,0\)/g, "currentColor");
+      .replace(/rgb\(0,0,0\)/g, "currentColor")
+      // Quita los marcadores "?" de estereocentros sin definir: la estimación
+      // ADMET no depende de la estereoquímica y ensucian el dibujo.
+      .replace(/<text[^>]*>\?<\/text>/g, "");
     $("estructura").innerHTML = svg;
   }
 

@@ -1,2 +1,5 @@
 __pycache__/
 vendor/node_modules/
+ml_data/
+*.png
+!imagenes/*.png

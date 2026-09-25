@@ -2,11 +2,14 @@
 rdkit
 numpy
 
+# Machine learning real (ml_train.py, ml_model.py) — ligero
+scikit-learn
+joblib
+
 # API HTTP opcional (admet_api.py --serve)
 # flask
 
-# Capa de modelos ADMET opcional y pesada (admet_api.py con predicción ML).
-# Instala DeepChem con su motor (uno de los dos):
+# Deep learning opcional y pesado: enganche a DeepChem con su motor.
 # deepchem
 # torch
 # tensorflow

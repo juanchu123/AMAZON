@@ -22,7 +22,47 @@ SALIDA = CARPETA / "visor_3d.html"
 CABECERA = '<!doctype html>\n<html lang="es">\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'
 
 
-def molecula_3d(nombre, smiles):
+def _backend_ml():
+    """Backend de scikit-learn si hay modelos entrenados; si no, None (el visor sigue funcionando)."""
+    try:
+        from ml_model import BackendSklearn
+
+        backend = BackendSklearn()
+        return backend if backend.disponible else None
+    except ImportError:
+        return None
+
+
+def _clase_logs(logs):
+    if logs < -6:
+        return "mal"
+    if logs < -4:
+        return "aviso"
+    return "bien"
+
+
+def criterios_ml(backend, smiles):
+    """Convierte las predicciones del modelo en filas para el panel del visor."""
+    if backend is None:
+        return []
+    resultado = backend.predecir(smiles)
+    if not resultado.get("disponible"):
+        return []
+    sol = resultado["predicciones"]["solubilidad"]
+    bhe = resultado["predicciones"]["bhe"]
+    return [
+        {"grupo": "Modelo ML", "nombre": "Solubilidad predicha (logS)",
+         "valor": f"{sol['logS']:.2f} log mol/L".replace(".", ","),
+         "estado": _clase_logs(sol["logS"]),
+         "detalle": f"RandomForest sobre ESOL · R² test {sol['test_R2']}"},
+        {"grupo": "Modelo ML", "nombre": "Barrera hematoencefálica",
+         "valor": f"{round(bhe['probabilidad_cruzar'] * 100)}% probable ({bhe['prediccion']})",
+         "estado": "info",
+         "detalle": f"RandomForest sobre BBBP · ROC-AUC test {bhe['test_ROC_AUC']}"},
+    ]
+
+
+def molecula_3d(nombre, smiles, backend_ml=None):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         raise ValueError(f"SMILES no válido para {nombre}: {smiles}")
@@ -39,6 +79,9 @@ def molecula_3d(nombre, smiles):
         if atomo.GetSymbol() not in elementos:
             elementos.append(atomo.GetSymbol())
 
+    perfil = admet.calcular(mol)
+    perfil["criterios"].extend(criterios_ml(backend_ml, smiles))
+
     return {
         "nombre": nombre,
         "smiles": smiles,
@@ -47,7 +90,7 @@ def molecula_3d(nombre, smiles):
         "atomos": mol.GetNumAtoms(),
         "elementos": elementos,
         "molblock": Chem.MolToMolBlock(mol),
-        "admet": admet.calcular(mol),
+        "admet": perfil,
     }
 
 
@@ -57,10 +100,13 @@ def construir_html(moleculas):
 
 
 def main():
+    backend = _backend_ml()
+    if backend is None:
+        print("Aviso: sin modelos ML (ejecuta ml_train.py); el visor mostrará solo las reglas.")
     moleculas = []
     for nombre, smiles in MOLECULAS:
         try:
-            moleculas.append(molecula_3d(nombre, smiles))
+            moleculas.append(molecula_3d(nombre, smiles, backend))
         except ValueError as error:
             print(error)
     if not moleculas:

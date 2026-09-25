@@ -33,17 +33,32 @@ se marcan como no estimables en vez de inventarlos.
 python admet.py                   # perfil de todas las moléculas por consola
 ```
 
-### 4. API — `admet_api.py`
-Puente entre RDKit/NumPy y modelos de DeepChem/PyTorch/TensorFlow. Siempre
-devuelve la capa por reglas; si instalas DeepChem con su motor y un modelo
-entrenado, añade predicciones ML (CYP, hERG...). Si no, lo dice explícitamente.
+### 4. Machine learning — `ml_train.py` + `ml_model.py`
+Modelos entrenados **de verdad** (scikit-learn) sobre datasets experimentales
+públicos (MoleculeNet), featurizando con huellas de RDKit:
+
+| Endpoint | Tipo | Dataset | Métrica en test |
+|----------|------|---------|-----------------|
+| Solubilidad (logS) | Regresión | Delaney/ESOL | R² ≈ 0,70 (RMSE 1,20) |
+| Barrera hematoencefálica | Clasificación | BBBP | ROC-AUC ≈ 0,95 |
+
 ```bash
-python admet_api.py "CCO"         # imprime el perfil en JSON
+python ml_train.py                # descarga datos, entrena, evalúa y guarda models/
+python ml_model.py "CCO"          # predice una molécula nueva con los modelos
+```
+Los modelos entrenados van en `models/` (se pueden reentrenar con un comando).
+
+### 5. API — `admet_api.py`
+Puente entre RDKit/NumPy y los modelos. Siempre devuelve la capa por reglas y,
+si hay modelos entrenados, añade las predicciones ML (usa scikit-learn por
+defecto; también hay enganche a DeepChem/PyTorch/TensorFlow para deep learning).
+```bash
+python admet_api.py "CCO"         # perfil completo (reglas + ML) en JSON
 python admet_api.py --serve       # API HTTP: GET /admet?smiles=CCO   (necesita flask)
 ```
-Capa de modelos (opcional, pesada): `pip install deepchem torch` (o `tensorflow`).
+Deep learning opcional y pesado: `pip install deepchem torch` (o `tensorflow`).
 
-### 5. Simulador ADMET — `simulador_admet.html`
+### 6. Simulador ADMET — `simulador_admet.html`
 Página web independiente: escribes un SMILES y calcula el perfil ADMET aproximado
 en el propio navegador con OpenChemLib (`vendor/openchemlib.js`). Como carga la
 librería como módulo ES, hay que servirlo por HTTP (no vale abrirlo con `file://`):
