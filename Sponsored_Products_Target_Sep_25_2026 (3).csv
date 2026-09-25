@@ -1,0 +1,4 @@
+﻿Región,Palabra clave,Tipo de coincidencia objetivo,Código de estado,Estado,Puja recomendada (baja)(EUR),Puja recomendada (mediana)(EUR),Puja recomendada (alta)(EUR),Puja (EUR),Impresiones,Porcentaje de impresiones del top de búsquedas,Clics,CTR,Coste total (EUR),CPC (EUR),Compras,Ventas (EUR),ACOS,ROAS
+ACTIVADA,soporte móvil para coche con pinza,Exacta,CAMPAIGN_PAUSED,En pausa,0.26,0.35,0.44,0.44,88,0,2,"0,0227",1.47,0.74,0,0,0,0
+ACTIVADA,soporte móvil para coche de pinza,Frase,CAMPAIGN_PAUSED,En pausa,0.26,0.34,0.43,0.3,7,0,0,0,0,0,0,0,0,0
+ACTIVADA,soporte móvil para coche de pinza,Exacta,CAMPAIGN_PAUSED,En pausa,0.29,0.38,0.48,0.34,89,0,2,"0,0225",0.81,0.41,0,0,0,0

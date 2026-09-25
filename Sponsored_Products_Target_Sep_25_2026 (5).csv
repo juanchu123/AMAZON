@@ -1,0 +1,13 @@
+﻿Región,Palabra clave,Tipo de coincidencia objetivo,Código de estado,Estado,Puja recomendada (baja)(EUR),Puja recomendada (mediana)(EUR),Puja recomendada (alta)(EUR),Puja (EUR),Impresiones,Porcentaje de impresiones del top de búsquedas,Clics,CTR,Coste total (EUR),CPC (EUR),Compras,Ventas (EUR),ACOS,ROAS
+EN PAUSA,soporte móvil para coche con pinza,Amplia,CAMPAIGN_PAUSED,En pausa,0.28,0.37,0.46,0.55,2929,0,18,"0,0061",10.83,0.6,2,22.78,"0,4754",2.103416435826408
+ACTIVADA,soporte móvil para coche con pinza,Frase,CAMPAIGN_PAUSED,En pausa,0.26,0.34,0.43,0.62,201,0,24,"0,1194",10.78,0.45,6,65.35,"0,1650",6.062152133580705
+EN PAUSA,soporte móvil para coche con pinza,Exacta,CAMPAIGN_PAUSED,En pausa,0.26,0.35,0.44,0.45,208,0,4,"0,0192",1.83,0.46,0,0,0,0
+EN PAUSA,soporte móvil para coche de pinza,Amplia,CAMPAIGN_PAUSED,En pausa,0.28,0.37,0.46,0.41,1497,0,31,"0,0207",11.95,0.39,3,32.77,"0,3647",2.742259414225941
+ACTIVADA,soporte móvil para coche de pinza,Frase,CAMPAIGN_PAUSED,En pausa,0.26,0.34,0.43,0.59,22090,0,205,"0,0093",109.41,0.53,20,224.64,"0,4870",2.0531944063613925
+ACTIVADA,soporte móvil para coche de pinza,Exacta,CAMPAIGN_PAUSED,En pausa,0.29,0.38,0.48,0.51,652,0,12,"0,0184",6.6,0.55,2,23.98,"0,2752",3.6333333333333333
+EN PAUSA,soporte móvil para coche de pinza para salpicadero,Amplia,CAMPAIGN_PAUSED,En pausa,0.25,0.33,0.41,0.3,75,0,9,"0,1200",3.12,0.35,1,10.39,"0,3003",3.3301282051282057
+ACTIVADA,soporte móvil para coche de pinza para salpicadero,Frase,CAMPAIGN_PAUSED,En pausa,0.22,0.29,0.36,0.2,1,0,0,0,0,0,0,0,0,0
+ACTIVADA,sujeta móvil de pinza,Amplia,CAMPAIGN_PAUSED,En pausa,0.28,0.37,0.46,0.5,89,0,3,"0,0337",0.91,0.3,0,0,0,0
+ACTIVADA,sujeta móvil de pinza,Frase,CAMPAIGN_PAUSED,En pausa,0.19,0.25,0.31,0.18,0,0,0,0,0,0,0,0,0,0
+EN PAUSA,sujeta móvil de pinza para coche,Amplia,CAMPAIGN_PAUSED,En pausa,0.28,0.37,0.46,0.5,253,0,4,"0,0158",1.87,0.47,0,0,0,0
+EN PAUSA,sujeta móvil de pinza para coche,Frase,CAMPAIGN_PAUSED,En pausa,0.19,0.25,0.31,0.18,0,0,0,0,0,0,0,0,0,0
