@@ -1,0 +1,397 @@
+<title>Simulador ADMET</title>
+<meta name="description" content="Escribe un SMILES y estima su perfil ADMET aproximado en el navegador con OpenChemLib.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --fondo: #EEF2F1;
+    --superficie: #FFFFFF;
+    --lienzo: #FBFCFC;
+    --tinta: #15201D;
+    --tenue: #5A6964;
+    --borde: #D5DEDB;
+    --acento: #0E7666;
+    --acento-suave: #DDF0EC;
+    --bien: #1B7543; --bien-fondo: #E0F2E7;
+    --aviso: #8F5A00; --aviso-fondo: #FAEFD7;
+    --mal: #B3261E; --mal-fondo: #FBE3E1;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --fondo: #0D1312; --superficie: #141C1A; --lienzo: #0A0F0E;
+      --tinta: #E2EBE8; --tenue: #8E9F9A; --borde: #26332F;
+      --acento: #52C4AF; --acento-suave: #173430;
+      --bien: #62D192; --bien-fondo: #16301F;
+      --aviso: #E6B24F; --aviso-fondo: #362A11;
+      --mal: #F28D85; --mal-fondo: #3B1C1A;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --fondo: #0D1312; --superficie: #141C1A; --lienzo: #0A0F0E;
+    --tinta: #E2EBE8; --tenue: #8E9F9A; --borde: #26332F;
+    --acento: #52C4AF; --acento-suave: #173430;
+    --bien: #62D192; --bien-fondo: #16301F;
+    --aviso: #E6B24F; --aviso-fondo: #362A11;
+    --mal: #F28D85; --mal-fondo: #3B1C1A;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 24px 40px;
+  }
+  .pagina { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+
+  header { display: grid; gap: 6px; }
+  .eyebrow {
+    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--acento); margin: 0;
+  }
+  h1 { font-size: 1.7rem; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  header p { margin: 0; color: var(--tenue); max-width: 64ch; }
+
+  /* Entrada */
+  .entrada {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+  }
+  .campo { display: grid; gap: 6px; }
+  .campo label { font-size: 0.78rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tenue); }
+  .fila-input { display: flex; gap: 8px; flex-wrap: wrap; }
+  #smiles {
+    flex: 1 1 260px;
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    padding: 11px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    background: var(--fondo);
+    color: var(--tinta);
+  }
+  #smiles:focus-visible, button:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+  #calcular {
+    flex: 0 0 auto;
+    border: 0;
+    background: var(--acento);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    padding: 11px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  :root[data-theme="dark"] #calcular, :root:not([data-theme="light"]) #calcular { color: #062622; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #calcular { color: #062622; } }
+  #calcular:hover { filter: brightness(1.06); }
+  .ejemplos { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .ejemplos span { font-size: 0.8rem; color: var(--tenue); margin-right: 2px; }
+  .ejemplos button {
+    border: 1px solid var(--borde);
+    background: transparent;
+    color: var(--tinta);
+    font: inherit;
+    font-size: 0.83rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .ejemplos button:hover { background: var(--acento-suave); border-color: var(--acento); color: var(--acento); }
+  .aviso-error {
+    margin: 0;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: var(--mal-fondo);
+    color: var(--mal);
+    font-size: 0.88rem;
+  }
+  .nota { margin: 0; color: var(--tenue); font-size: 0.85rem; }
+  .nota code { font-family: var(--mono); font-size: 0.85em; background: var(--fondo); padding: 1px 5px; border-radius: 4px; }
+
+  /* Resultado */
+  .resultado { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: 12px; overflow: hidden; }
+
+  .estructura { padding: 12px; background: var(--lienzo); display: grid; place-items: center; min-height: 220px; }
+  .estructura svg { width: 100%; height: auto; max-height: 260px; color: var(--tinta); }
+  .titulo-mol { padding: 12px 16px; border-top: 1px solid var(--borde); display: grid; gap: 2px; }
+  .titulo-mol strong { font-size: 1.05rem; }
+  .titulo-mol span { color: var(--tenue); font-family: var(--mono); font-size: 0.88rem; }
+
+  .descriptores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 1px;
+    margin: 16px 0 0;
+    background: var(--borde);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .descriptores div { background: var(--superficie); padding: 10px 12px; display: grid; gap: 2px; }
+  .descriptores dt { font-size: 0.72rem; color: var(--tenue); }
+  .descriptores dd { margin: 0; font-family: var(--mono); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+
+  .panel { padding: 4px 18px 18px; }
+  .grupo { padding-top: 14px; }
+  .grupo h2 {
+    margin: 0 0 2px; font-size: 0.72rem; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--tenue);
+  }
+  .fila {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+    gap: 4px 16px; padding: 9px 0; border-bottom: 1px solid var(--borde);
+  }
+  .grupo .fila:last-child { border-bottom: 0; }
+  .fila strong { font-weight: 500; }
+  .fila small { display: block; color: var(--tenue); font-size: 0.8rem; overflow-wrap: anywhere; }
+  .pastilla {
+    justify-self: end; text-align: right; font-size: 0.82rem; font-weight: 500;
+    padding: 3px 11px; border-radius: 999px; background: var(--fondo); color: var(--tenue); max-width: 24ch;
+  }
+  .pastilla.bien { background: var(--bien-fondo); color: var(--bien); }
+  .pastilla.aviso { background: var(--aviso-fondo); color: var(--aviso); }
+  .pastilla.mal { background: var(--mal-fondo); color: var(--mal); }
+  .pastilla.info { background: var(--acento-suave); color: var(--acento); }
+  .pastilla.na { font-style: italic; }
+
+  .pie { color: var(--tenue); font-size: 0.85rem; display: grid; gap: 6px; }
+  .pie code { font-family: var(--mono); font-size: 0.85em; background: var(--superficie); border: 1px solid var(--borde); padding: 1px 6px; border-radius: 4px; }
+
+  @media (max-width: 720px) {
+    .resultado { grid-template-columns: minmax(0, 1fr); }
+    .fila { grid-template-columns: minmax(0, 1fr); }
+    .pastilla { justify-self: start; text-align: left; }
+  }
+</style>
+
+<div class="pagina">
+  <header>
+    <p class="eyebrow">Cheminformática · aproximado</p>
+    <h1>Simulador ADMET</h1>
+    <p>Escribe una molécula en notación <abbr title="Simplified Molecular Input Line Entry System">SMILES</abbr> y obtén una estimación de su perfil ADMET. Todo el cálculo ocurre en tu navegador con OpenChemLib; no se envía nada a ningún servidor.</p>
+  </header>
+
+  <section class="entrada" aria-label="Entrada de molécula">
+    <div class="campo">
+      <label for="smiles">SMILES</label>
+      <div class="fila-input">
+        <input id="smiles" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
+               value="CC(C)CC1=CC=C(C=C1)C(C)C(=O)O" placeholder="p. ej. CCO">
+        <button type="button" id="calcular">Calcular</button>
+      </div>
+    </div>
+    <div class="ejemplos" id="ejemplos">
+      <span>Ejemplos:</span>
+    </div>
+    <p class="aviso-error" id="error" hidden></p>
+    <p class="nota">Estimación orientativa por reglas empíricas, no un análisis de laboratorio ni un modelo entrenado. Para metabolismo (CYP), excreción y toxicidad predichos con modelos, usa el script <code>admet_api.py</code> con DeepChem.</p>
+  </section>
+
+  <section class="resultado" id="resultado" aria-live="polite" hidden>
+    <div class="tarjeta">
+      <div class="estructura" id="estructura"></div>
+      <div class="titulo-mol">
+        <strong id="d-formula"></strong>
+        <span id="d-masa"></span>
+      </div>
+      <dl class="descriptores" id="descriptores"></dl>
+    </div>
+    <div class="tarjeta">
+      <div class="panel" id="criterios"></div>
+    </div>
+  </section>
+
+  <div class="pie">
+    <p>Descriptores y solubilidad: modelo cLogP/logS de OpenChemLib. Alertas estructurales: subconjunto reducido de grupos reactivos (no es el catálogo PAINS/Brenk completo, que sí está en <code>admet.py</code>).</p>
+  </div>
+</div>
+
+<script type="module">
+  import OCL from "./openchemlib.js";
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const num = (x, d = 2) => x.toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+  const EJEMPLOS = [
+    ["Ibuprofeno", "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O"],
+    ["Cafeína", "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"],
+    ["Paracetamol", "CC(=O)NC1=CC=C(O)C=C1"],
+    ["Aspirina", "CC(=O)OC1=CC=CC=C1C(=O)O"],
+    ["Morfina", "CN1CCC23C4Oc5c(O)ccc(CC1C2C=CC4O)c35"],
+    ["Etanol", "CCO"],
+  ];
+
+  // Alertas estructurales: subconjunto de grupos reactivos/indeseables.
+  const ALERTAS = [
+    ["Grupo nitro", "[NX3+](=O)[O-]"],
+    ["Éster de fenol", "[#6]C(=O)O[c]"],
+    ["Aldehído", "[CX3H1](=O)[#6]"],
+    ["Aceptor de Michael", "[CX3]=[CX3][CX3]=[OX1]"],
+    ["Haluro de alquilo", "[Cl,Br,I][CX4]"],
+    ["Epóxido", "[OX2r3]1[#6r3][#6r3]1"],
+    ["Tiol libre", "[SX2H]"],
+    ["Azida", "[NX1]=[NX2]=[NX1]"],
+    ["Isocianato", "[NX2]=C=[OX1]"],
+    ["Hidrazina", "[NX3][NX3H,NX3H2]"],
+  ];
+
+  const parserSmarts = new OCL.SmilesParser({ smartsMode: "smarts" });
+  const consultas = ALERTAS.map(([nombre, smarts]) => {
+    try {
+      const q = parserSmarts.parseMolecule(smarts, { noCoordinates: true });
+      q.setFragment(true);
+      return { nombre, q };
+    } catch { return null; }
+  }).filter(Boolean);
+
+  function fsp3(mol) {
+    let c = 0, sp3 = 0;
+    for (let i = 0; i < mol.getAllAtoms(); i++) {
+      if (mol.getAtomicNo(i) === 6) { c++; if (!mol.isAromaticAtom(i) && mol.getAtomPi(i) === 0) sp3++; }
+    }
+    return c ? sp3 / c : 0;
+  }
+  function atomosPesados(mol) {
+    let n = 0;
+    for (let i = 0; i < mol.getAllAtoms(); i++) if (mol.getAtomicNo(i) > 1) n++;
+    return n;
+  }
+  function alertas(mol) {
+    const buscador = new OCL.SSSearcher();
+    const encontradas = [];
+    for (const { nombre, q } of consultas) {
+      buscador.setMol(q, mol);
+      if (buscador.isFragmentInMolecule()) encontradas.push(nombre);
+    }
+    return encontradas;
+  }
+
+  function claseSolubilidad(logs) {
+    if (logs < -10) return ["Insoluble", "mal"];
+    if (logs < -6) return ["Poco soluble", "mal"];
+    if (logs < -4) return ["Moderadamente soluble", "aviso"];
+    if (logs < -2) return ["Soluble", "bien"];
+    return ["Muy soluble", "bien"];
+  }
+
+  function perfil(mol) {
+    const p = new OCL.MoleculeProperties(mol);
+    const mf = mol.getMolecularFormula();
+    const mw = mf.relativeWeight, logp = p.logP, logs = p.logS, tpsa = p.polarSurfaceArea;
+    const hbd = p.donorCount, hba = p.acceptorCount, rot = p.rotatableBondCount;
+
+    const inc = [["MW > 500", mw > 500], ["LogP > 5", logp > 5], ["donadores H > 5", hbd > 5], ["aceptores H > 10", hba > 10]]
+      .filter(([, f]) => f).map(([t]) => t);
+    const veber = rot <= 10 && tpsa <= 140;
+    const egan = tpsa <= 131.6 && logp <= 5.88;
+    const bhe = tpsa < 90 && mw < 450;
+    const [clase, estadoSol] = claseSolubilidad(logs);
+    const encontradas = alertas(mol);
+
+    return {
+      formula: mf.formula,
+      masa: mw,
+      descriptores: {
+        "LogP": num(logp), "LogS": num(logs), "TPSA": num(tpsa, 1) + " Å²",
+        "Donadores H": String(hbd), "Aceptores H": String(hba),
+        "Rotables": String(rot), "Fsp³": num(fsp3(mol)), "Át. pesados": String(atomosPesados(mol)),
+      },
+      criterios: [
+        { grupo: "Absorción", nombre: "Regla de Lipinski",
+          valor: inc.length ? `${inc.length} incumplimiento(s): ${inc.join(", ")}` : "Cumple",
+          estado: inc.length <= 1 ? "bien" : "mal", detalle: "MW ≤ 500, LogP ≤ 5, HBD ≤ 5, HBA ≤ 10 (se tolera 1 fallo)." },
+        { grupo: "Absorción", nombre: "Regla de Veber", valor: veber ? "Cumple" : "No cumple",
+          estado: veber ? "bien" : "aviso", detalle: "Enlaces rotables ≤ 10 y TPSA ≤ 140 Å²." },
+        { grupo: "Absorción", nombre: "Absorción intestinal", valor: egan ? "Alta" : "Baja",
+          estado: egan ? "bien" : "mal", detalle: "Regla de Egan: TPSA ≤ 131,6 Å² y LogP ≤ 5,88." },
+        { grupo: "Absorción", nombre: "Solubilidad en agua", valor: `${clase} (logS ${num(logs)})`,
+          estado: estadoSol, detalle: "Modelo logS de OpenChemLib; en mol/L." },
+        { grupo: "Distribución", nombre: "Barrera hematoencefálica",
+          valor: bhe ? "Probable que la cruce" : "Poco probable", estado: "info",
+          detalle: "TPSA < 90 Å² y MW < 450 (perfil típico de fármacos del SNC)." },
+        { grupo: "Toxicidad", nombre: "Alertas estructurales",
+          valor: encontradas.length ? encontradas.join(", ") : "Ninguna",
+          estado: encontradas.length ? "aviso" : "bien",
+          detalle: encontradas.length ? "Grupos reactivos detectados (subconjunto reducido)." : "Sin coincidencias en el subconjunto de grupos reactivos." },
+        { grupo: "Metabolismo", nombre: "Inhibición de CYP450", valor: "No estimable", estado: "na",
+          detalle: "Requiere un modelo entrenado (admet_api.py + DeepChem)." },
+        { grupo: "Excreción", nombre: "Aclaramiento y vida media", valor: "No estimable", estado: "na",
+          detalle: "Requiere un modelo entrenado (admet_api.py + DeepChem)." },
+      ],
+    };
+  }
+
+  const GRUPOS = ["Absorción", "Distribución", "Metabolismo", "Excreción", "Toxicidad"];
+
+  function dibujar(mol) {
+    const svg = mol.toSVG(360, 240, undefined, { autoCrop: true, autoCropMargin: 8, strokeWidth: 1.5, factorTextSize: 1.15 })
+      .replace(/rgb\(0,0,0\)/g, "currentColor");
+    $("estructura").innerHTML = svg;
+  }
+
+  function render(p) {
+    $("d-formula").innerHTML = p.formula.replace(/(\d+)/g, "<sub>$1</sub>");
+    $("d-masa").textContent = num(p.masa) + " g/mol";
+    $("descriptores").innerHTML = Object.entries(p.descriptores)
+      .map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("");
+    $("criterios").innerHTML = GRUPOS.map((g) => {
+      const filas = p.criterios.filter((c) => c.grupo === g);
+      if (!filas.length) return "";
+      return `<div class="grupo"><h2>${g}</h2>${filas.map((c) => `
+        <div class="fila">
+          <div><strong>${esc(c.nombre)}</strong><small>${esc(c.detalle)}</small></div>
+          <span class="pastilla ${c.estado}">${esc(c.valor)}</span>
+        </div>`).join("")}</div>`;
+    }).join("");
+    $("resultado").hidden = false;
+  }
+
+  function calcular() {
+    const smiles = $("smiles").value.trim();
+    const err = $("error");
+    if (!smiles) { err.textContent = "Escribe un SMILES."; err.hidden = false; return; }
+    let mol;
+    try {
+      mol = OCL.Molecule.fromSmiles(smiles);
+      if (mol.getAllAtoms() === 0) throw new Error("vacío");
+    } catch {
+      err.textContent = `No se pudo interpretar el SMILES «${smiles}». Revisa la notación.`;
+      err.hidden = false;
+      return;
+    }
+    err.hidden = true;
+    dibujar(mol);
+    render(perfil(mol));
+  }
+
+  function iniciar() {
+    $("ejemplos").insertAdjacentHTML("beforeend", EJEMPLOS.map(([n, s]) =>
+      `<button type="button" data-smiles="${esc(s)}">${esc(n)}</button>`).join(""));
+    $("ejemplos").addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (b) { $("smiles").value = b.dataset.smiles; calcular(); }
+    });
+    $("calcular").addEventListener("click", calcular);
+    $("smiles").addEventListener("keydown", (e) => { if (e.key === "Enter") calcular(); });
+    calcular();
+  }
+
+  iniciar();
+</script>

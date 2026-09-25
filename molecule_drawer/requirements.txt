@@ -1,1 +1,12 @@
+# Base (imprescindible)
 rdkit
+numpy
+
+# API HTTP opcional (admet_api.py --serve)
+# flask
+
+# Capa de modelos ADMET opcional y pesada (admet_api.py con predicción ML).
+# Instala DeepChem con su motor (uno de los dos):
+# deepchem
+# torch
+# tensorflow
