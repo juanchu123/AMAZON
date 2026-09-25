@@ -94,6 +94,8 @@ playwright install chromium       # solo si vas a usar el navegador automático
 
 ### 4.2 Recomendar keywords nuevas con machine learning — ✅ se puede usar ya
 
+**Fuente preferida: el Excel consolidado `FreshFinder_Amazon_Ads_historico.xlsx`** (hojas *Anuncios* y *Keywords*, con campaña, grupo e IDs). Si está en la carpeta, `keyword_ml.py` lo usa solo. Las keywords de grupos con varios productos cuentan para un producto solo si éste tiene ≥ 90% del gasto del grupo. Para volver al modo antiguo con CSV sueltos: `python keyword_ml.py --csv`. Los pasos de abajo son para ese modo CSV.
+
 1. En Amazon Ads, exporta de cada grupo de anuncios:
    - la pestaña **Anuncios** → `Sponsored_Products_Ad_*.csv` (trae el producto/ASIN);
    - la pestaña **Segmentación** → `Sponsored_Products_Target_*.csv` (trae las palabras).
@@ -103,7 +105,8 @@ playwright install chromium       # solo si vas a usar el navegador automático
 3. Ejecuta:
 
 ```bash
-python keyword_ml.py                          # soporte de pinza (por defecto)
+python keyword_ml.py                          # soporte de pinza (por defecto; usa el Excel si está)
+python keyword_ml.py --excel otro_historico.xlsx
 python keyword_ml.py --top 20                 # más recomendaciones
 python keyword_ml.py --asin B0DHYBY6MS        # otro producto (p. ej. rejilla)
 python keyword_ml.py --datos ./exports        # CSV en otra carpeta
@@ -218,9 +221,10 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 
 ## 6. Resultados actuales (soporte de pinza, B0DCZS1NR6)
 
-- Datos: 9 keywords, 364 clics, 35 compras, ticket medio 11,24€, CPC medio 0,54€, ACOS real ≈ 41%.
-- Lo que el modelo ha aprendido: **"pinza"** y **"coche pinza"** son las palabras que más venden; **"sujeta"** y la coincidencia **Amplia** atraen clics que no compran.
-- Mejores frases para probar: *soporte móvil coche pinza 360*, *soporte móvil coche pinza para espejo retrovisor*, variantes con *salpicadero*. Para quedar en ACOS 35%, la puja máxima de cada una va de **0,30€ a 0,47€**. Pujando el CPC medio actual (0,54€), todas quedarían por encima del objetivo.
+- Datos (Excel histórico completo): 8 grupos de anuncios, 43 keywords distintas, 459 clics, 37 compras, ticket medio 11,24€, CPC medio 0,61€. El modelo acierta un **17,7%** mejor que la media (antes, con los CSV, un 7,4%).
+- Lo que el modelo ha aprendido: **"pinza"** es con diferencia la palabra que más vende; "soporte" y "móvil" suman; **"sujeta"**, **"teléfono"** y la coincidencia **Amplia** atraen clics que no compran.
+- Mejores frases nuevas: *soporte móvil coche pinza 360* (0,45€ de puja máx.), *… para espejo retrovisor* (0,47€), *… para parasol / ajustable / para iphone* (0,46€). Pujando el CPC medio actual (0,61€), todas quedarían por encima del objetivo del 35%.
+- Plan aplicado: `resultados/grupo_pinza_V2.xlsx` (grupo nuevo en la campaña "Soporte móvil pinza", 5 keywords históricas + 5 especiales, tickets y seguimiento).
 
 ---
 
@@ -228,7 +232,7 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 
 - [x] ~~Corregir `keyword_ml.py`~~: quitado el modelo de CPC (aprendía de las pujas, no de las palabras). Ahora ordena por compra/clic y da `puja_max_rentable_eur` con ACOS objetivo 35% (`--acos-objetivo` para cambiarlo). Descarta las frases cuya puja máxima no llega a la puja recomendada más baja de Amazon.
 - [ ] **Coste del producto y comisiones de Amazon**, para calcular el ACOS de equilibrio y el beneficio neto real.
-- [ ] **`Sponsored_Products_Target_Sep_25_2026 (3).csv`:** no cuadra con ningún anuncio. ¿Es un export repetido o un tercer grupo de la pinza?
+- [x] ~~`Sponsored_Products_Target_Sep_25_2026 (3).csv`~~: era el grupo "Soporte pinza a ver → Pinza". Ya entra en el entrenamiento a través del Excel histórico.
 - [ ] **Falta el `.gitignore`:** su contenido está en un archivo llamado `download`. Hay que renombrarlo antes de capturar la sesión, para que `.auth/` nunca se suba.
 - [ ] Selectores de `browser_agent.py` (ver 4.4).
 - [ ] **Pasar las reglas nuevas de la sección 5 al código.** `safety.py` todavía tiene ±20% por cambio y 24h entre cambios. Hay que cambiarlo a revisión cada 3 días con rango de ±50% sobre la puja original, añadir la puja original al log, el grupo de pruebas y los stop-loss nuevos. `CLAUDE.md` también debe actualizarse.

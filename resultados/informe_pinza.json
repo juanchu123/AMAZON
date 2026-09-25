@@ -1,138 +1,123 @@
 {
   "asin": "B0DCZS1NR6",
   "informe_datos": {
-    "duplicados_identicos": [],
-    "relaciones": [
-      {
-        "palabras": "Sponsored_Products_Target_Sep_25_2026 (4).csv",
-        "anuncios": "Sponsored_Products_Ad_Sep_25_2026 (2).csv",
-        "totales": {
-          "impresiones": 18198.0,
-          "clics": 144.0,
-          "coste": 101.77,
-          "compras": 11.0,
-          "ventas": 121.53
-        }
-      },
-      {
-        "palabras": "Sponsored_Products_Target_Sep_25_2026 (5).csv",
-        "anuncios": "Sponsored_Products_Ad_Sep_25_2026 (3).csv",
-        "totales": {
-          "impresiones": 27995.0,
-          "clics": 310.0,
-          "coste": 157.3,
-          "compras": 34.0,
-          "ventas": 379.91
-        }
-      },
-      {
-        "palabras": "Sponsored_Products_Target_Sep_25_2026 (6).csv",
-        "anuncios": "Sponsored_Products_Ad_Sep_25_2026 (4).csv",
-        "totales": {
-          "impresiones": 156086.0,
-          "clics": 850.0,
-          "coste": 889.17,
-          "compras": 38.0,
-          "ventas": 581.61
-        }
-      },
-      {
-        "palabras": "Sponsored_Products_Target_Sep_25_2026 (7).csv",
-        "anuncios": "Sponsored_Products_Ad_Sep_25_2026 (5).csv",
-        "totales": {
-          "impresiones": 5980.0,
-          "clics": 54.0,
-          "coste": 40.57,
-          "compras": 1.0,
-          "ventas": 13.5
-        }
-      }
-    ],
-    "sin_relacionar": [
-      {
-        "archivo": "Sponsored_Products_Target_Sep_25_2026 (3).csv",
-        "motivo": "ningún export de anuncios tiene los mismos totales",
-        "totales": {
-          "impresiones": 184.0,
-          "clics": 4.0,
-          "coste": 2.28,
-          "compras": 0.0,
-          "ventas": 0.0
-        }
-      },
-      {
-        "archivo": "Sponsored_Products_Ad_Sep_25_2026 (1).csv",
-        "motivo": "ningún export de palabras suma lo mismo",
-        "totales": {
-          "impresiones": 0.0,
-          "clics": 0.0,
-          "coste": 4.07,
-          "compras": 0.0,
-          "ventas": 0.0
-        }
-      }
-    ],
+    "fuente": "./FreshFinder_Amazon_Ads_historico.xlsx",
     "grupos": [
       {
-        "palabras": "Sponsored_Products_Target_Sep_25_2026 (4).csv",
-        "asin": "B0DHYBY6MS",
-        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "palabras": "Campaña con ajustes preestablecidos - B0DCZS1NR6 - 27/9/2024 19:18:30 / Grupo de anuncios - 27/9/2024 19:18:30",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
         "cuota_gasto": 1.0,
-        "usado": false
+        "usado": true
       },
       {
-        "palabras": "Sponsored_Products_Target_Sep_25_2026 (5).csv",
+        "palabras": "Campaign - 13/4/2025 9:51:56.744 / Promoción mala",
         "asin": "B0DCZS1NR6",
-        "producto": "Genérico Soporte Móvil para Coche con Pinza Ajustable 360° para Salpic",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Nuevo producto - B0DCZS1NR6 - 21/10/2024 9:39:18 / Grupo de anuncios - 21/10/2024 9:39:18",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "SP Campaign Recommendation - Suggested Products - 04/03/2025 ded33a / Genérico - Car Electronics Other",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte pinza bruh / Grupo de anuncios - 11/1/2025 0:00:19.292",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Campaña - 2/5/2025 11:00:04.617 / el malo va bien :(",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte pinza a ver / Pinza",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte móvil pinza / Pinza",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
         "cuota_gasto": 0.992,
         "usado": true
       },
       {
-        "palabras": "Sponsored_Products_Target_Sep_25_2026 (6).csv",
-        "asin": "B0DHYBY6MS",
-        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
-        "cuota_gasto": 1.0,
+        "palabras": "Soporte móvil AC / Básico",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 0.793,
         "usado": false
       },
       {
-        "palabras": "Sponsored_Products_Target_Sep_25_2026 (7).csv",
+        "palabras": "Soporte móvil pinza / Salpicadero sin ventosa",
         "asin": "B0DCZS1NR6",
-        "producto": "Genérico Soporte Móvil para Coche con Pinza Ajustable 360° para Salpic",
-        "cuota_gasto": 1.0,
-        "usado": true
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 0.679,
+        "usado": false
       }
     ]
   },
   "validacion": {
-    "logloss_modelo": 0.34883322847177933,
-    "logloss_media": 0.37654658626698795,
-    "mejora_pct": 7.359874928080911
+    "logloss_modelo": 0.2889612264631112,
+    "logloss_media": 0.3509926923763333,
+    "mejora_pct": 17.6731502565621
   },
   "ticket_medio_eur": 11.24,
-  "cpc_medio_eur": 0.54,
-  "candidatas_generadas": 161,
+  "cpc_medio_eur": 0.61,
+  "candidatas_generadas": 263,
   "coeficientes_conversion": {
-    "b=coche_pinza": 0.665,
-    "w=pinza": 0.535,
-    "b=movil_coche": 0.167,
-    "b=soporte_movil": 0.167,
-    "n_palabras": 0.129,
-    "w=soporte": 0.125,
-    "match=exacta": 0.102,
+    "b=coche_pinza": 0.821,
+    "w=pinza": 0.728,
+    "b=soporte_movil": 0.303,
+    "b=movil_coche": 0.26,
+    "w=soporte": 0.206,
+    "n_palabras": 0.174,
+    "w=movil": 0.14,
+    "match=frase": 0.121,
     "w=coche": 0.102,
-    "b=pinza_salpicadero": 0.061,
-    "w=salpicadero": 0.061,
-    "match=frase": 0.06,
-    "w=movil": 0.037,
-    "b=soporte_telefono": -0.042,
-    "b=telefono_360": -0.042,
-    "w=360": -0.042,
-    "w=telefono": -0.042,
-    "b=pinza_coche": -0.065,
-    "b=movil_pinza": -0.13,
-    "b=sujeta_movil": -0.13,
-    "w=sujeta": -0.13,
-    "match=amplia": -0.168
+    "b=pinza_salpicadero": 0.062,
+    "w=salpicadero": 0.034,
+    "b=telefono_360": -0.022,
+    "w=360": -0.022,
+    "b=moviles_coche": -0.024,
+    "b=sujeta_moviles": -0.024,
+    "w=moviles": -0.024,
+    "b=soport_movil": -0.027,
+    "w=soport": -0.027,
+    "b=telefono_coche": -0.028,
+    "b=coche_salpicadero": -0.028,
+    "b=car_mount": -0.029,
+    "w=car": -0.029,
+    "w=mount": -0.029,
+    "b=sujetar_movil": -0.043,
+    "w=sujetar": -0.043,
+    "b=pinza_coche": -0.044,
+    "b=soporte_coche": -0.048,
+    "b=soporte_telefono": -0.049,
+    "w=telefono": -0.049,
+    "match=exacta": -0.064,
+    "match=amplia": -0.082,
+    "b=movil_pinza": -0.094,
+    "b=sujeta_movil": -0.094,
+    "w=sujeta": -0.117
   },
-  "acos_objetivo_pct": 30.0
+  "acos_objetivo_pct": 35.0
 }

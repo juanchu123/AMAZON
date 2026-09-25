@@ -1,7 +1,14 @@
 """
 keyword_ml.py — Machine learning de keywords para UN producto (por defecto: el soporte de pinza).
 
-Qué hace, en orden:
+Fuente de datos (una de las dos):
+  A) EXCEL CONSOLIDADO (preferido): FreshFinder_Amazon_Ads_historico.xlsx, con hojas "Anuncios" y
+     "Keywords" que ya traen campaña, grupo de anuncios e IDs. Se detecta solo si está en --datos,
+     o se indica con --excel. Las keywords de grupos con varios productos se asignan al producto
+     que tiene ≥ CUOTA_MIN_GRUPO del gasto del grupo (hoja Anuncios); si no, se descartan.
+  B) CSV sueltos (modo antiguo), pasos 1-4 de abajo.
+
+Qué hace, en orden (modo CSV):
   1. Lee todos los exports de Amazon Ads de la carpeta de datos:
        - Sponsored_Products_Ad_*.csv      -> anuncios (SÍ traen producto: ASIN, SKU, nombre)
        - Sponsored_Products_Target_*.csv  -> palabras clave (NO traen producto)
@@ -32,6 +39,7 @@ Uso:
     python keyword_ml.py --datos ./exports --top 20
     python keyword_ml.py --asin B0DCZS1NR6
     python keyword_ml.py --acos-objetivo 30
+    python keyword_ml.py --excel FreshFinder_Amazon_Ads_historico.xlsx
 """
 
 import argparse
@@ -56,6 +64,7 @@ PENALIZACION_A_CIEGAS = 0.85    # al ordenar, compra/clic × esto por cada palab
 ACOS_OBJETIVO_PCT = 35.0        # para la puja máxima rentable (confirmado por Juan: 35%)
 NUCLEO = {"soporte", "movil", "coche", "pinza"}  # palabras que casi todas las frases comparten
 MAX_REPETICION = 2              # veces que una misma palabra extra puede repetirse en el top
+CUOTA_MIN_GRUPO = 0.90          # un grupo con varios productos cuenta para uno si éste gasta ≥ 90%
 TOLERANCIA_EUR = 0.02           # margen de redondeo al comparar totales entre archivos
 
 
@@ -200,6 +209,57 @@ def filas_producto(grupos, asin=None, contiene=None):
     return filas, info, titulo, asin_elegido
 
 
+def cargar_excel(path, asin=None, contiene=None):
+    """Lee el Excel consolidado (hojas 'Anuncios' y 'Keywords'). Devuelve lo mismo que
+    filas_producto() + el conjunto de keywords existentes en toda la cuenta."""
+    from openpyxl import load_workbook
+    wb = load_workbook(path, read_only=True, data_only=True)
+
+    def hoja(nombre):
+        it = wb[nombre].iter_rows(values_only=True)
+        cab = [str(c).strip() if c is not None else "" for c in next(it)]
+        return [dict(zip(cab, r)) for r in it if any(v is not None for v in r)]
+
+    anuncios, keywords = hoja("Anuncios"), hoja("Keywords")
+    f = lambda v: float(v) if isinstance(v, (int, float)) else _num(str(v) if v is not None else "")
+
+    # cuota de gasto de cada producto dentro de cada grupo de anuncios
+    gasto = defaultdict(lambda: defaultdict(float))
+    nombres = {}
+    for a in anuncios:
+        gasto[a["ID grupo"]][a["ASIN"]] += f(a["Coste (€)"])
+        nombres[a["ASIN"]] = a["Producto"]
+    if asin is None:
+        asin = next((a for a, n in nombres.items() if contiene and normalizar(contiene) in normalizar(n)), None)
+    if asin is None:
+        raise SystemExit(f"Ningún producto del Excel contiene {contiene!r} en el nombre.")
+
+    filas, info, vistos_grupo = [], [], {}
+    for r in keywords:
+        g = r["ID grupo"]
+        if g not in vistos_grupo:
+            total = sum(gasto[g].values())
+            cuota = gasto[g].get(asin, 0.0) / total if total else (1.0 if str(r["Producto (ASIN)"]) == asin else 0.0)
+            vistos_grupo[g] = cuota >= CUOTA_MIN_GRUPO
+            if cuota > 0:
+                info.append({"palabras": f"{r['Campaña']} / {r['Grupo de anuncios']}", "asin": asin,
+                             "producto": nombres[asin][:70], "cuota_gasto": round(cuota, 3), "usado": vistos_grupo[g]})
+        if not vistos_grupo[g] or r["Coincidencia"] not in ("Amplia", "Frase", "Exacta"):
+            continue  # otro producto, o segmentación automática (close-match, substitutes…)
+        filas.append({
+            "keyword": str(r["Keyword / segmento"]).strip(),
+            "coincidencia": r["Coincidencia"],
+            "impresiones": f(r["Impresiones"]), "clics": f(r["Clics"]), "coste": f(r["Coste (€)"]),
+            "compras": f(r["Compras"]), "ventas": f(r["Ventas (€)"]), "puja": f(r["Puja actual (€)"]),
+            "puja_rec": f(r["Puja rec. mediana"]), "puja_rec_baja": f(r["Puja rec. baja"]),
+            "campana": r["Campaña"], "grupo": r["Grupo de anuncios"],
+            "id_campana": r["ID campaña"], "id_grupo": g,
+            "archivo": f"{r['Campaña']} / {r['Grupo de anuncios']}",
+        })
+    existentes = {firma(str(r["Keyword / segmento"])) for r in keywords if r["Coincidencia"] in ("Amplia", "Frase", "Exacta")}
+    return filas, info, nombres[asin], asin, existentes
+
+
 # ---------------------------------------------------------------- 5: modelos
 
 def _dataset(filas, exito, intentos):
@@ -265,7 +325,8 @@ def vocabulario(titulo, filas):
     marcas = [m for m in ["iphone", "samsung", "xiaomi"] if m in t]
     for f in filas:  # cabezas que ya usan sus keywords reales
         toks = normalizar(f["keyword"]).split()
-        if len(toks) >= 2 and toks[0] in {"soporte", "sujeta", "porta"} and toks[1] not in STOPWORDS:
+        # solo cabezas "soporte/sujeta/porta + móvil/teléfono" (evita 'soporte gps', 'soporte mobil'…)
+        if len(toks) >= 2 and toks[0] in {"soporte", "sujeta", "porta"} and toks[1] in {"movil", "telefono"}:
             cab = " ".join(toks[:2]).replace("movil", "móvil").replace("telefono", "teléfono")
             if cab not in cabezas:
                 cabezas.append(cab)
@@ -367,10 +428,28 @@ def main():
     ap.add_argument("--top", type=int, default=15)
     ap.add_argument("--acos-objetivo", type=float, default=ACOS_OBJETIVO_PCT, help="ACOS objetivo en %% para la puja máxima rentable")
     ap.add_argument("--salida", default="resultados")
+    ap.add_argument("--excel", help="Excel consolidado (hojas Anuncios + Keywords). Por defecto, *historico*.xlsx en --datos")
+    ap.add_argument("--csv", action="store_true", help="forzar el modo antiguo con CSV sueltos")
     args = ap.parse_args()
 
+    excel = args.excel or (None if args.csv else next(iter(sorted(glob.glob(os.path.join(args.datos, "*historico*.xlsx")))), None))
+    contiene = None if args.asin else args.producto_contiene
+    if excel:
+        filas, info_grupos, titulo, asin, existentes = cargar_excel(excel, asin=args.asin, contiene=contiene)
+        informe = {"fuente": excel, "grupos": info_grupos}
+        print(f"\n=== 1-2. Fuente: {excel} — grupos de anuncios con este producto ===")
+        for g in sorted(info_grupos, key=lambda g: -g["cuota_gasto"]):
+            print(f"  {'USADO   ' if g['usado'] else 'ignorado'} {g['palabras']} ({g['cuota_gasto']:.0%} del gasto del grupo)")
+    else:
+        filas, informe, titulo, asin, existentes = _cargar_csv(args, contiene)
+    if not filas:
+        raise SystemExit("Ningún grupo de anuncios corresponde a ese producto.")
+    _entrenar_y_recomendar(args, filas, informe, titulo, asin, existentes)
+
+
+def _cargar_csv(args, contiene):
     grupos, informe = cargar_y_relacionar(args.datos)
-    filas, info_grupos, titulo, asin = filas_producto(grupos, asin=args.asin, contiene=None if args.asin else args.producto_contiene)
+    filas, info_grupos, titulo, asin = filas_producto(grupos, asin=args.asin, contiene=contiene)
     informe["grupos"] = info_grupos
 
     print("\n=== 1. Duplicados y relación palabras <-> anuncios ===")
@@ -387,8 +466,14 @@ def main():
         if g["usado"] and g["cuota_gasto"] < 0.95:
             print(f"           ojo: el {1 - g['cuota_gasto']:.0%} del gasto de este grupo es de otro producto")
 
-    if not filas:
-        raise SystemExit("Ningún grupo de anuncios corresponde a ese producto.")
+    # nunca recomendar algo que ya exista en la cuenta (de cualquier producto)
+    existentes = {firma(r["Palabra clave"]) for pt, pa, rows_t, _ in grupos for r in rows_t}
+    for p in glob.glob(os.path.join(args.datos, "Sponsored_Products_Target_*.csv")):
+        existentes |= {firma(r["Palabra clave"]) for r in _read_csv(p)}
+    return filas, informe, titulo, asin, existentes
+
+
+def _entrenar_y_recomendar(args, filas, informe, titulo, asin, existentes):
     con_clics = [f for f in filas if f["clics"] > 0]
     print(f"\n=== 3. Entrenamiento: {asin} — {len(filas)} filas, {len({firma(f['keyword']) for f in filas})} keywords distintas, "
           f"{sum(f['clics'] for f in filas):.0f} clics, {sum(f['compras'] for f in filas):.0f} compras ===")
@@ -398,11 +483,6 @@ def main():
     if cv:
         print(f"  Validación (dejando fuera cada keyword): modelo {cv['logloss_modelo']:.3f} vs media {cv['logloss_media']:.3f} "
               f"-> {'mejora' if cv['mejora_pct'] > 0 else 'NO mejora'} un {abs(cv['mejora_pct']):.1f}%")
-
-    # nunca recomendar algo que ya exista en la cuenta (de cualquier producto)
-    existentes = {firma(r["Palabra clave"]) for pt, pa, rows_t, _ in grupos for r in rows_t}
-    for p in glob.glob(os.path.join(args.datos, "Sponsored_Products_Target_*.csv")):
-        existentes |= {firma(r["Palabra clave"]) for r in _read_csv(p)}
 
     recs_baja = [f["puja_rec_baja"] for f in filas if f["puja_rec_baja"] > 0]
     recs, resumen = recomendar(filas, titulo, existentes, args.top, acos_objetivo=args.acos_objetivo,

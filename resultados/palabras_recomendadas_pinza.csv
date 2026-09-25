@@ -1,6 +1,7 @@
 ﻿rank,palabra_clave,coincidencia_sugerida,prob_compra_por_clic,clics_por_venta,puja_max_rentable_eur,acos_si_pujas_cpc_medio_pct,palabras_sin_datos,motivo
-1,soporte móvil coche pinza 360,Frase,0.1117,9.0,0.38,43.3,0,"venden más: pinza, soporte, coche"
-2,soporte teléfono coche pinza para salpicadero,Frase,0.0859,11.6,0.29,56.3,0,"venden más: pinza, soporte, coche, salpicadero"
-3,soporte móvil coche pinza para espejo retrovisor,Frase,0.1186,8.4,0.4,40.8,2,"venden más: pinza, soporte, coche | sin datos (se prueba a ciegas): espejo, retrovisor"
-4,sujeta móvil coche pinza para salpicadero,Frase,0.0786,12.7,0.27,61.5,0,"venden más: pinza, coche, salpicadero | venden menos: sujeta"
-5,soporte teléfono coche pinza ajustable 360,Frase,0.0757,13.2,0.26,63.9,1,"venden más: pinza, soporte, coche | sin datos (se prueba a ciegas): ajustable"
+1,soporte móvil coche pinza 360,Frase,0.114,8.8,0.45,47.5,0,"venden más: pinza, soporte, movil, coche"
+2,soporte móvil coche pinza para espejo retrovisor,Frase,0.1199,8.3,0.47,45.2,2,"venden más: pinza, soporte, movil, coche | sin datos (se prueba a ciegas): espejo, retrovisor"
+3,porta móvil coche pinza para salpicadero,Frase,0.08,12.5,0.31,67.7,1,"venden más: pinza, movil, coche | sin datos (se prueba a ciegas): porta"
+4,soporte teléfono coche pinza para salpicadero,Frase,0.0595,16.8,0.23,91.2,0,"venden más: pinza, soporte, coche"
+5,porta móvil coche pinza ajustable 360,Frase,0.0742,13.5,0.29,73.1,2,"venden más: pinza, movil, coche | sin datos (se prueba a ciegas): porta, ajustable"
+6,sujeta móvil coche pinza ajustable,Frase,0.0602,16.6,0.24,90.1,1,"venden más: pinza, movil, coche | venden menos: sujeta | sin datos (se prueba a ciegas): ajustable"
