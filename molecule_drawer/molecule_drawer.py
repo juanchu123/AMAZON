@@ -1,5 +1,6 @@
 """Dibuja moléculas sencillas en 2D a partir de SMILES y las guarda como PNG."""
 
+import unicodedata
 from pathlib import Path
 
 from rdkit import Chem
@@ -7,16 +8,22 @@ from rdkit.Chem import Draw
 
 MOLECULAS = [
     ("Metano", "C"),
-    ("Oxigeno", "O=O"),
+    ("Oxígeno", "O=O"),
     ("Agua", "O"),
-    ("Dioxido_de_carbono", "O=C=O"),
-    ("Amoniaco", "N"),
+    ("Dióxido de carbono", "O=C=O"),
+    ("Amoníaco", "N"),
     ("Etanol", "CCO"),
     ("Benceno", "c1ccccc1"),
-    ("Cafeina", "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"),
+    ("Cafeína", "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"),
 ]
 
 SALIDA = Path(__file__).parent / "imagenes"
+
+
+def nombre_archivo(nombre):
+    """Quita tildes y espacios: 'Dióxido de carbono' -> 'Dioxido_de_carbono'."""
+    ascii_ = unicodedata.normalize("NFKD", nombre).encode("ascii", "ignore").decode()
+    return ascii_.replace(" ", "_")
 
 
 def main():
@@ -26,7 +33,7 @@ def main():
         if mol is None:
             print(f"SMILES no válido para {nombre}: {smiles}")
             continue
-        ruta = SALIDA / f"{nombre}.png"
+        ruta = SALIDA / f"{nombre_archivo(nombre)}.png"
         Draw.MolToFile(mol, str(ruta), size=(300, 300))
         print(f"Guardada: {ruta}")
 

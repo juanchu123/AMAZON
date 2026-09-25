@@ -1,0 +1,367 @@
+<title>Visor de Moléculas</title>
+<meta name="description" content="Moléculas en 3D generadas con RDKit: arrastra para girarlas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --fondo: #EEF2F1;
+    --superficie: #FFFFFF;
+    --visor: #FBFCFC;
+    --tinta: #15201D;
+    --tenue: #5A6964;
+    --borde: #D5DEDB;
+    --acento: #0E7666;
+    --acento-suave: #DDF0EC;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --fondo: #0D1312;
+      --superficie: #141C1A;
+      --visor: #0A0F0E;
+      --tinta: #E2EBE8;
+      --tenue: #8E9F9A;
+      --borde: #26332F;
+      --acento: #52C4AF;
+      --acento-suave: #173430;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --fondo: #0D1312;
+    --superficie: #141C1A;
+    --visor: #0A0F0E;
+    --tinta: #E2EBE8;
+    --tenue: #8E9F9A;
+    --borde: #26332F;
+    --acento: #52C4AF;
+    --acento-suave: #173430;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0;
+    padding-inline: 16px;
+    padding-block: 24px 32px;
+  }
+  .pagina {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    gap: 20px;
+  }
+  header { display: grid; gap: 4px; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  header p { margin: 0; color: var(--tenue); max-width: 60ch; }
+
+  .cuerpo {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* Lista de moléculas */
+  .lista {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .etiqueta {
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--tenue);
+    margin: 0 0 8px;
+  }
+  .lista button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--tinta);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .lista button:hover { background: var(--superficie); }
+  .lista button[aria-pressed="true"] {
+    background: var(--acento-suave);
+    color: var(--acento);
+    font-weight: 600;
+  }
+  .lista .formula { font-family: var(--mono); font-size: 0.85rem; color: var(--tenue); font-weight: 400; }
+  .lista button[aria-pressed="true"] .formula { color: var(--acento); }
+
+  /* Visor */
+  .panel {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    overflow: hidden;
+    display: grid;
+  }
+  .barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--borde);
+  }
+  .segmentos {
+    display: inline-flex;
+    flex-wrap: wrap;
+    border: 1px solid var(--borde);
+    border-radius: 7px;
+    padding: 2px;
+    gap: 2px;
+  }
+  .segmentos button, .accion {
+    border: 0;
+    background: transparent;
+    color: var(--tinta);
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .segmentos button:hover, .accion:hover { background: var(--fondo); }
+  .segmentos button[aria-pressed="true"] { background: var(--acento); color: var(--superficie); }
+  .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+  .accion { border: 1px solid var(--borde); }
+  .accion[aria-pressed="true"] { border-color: var(--acento); color: var(--acento); }
+  button:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+  .escenario {
+    position: relative;
+    height: min(62vh, 560px);
+    min-height: 320px;
+    background: var(--visor);
+  }
+  #visor { position: absolute; inset: 0; }
+  .pista {
+    position: absolute;
+    left: 12px;
+    bottom: 10px;
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--tenue);
+    pointer-events: none;
+  }
+  .error {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    text-align: center;
+    color: var(--tenue);
+  }
+
+  .ficha {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px 24px;
+    padding: 16px;
+    border-top: 1px solid var(--borde);
+    margin: 0;
+  }
+  .ficha div { display: grid; gap: 2px; min-width: 0; }
+  .ficha dt {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--tenue);
+  }
+  .ficha dd {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .ficha .ancho { grid-column: 1 / -1; }
+  .leyenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-family: var(--sans) !important; font-size: 0.88rem !important; }
+  .leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+  .leyenda i {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 1px solid var(--borde);
+    display: inline-block;
+  }
+
+  @media (max-width: 760px) {
+    .cuerpo { grid-template-columns: minmax(0, 1fr); }
+    .lista {
+      display: flex;
+      overflow-x: auto;
+      gap: 6px;
+      padding-bottom: 4px;
+    }
+    .lista li { flex: 0 0 auto; }
+    .lista button { width: auto; border: 1px solid var(--borde); background: var(--superficie); }
+    .escenario { height: 58vh; }
+  }
+</style>
+
+<div class="pagina">
+  <header>
+    <h1>Visor de moléculas</h1>
+    <p>Geometría 3D calculada con RDKit (ETKDG + campo de fuerza MMFF). Arrastra para girar, rueda o pellizco para acercar.</p>
+  </header>
+
+  <div class="cuerpo">
+    <nav aria-label="Moléculas">
+      <p class="etiqueta">Moléculas</p>
+      <ul class="lista" id="lista"></ul>
+    </nav>
+
+    <section class="panel" aria-label="Visor 3D">
+      <div class="barra">
+        <div class="segmentos" role="group" aria-label="Estilo de representación" id="estilos">
+          <button type="button" id="estilo-bolas" data-estilo="bolas" aria-pressed="true">Bolas y varillas</button>
+          <button type="button" id="estilo-varillas" data-estilo="varillas" aria-pressed="false">Varillas</button>
+          <button type="button" id="estilo-esferas" data-estilo="esferas" aria-pressed="false">Esferas</button>
+        </div>
+        <div class="acciones">
+          <button type="button" class="accion" id="girar" aria-pressed="true">Giro automático</button>
+          <button type="button" class="accion" id="centrar">Centrar</button>
+        </div>
+      </div>
+      <div class="escenario">
+        <div id="visor"></div>
+        <p class="pista">Clic derecho + arrastrar para mover · doble clic para centrar en un átomo</p>
+      </div>
+      <dl class="ficha">
+        <div><dt>Fórmula</dt><dd id="d-formula"></dd></div>
+        <div><dt>Masa molar</dt><dd id="d-masa"></dd></div>
+        <div><dt>Átomos</dt><dd id="d-atomos"></dd></div>
+        <div><dt>SMILES</dt><dd id="d-smiles"></dd></div>
+        <div class="ancho"><dt>Elementos (colores CPK)</dt><dd class="leyenda" id="d-leyenda"></dd></div>
+      </dl>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/3dmol@2.5.5/build/3Dmol-min.js"></script>
+<script>
+  const MOLECULAS = /*MOLECULAS*/[];
+
+  const CPK = {
+    H: ["Hidrógeno", "#FFFFFF"], C: ["Carbono", "#909090"], N: ["Nitrógeno", "#3050F8"],
+    O: ["Oxígeno", "#FF0D0D"], S: ["Azufre", "#FFFF30"], P: ["Fósforo", "#FF8000"],
+    F: ["Flúor", "#90E050"], Cl: ["Cloro", "#1FF01F"], Br: ["Bromo", "#A62929"], I: ["Yodo", "#940094"]
+  };
+  const ESTILOS = {
+    bolas: { stick: { radius: 0.14, colorscheme: "Jmol" }, sphere: { scale: 0.28, colorscheme: "Jmol" } },
+    varillas: { stick: { radius: 0.2, colorscheme: "Jmol" } },
+    esferas: { sphere: { colorscheme: "Jmol" } }
+  };
+
+  const reducirMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let actual = 0;
+  let estilo = "bolas";
+  let girando = !reducirMovimiento;
+  let visor = null;
+
+  const $ = (id) => document.getElementById(id);
+  const formulaHTML = (f) => f.replace(/(\d+)/g, "<sub>$1</sub>");
+  const colorFondo = () => getComputedStyle(document.documentElement).getPropertyValue("--visor").trim() || "#ffffff";
+
+  function pintarLista() {
+    $("lista").innerHTML = MOLECULAS.map((m, i) => `
+      <li><button type="button" id="mol-${i}" data-i="${i}" aria-pressed="${i === actual}">
+        <span>${m.nombre}</span><span class="formula">${formulaHTML(m.formula)}</span>
+      </button></li>`).join("");
+  }
+
+  function pintarFicha(m) {
+    $("d-formula").innerHTML = formulaHTML(m.formula);
+    $("d-masa").textContent = m.masa.toFixed(2).replace(".", ",") + " g/mol";
+    $("d-atomos").textContent = m.atomos + (m.atomos === 1 ? " átomo" : " átomos");
+    $("d-smiles").textContent = m.smiles;
+    $("d-leyenda").innerHTML = m.elementos.map((e) => {
+      const [nombre, color] = CPK[e] || [e, "#FF1493"];
+      return `<span><i style="background:${color}"></i>${nombre} (${e})</span>`;
+    }).join("");
+  }
+
+  function mostrar(i) {
+    actual = i;
+    const m = MOLECULAS[i];
+    document.querySelectorAll(".lista button").forEach((b) =>
+      b.setAttribute("aria-pressed", String(Number(b.dataset.i) === i)));
+    pintarFicha(m);
+    if (!visor) return;
+    visor.clear();
+    visor.addModel(m.molblock, "sdf");
+    visor.setStyle({}, ESTILOS[estilo]);
+    visor.zoomTo();
+    visor.zoom(0.85);
+    visor.render();
+  }
+
+  function aplicarGiro() {
+    $("girar").setAttribute("aria-pressed", String(girando));
+    if (visor) visor.spin(girando ? "y" : false, 0.6);
+  }
+
+  function iniciar() {
+    pintarLista();
+    if (typeof $3Dmol === "undefined") {
+      $("visor").innerHTML = '<div class="error">No se pudo cargar 3Dmol.js. Comprueba la conexión a internet y recarga la página.</div>';
+      pintarFicha(MOLECULAS[0]);
+      return;
+    }
+    visor = $3Dmol.createViewer($("visor"), { backgroundColor: colorFondo(), antialias: true });
+    mostrar(0);
+    aplicarGiro();
+
+    $("lista").addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (b) mostrar(Number(b.dataset.i));
+    });
+    $("estilos").addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      estilo = b.dataset.estilo;
+      document.querySelectorAll("#estilos button").forEach((x) =>
+        x.setAttribute("aria-pressed", String(x === b)));
+      visor.setStyle({}, ESTILOS[estilo]);
+      visor.render();
+    });
+    $("girar").addEventListener("click", () => { girando = !girando; aplicarGiro(); });
+    $("centrar").addEventListener("click", () => { visor.zoomTo(); visor.zoom(0.85); visor.render(); });
+
+    const refrescarFondo = () => { visor.setBackgroundColor(colorFondo()); visor.render(); };
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", refrescarFondo);
+    new MutationObserver(refrescarFondo).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    window.addEventListener("resize", () => { visor.resize(); visor.render(); });
+  }
+
+  iniciar();
+</script>
