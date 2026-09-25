@@ -15,6 +15,9 @@ MOLECULAS = [
     ("Etanol", "CCO"),
     ("Benceno", "c1ccccc1"),
     ("Cafeína", "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"),
+    ("Aspirina", "CC(=O)OC1=CC=CC=C1C(=O)O"),
+    ("Paracetamol", "CC(=O)NC1=CC=C(O)C=C1"),
+    ("Ibuprofeno", "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O"),
 ]
 
 SALIDA = Path(__file__).parent / "imagenes"

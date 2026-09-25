@@ -2,7 +2,8 @@
 
 RDKit calcula las coordenadas 3D (ETKDG + optimización MMFF) y el resultado se
 incrusta en una página HTML que usa 3Dmol.js para dibujarlas: se pueden girar
-con el ratón, hacer zoom y cambiar de estilo. Abre `visor_3d.html` en el navegador.
+con el ratón, hacer zoom y cambiar de estilo, y cada una muestra su perfil ADMET
+estimado (ver admet.py). Abre `visor_3d.html` en el navegador.
 """
 
 import json
@@ -12,6 +13,7 @@ from pathlib import Path
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, rdMolDescriptors
 
+import admet
 from molecule_drawer import MOLECULAS
 
 CARPETA = Path(__file__).parent
@@ -45,6 +47,7 @@ def molecula_3d(nombre, smiles):
         "atomos": mol.GetNumAtoms(),
         "elementos": elementos,
         "molblock": Chem.MolToMolBlock(mol),
+        "admet": admet.calcular(mol),
     }
 
 

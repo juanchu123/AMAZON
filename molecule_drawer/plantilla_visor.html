@@ -13,6 +13,9 @@
     --borde: #D5DEDB;
     --acento: #0E7666;
     --acento-suave: #DDF0EC;
+    --bien: #1B7543; --bien-fondo: #E0F2E7;
+    --aviso: #8F5A00; --aviso-fondo: #FAEFD7;
+    --mal: #B3261E; --mal-fondo: #FBE3E1;
     --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   }
@@ -27,6 +30,9 @@
       --borde: #26332F;
       --acento: #52C4AF;
       --acento-suave: #173430;
+      --bien: #62D192; --bien-fondo: #16301F;
+      --aviso: #E6B24F; --aviso-fondo: #362A11;
+      --mal: #F28D85; --mal-fondo: #3B1C1A;
     }
   }
   :root[data-theme="dark"] {
@@ -39,6 +45,9 @@
     --borde: #26332F;
     --acento: #52C4AF;
     --acento-suave: #173430;
+    --bien: #62D192; --bien-fondo: #16301F;
+    --aviso: #E6B24F; --aviso-fondo: #362A11;
+    --mal: #F28D85; --mal-fondo: #3B1C1A;
   }
 
   * { box-sizing: border-box; }
@@ -214,6 +223,64 @@
     display: inline-block;
   }
 
+  .admet {
+    border-top: 1px solid var(--borde);
+    padding: 20px 16px;
+    display: grid;
+    gap: 18px;
+  }
+  .admet-cabecera { display: grid; gap: 2px; }
+  .admet h2 { margin: 0; font-size: 1.1rem; font-weight: 600; }
+  .admet-cabecera p, .nota { margin: 0; color: var(--tenue); font-size: 0.86rem; max-width: 70ch; }
+  .descriptores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1px;
+    margin: 0;
+    background: var(--borde);
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .descriptores div { background: var(--superficie); padding: 10px 12px; display: grid; gap: 2px; }
+  .descriptores dt { font-size: 0.75rem; color: var(--tenue); }
+  .descriptores dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .criterios { display: grid; gap: 16px; }
+  .grupo h3 {
+    margin: 0 0 4px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--tenue);
+  }
+  .fila {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px 16px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--borde);
+  }
+  .grupo .fila:last-child { border-bottom: 0; }
+  .fila strong { font-weight: 500; }
+  .fila small { display: block; color: var(--tenue); font-size: 0.8rem; overflow-wrap: anywhere; }
+  .pastilla {
+    justify-self: end;
+    text-align: right;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--fondo);
+    color: var(--tenue);
+    max-width: 22ch;
+  }
+  .pastilla.bien { background: var(--bien-fondo); color: var(--bien); }
+  .pastilla.aviso { background: var(--aviso-fondo); color: var(--aviso); }
+  .pastilla.mal { background: var(--mal-fondo); color: var(--mal); }
+  .pastilla.info { background: var(--acento-suave); color: var(--acento); }
+
   @media (max-width: 760px) {
     .cuerpo { grid-template-columns: minmax(0, 1fr); }
     .lista {
@@ -225,6 +292,8 @@
     .lista li { flex: 0 0 auto; }
     .lista button { width: auto; border: 1px solid var(--borde); background: var(--superficie); }
     .escenario { height: 58vh; }
+    .fila { grid-template-columns: minmax(0, 1fr); }
+    .pastilla { justify-self: start; text-align: left; }
   }
 </style>
 
@@ -263,6 +332,14 @@
         <div><dt>SMILES</dt><dd id="d-smiles"></dd></div>
         <div class="ancho"><dt>Elementos (colores CPK)</dt><dd class="leyenda" id="d-leyenda"></dd></div>
       </dl>
+      <section class="admet" aria-labelledby="t-admet">
+        <div class="admet-cabecera">
+          <h2 id="t-admet">Perfil ADMET</h2>
+          <p>Absorción, distribución, metabolismo, excreción y toxicidad, estimados con reglas empíricas en RDKit. Es orientativo y tiene sentido sobre todo para moléculas tipo fármaco.</p>
+        </div>
+        <dl class="descriptores" id="d-descriptores"></dl>
+        <div class="criterios" id="d-criterios"></div>
+      </section>
     </section>
   </div>
 </div>
@@ -310,12 +387,30 @@
     }).join("");
   }
 
+  const GRUPOS = ["Absorción", "Distribución", "Metabolismo", "Excreción", "Toxicidad", "Tipo fármaco"];
+  const escapar = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+  function pintarAdmet(a) {
+    $("d-descriptores").innerHTML = Object.entries(a.descriptores)
+      .map(([k, v]) => `<div><dt>${escapar(k)}</dt><dd>${escapar(v)}</dd></div>`).join("");
+    $("d-criterios").innerHTML = GRUPOS.map((g) => {
+      const filas = a.criterios.filter((c) => c.grupo === g);
+      if (!filas.length) return "";
+      return `<div class="grupo"><h3>${g}</h3>${filas.map((c) => `
+        <div class="fila">
+          <div><strong>${escapar(c.nombre)}</strong><small>${escapar(c.detalle)}</small></div>
+          <span class="pastilla ${c.estado}">${escapar(c.valor)}</span>
+        </div>`).join("")}</div>`;
+    }).join("");
+  }
+
   function mostrar(i) {
     actual = i;
     const m = MOLECULAS[i];
     document.querySelectorAll(".lista button").forEach((b) =>
       b.setAttribute("aria-pressed", String(Number(b.dataset.i) === i)));
     pintarFicha(m);
+    pintarAdmet(m.admet);
     if (!visor) return;
     visor.clear();
     visor.addModel(m.molblock, "sdf");
@@ -332,19 +427,19 @@
 
   function iniciar() {
     pintarLista();
+    $("lista").addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (b) mostrar(Number(b.dataset.i));
+    });
     if (typeof $3Dmol === "undefined") {
       $("visor").innerHTML = '<div class="error">No se pudo cargar 3Dmol.js. Comprueba la conexión a internet y recarga la página.</div>';
-      pintarFicha(MOLECULAS[0]);
+      mostrar(0);
       return;
     }
     visor = $3Dmol.createViewer($("visor"), { backgroundColor: colorFondo(), antialias: true });
     mostrar(0);
     aplicarGiro();
 
-    $("lista").addEventListener("click", (e) => {
-      const b = e.target.closest("button");
-      if (b) mostrar(Number(b.dataset.i));
-    });
     $("estilos").addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
