@@ -240,12 +240,23 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 
 ---
 
+## 5.5 Campañas y presupuesto (26/09/2026)
+
+| Campaña | Qué lleva | Presupuesto |
+|---|---|---|
+| Pinza - Principal V2 | 5 keywords históricas + 5 especiales del modelo, 8 negativas | 7 €/día |
+| Pinza - Pruebas | 4 ASIN de competencia + categoría (a mano), tu ficha como negativa | 7 €/día |
+| Rejilla - Principal V2 | 4 históricas + 6 especiales del modelo (perfil `rejilla`), 9 negativas (incl. "pinza") | 7 €/día |
+
+- Pedido por Juan: **7 €/día por campaña = 21 €/día (≈630 €/mes)**. La cartera sigue con el **tope de 100 €/mes** de CLAUDE.md (se agotaría en ~5 días) hasta que Juan decida subirlo.
+- `python crear_memoria.py` genera `resultados/memoria.xlsx` (seguimiento y tickets) y `resultados/bulk_AAAA-MM-DD.xlsx` (hoja masiva para subir; todo se crea en pausa) a partir de los mismos datos.
+
 ## 6. Resultados actuales (soporte de pinza, B0DCZS1NR6)
 
 - Datos (Excel histórico completo): 8 grupos de anuncios, 43 keywords distintas, 459 clics, 37 compras, ticket medio 11,24€, CPC medio 0,61€. El modelo acierta un **17,7%** mejor que la media (antes, con los CSV, un 7,4%).
 - Lo que el modelo ha aprendido: **"pinza"** es con diferencia la palabra que más vende; "soporte" y "móvil" suman; **"sujeta"**, **"teléfono"** y la coincidencia **Amplia** atraen clics que no compran.
 - Mejores frases nuevas: *soporte móvil coche pinza 360* (0,45€ de puja máx.), *… para espejo retrovisor* (0,47€), *… para parasol / ajustable / para iphone* (0,46€). Pujando el CPC medio actual (0,61€), todas quedarían por encima del objetivo del 35%.
-- Plan aplicado: `resultados/grupo_pinza_V2.xlsx` (grupo nuevo en la campaña "Soporte móvil pinza", 5 keywords históricas + 5 especiales, tickets y seguimiento).
+- Plan aplicado: `resultados/memoria.xlsx` (generado con `python crear_memoria.py`) (grupo nuevo en la campaña "Soporte móvil pinza", 5 keywords históricas + 5 especiales, tickets y seguimiento).
 
 ---
 
