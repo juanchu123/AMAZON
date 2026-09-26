@@ -57,7 +57,7 @@ Ejemplo: con una conversión del 11% × 11,24€ × 35% ≈ **0,44€**. Si puja
 4. **Stop-loss siempre activos:** lo que gasta sin vender se corta sin esperar (ver 5.3).
 5. **Promover lo que ya funciona:** términos de búsqueda reales con ventas y buen ACOS pasan a ser keywords en coincidencia **Exacta**.
 6. **Aprender por producto, nunca mezclado.** La misma palabra puede funcionar para la pinza y fallar para la rejilla.
-7. **Presupuesto duro de 630€/mes** (antes 100€; cambiado por Juan el 26/09/2026). Nunca se supera, aunque los datos "lo justifiquen".
+7. **Presupuesto duro de 840€/mes** (antes 100€ y 630€; cambiado por Juan el 26/09/2026). Nunca se supera, aunque los datos "lo justifiquen".
 8. **Si todas las campañas aparecen en pausa sin que el sistema las haya pausado** (saldo, suspensión…), no reactivar nada: avisar a Juan.
 
 ---
@@ -182,7 +182,7 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 | ACOS > 50% | Bajar la puja un 25-50%, sin bajar de la original − 50% |
 | Sin ventas | Ver stop-loss (5.3) |
 
-- **Sube solo si el gasto del mes lo permite.** Si el gasto proyectado del mes se acerca a 630€, solo se permiten bajadas.
+- **Sube solo si el gasto del mes lo permite.** Si el gasto proyectado del mes se acerca a 840€, solo se permiten bajadas.
 - **Por qué cada 3 días y no a diario:** Amazon tarda 24-48h en atribuir ventas a un clic. Con cambios diarios se decidiría con datos incompletos.
 
 ### 5.2 Campaña de pruebas (50% del presupuesto)
@@ -211,7 +211,7 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 ### 5.2c Negativas, cartera, ubicaciones y atribución
 
 - **Negativas (Frase) en el grupo principal:** ventosa, rejilla, magnetico, iman, parabrisas, moto, bicicleta, cargador. Cada 2 semanas, del informe de términos de búsqueda: **≥ 10 clics y 0 ventas → negativa exacta**.
-- **Cartera "FreshFinder - cartera"** con límite mensual recurrente de 630 € y las campañas dentro: el tope lo aplica Amazon.
+- **Cartera "FreshFinder - cartera"** con límite mensual recurrente de 840 € y las campañas dentro: el tope lo aplica Amazon.
 - **Ajustes por ubicación:** 0% al empezar. A las 2 semanas, con el informe de ubicación, subir +10-25% solo la ubicación con mejor ACOS.
 - **Atribución de 7 días:** las ventas llegan hasta 7 días después del clic. Las pujas se siguen revisando cada 3 días, pero **un cambio se evalúa a los 7 días**, y los últimos días de datos siempre parecen peores de lo que son.
 - **Términos de búsqueda:** Amazon solo los guarda **65 días** → descargarlos cada 2 semanas y guardarlos.
@@ -225,7 +225,7 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 | **Keyword normal** | Ya está en la puja mínima (original − 50%) y sigue con **ACOS > 50%** tras ≥ 20 clics *(propuesto)* | Pausar |
 | **Keyword pausada** | Ha pasado **2 veces** por un stop-loss | No reactivar; marcar para revisión de Juan |
 | **Campaña de pruebas** | Ha gastado los **50 € del mes** | Pausar la campaña hasta el mes siguiente |
-| **Cuenta** | El gasto proyectado del mes llega a **630€** | Solo bajadas y pausas hasta fin de mes |
+| **Cuenta** | El gasto proyectado del mes llega a **840€** | Solo bajadas y pausas hasta fin de mes |
 | **Cuenta** | Todas las campañas en pausa sin haberlo hecho tú, suspensión o problema de pago | No reactivar nada; revisar Seller Central |
 
 ### 5.4 Calendario
@@ -236,7 +236,7 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 | **Cada 7 días tras un cambio** | Evaluar su ticket (hoja Tickets del Excel): antes, las ventas aún no están atribuidas. |
 | **Cada 2 semanas** | Descargar y guardar Términos de búsqueda (solo 65 días): **negativos** los de ≥ 10 clics y 0 ventas; a pruebas los que tengan ventas y no sean keyword. Mirar el informe de ubicación. |
 | **Cada 2 semanas** | Actualizar el Excel histórico y ejecutar `keyword_ml.py`. Añadir 2-3 frases nuevas a la campaña de pruebas. |
-| **Cada mes** | Comprobar el gasto total (≤ 630€; 7 €/día por campaña). Reiniciar el presupuesto de pruebas. Revisar las keywords marcadas para revisión. |
+| **Cada mes** | Comprobar el gasto total (≤ 840€; 7 €/día por campaña). Reiniciar el presupuesto de pruebas. Revisar las keywords marcadas para revisión. |
 
 ---
 
@@ -247,8 +247,10 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 | Pinza - Principal V2 | 5 keywords históricas + 5 especiales del modelo, 8 negativas | 7 €/día |
 | Pinza - Pruebas | 4 ASIN de competencia + categoría (a mano), tu ficha como negativa | 7 €/día |
 | Rejilla - Principal V2 | 4 históricas + 6 especiales del modelo (perfil `rejilla`), 9 negativas (incl. "pinza") | 7 €/día |
+| Pou - Principal V2 | 1 histórica + 9 especiales elegidas a mano (perfil `pou`; solo 1 compra en el histórico → pujas ≤ 0,30 €), negativas exactas "peluche"/"peluches" (a mano) | 7 €/día |
+| Pou - Pruebas | 3 ASIN de competencia (preparada, **pendiente** de presupuesto) | ? |
 
-- Pedido por Juan: **7 €/día por campaña = 21 €/día (≈630 €/mes)**. Juan sube el tope de la cartera y de CLAUDE.md a **630 €/mes**.
+- Pedido por Juan: **7 €/día por campaña = 21 €/día (≈630 €/mes)**. Juan sube el tope de la cartera y de CLAUDE.md a **840 €/mes** (4 campañas × 7 €/día).
 - **Campaña para un producto nuevo:** skill `/crear-campana <producto>` (`.claude/skills/crear-campana/SKILL.md`): pregunta lo necesario, crea el perfil en `keyword_ml.py`, la campaña en `crear_memoria.py` y genera memoria + bulk solo de lo nuevo (`--solo`).
 - `python crear_memoria.py` genera `resultados/memoria.xlsx` (seguimiento y tickets) y `resultados/bulk_AAAA-MM-DD.xlsx` (hoja masiva para subir; todo se crea en pausa) a partir de los mismos datos.
 

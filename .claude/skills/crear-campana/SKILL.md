@@ -45,14 +45,14 @@ Si el producto no está en `PERFILES`, añade uno (copia la estructura de "pinza
 | `lugares`, `atributos` | modificadores; solo se usan si aparecen en el título o en sus keywords reales (no inventar características que no tiene la ficha) |
 | `extras` | plantillas de frases propias del producto con `{M}` (montaje) y `{l}` (lugar) |
 
-Si el producto no es un soporte de móvil, revisa también `vocabulario()` (cabezas "soporte/sujeta/porta + móvil/teléfono") y adapta las cabezas al producto en su perfil, sin romper los existentes.
+Si el producto no es un soporte de móvil, el perfil define sus propias `cabezas`, `plantillas` (`{c}` cabeza, `{M}` producto, `{m}` modificador), `marcas`, `extras` y `fijas` (ver perfil "pou"). Sin esas claves se usan las de soporte (`DEFECTO_SOPORTE`).
 
 Ejecuta y revisa:
 ```bash
 python keyword_ml.py --producto <perfil> --top 15
 python keyword_ml.py            # la pinza debe dar exactamente lo mismo que antes
 ```
-Cuenta a Juan la línea "Validación": si mejora < 5 % sobre la media, avisa de que las especiales van casi a ciegas.
+Cuenta a Juan la línea "Validación": si mejora < 5 % sobre la media, avisa de que las especiales van casi a ciegas. **Con < 10 compras en el histórico el modelo no es fiable** (con 1 compra da un 22 % de conversión a una frase de 1 clic): `crear_memoria.py` limita las pujas especiales a 0,30 € (`MIN_COMPRAS_MODELO`) y conviene elegir las especiales a mano (lista `especiales`) con vocabulario del título y de sus keywords.
 
 ## Paso 3 — Campaña en `crear_memoria.py` (`CAMPANAS`)
 
@@ -76,6 +76,8 @@ python crear_memoria.py --fecha $(date +%F) --solo "<Campaña 1>,<Campaña 2>" -
 ```
 
 - **`--solo` es obligatorio** al añadir campañas: sin él el bulk vuelve a crear las campañas que ya existen → duplicadas en Amazon.
+- Usa `--bulk resultados/bulk_<fecha>_<producto>.xlsx` si ya hay un bulk de ese día.
+- Una campaña con `"pendiente": True` (p. ej. presupuesto sin decidir) no cuenta para el tope ni se genera salvo que se pida con `--solo`.
 - **Nunca sobrescribas `resultados/memoria.xlsx`** ni otra memoria que Juan esté rellenando (tickets con "Fecha aplicado", filas en "Seguimiento"). Si Juan quiere una sola memoria con todo, primero descarga la suya de GitHub y copia sus datos; si no, memoria separada por producto.
 - Si ya existe un `bulk_<hoy>.xlsx` de otra cosa, renombra el anterior o usa otra fecha, no lo pises sin avisar.
 
@@ -95,7 +97,7 @@ Informes reales de Amazon (26/09/2026: 1ª subida rechazada, 2ª subida **acepta
 | Entidad | Campaña, Grupo de anuncios, Anuncio de producto, Palabra clave, Palabra clave negativa, Segmentación por productos | Segmentación por productos negativa (→ a mano) |
 | Operación | Crear | |
 | Tipo de segmentación | Manual | |
-| Tipo de coincidencia | Amplia, Frase, Exacta, Frase negativa | |
+| Tipo de coincidencia | Amplia, Frase, Exacta, Frase negativa | (sin probar: Exacta negativa → a mano, `BULK_TIPOS_NEG_OK`) |
 | Estado | Activado, En pausa | Habilitado, Pausado |
 | Estrategia de pujas | vacía (por defecto en campañas nuevas: solo reducir; comprobar en la consola) | "Pujas dinámicas: solo reducir" |
 

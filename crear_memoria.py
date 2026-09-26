@@ -35,8 +35,9 @@ import keyword_ml as k
 EXCEL_HIST = "FreshFinder_Amazon_Ads_historico.xlsx"
 ACOS_OBJ = 0.35
 PRESUPUESTO_DIARIO = 7.0          # pedido por Juan (26/09/2026): 7 €/día en cada campaña
-CARTERA_MENSUAL = 630.0           # tope duro (CLAUDE.md): 21 €/día x 30, fijado por Juan el 26/09/2026
+CARTERA_MENSUAL = 840.0           # tope duro (CLAUDE.md): 28 €/día x 30, fijado por Juan el 26/09/2026 (antes 630)
 PUJA_PRUEBA = 0.30
+MIN_COMPRAS_MODELO = 10   # con menos compras en el histórico, el modelo no es fiable: pujas ≤ PUJA_PRUEBA
 
 # Valores de la hoja masiva en español. Informe de Amazon del 26/09/2026 (1ª subida):
 #   ✘ Estado "Habilitado"/"Pausado", ✘ Estrategia "Pujas dinámicas: solo reducir",
@@ -44,6 +45,7 @@ PUJA_PRUEBA = 0.30
 #   ✔ Campaña, Grupo de anuncios, Anuncio de producto, Palabra clave, Palabra clave negativa,
 #     Segmentación por productos, Crear, Manual, Amplia/Frase/Exacta, Frase negativa.
 BULK_ACTIVO, BULK_PAUSA = "Activado", "En pausa"   # ✔ confirmados: 2ª subida (26/09/2026) sin errores
+BULK_TIPOS_NEG_OK = {"Frase negativa"}   # "Exacta negativa" aún sin validar -> a mano
 BULK_ESTRATEGIA = None   # vacía: en campañas nuevas Amazon pone "solo reducir" por defecto
 
 NEG_COMUNES = [
@@ -93,6 +95,40 @@ CAMPANAS = [
             ("salpicadero", "La rejilla no va al salpicadero."),
         ],
     },
+    {
+        "nombre": "Pou - Principal V2", "grupo": "Pou - Principal V2", "perfil": "pou",
+        "sku": "NN-8FIP-9ZZT", "tipo": "Palabras clave", "puja_grupo": 0.30, "puja_minima": 0.0,
+        "n_hist": 5, "n_total": 10,
+        # Con 1 sola compra el ranking del modelo es ruido (repetía singular/plural). Elegidas a mano con
+        # vocabulario del título y de sus propias keywords; el modelo solo pone la puja (tope 0,30 €).
+        "especiales": [
+            ("peluche pou", "La búsqueda principal del producto. Ya existía, pero con puja de 0,09 € casi no salió."),
+            ("muñeco pou", "Sinónimo de peluche que usa el título ('Muñeco de peluche Pou')."),
+            ("muñeco de peluche pou", "El nombre exacto del título."),
+            ("alien pou", "Cómo busca mucha gente este peluche (ya estaba entre sus keywords, sin apenas pujas)."),
+            ("peluche pou alienígena", "Palabra del título: 'alienígena con expresión'."),
+            ("peluche pou 22 cm", "Quien busca el tamaño sabe lo que quiere: intención de compra alta."),
+            ("peluche pou regalo", "El título lo vende como regalo."),
+            ("muñeco pou regalo niño", "'Regalo para el día del niño' del título."),
+            ("pou peluche", "Orden inverso de la búsqueda principal (Frase no cubre el cambio de orden)."),
+        ],
+        "negativas": [  # búsquedas genéricas: "peluche" gastó 32 clics sin vender. Exacta = solo esa búsqueda exacta
+            ("peluche", "Búsqueda genérica: 32 clics y 0 ventas en el histórico. Negativa EXACTA: no bloquea 'peluche pou'.", "Exacta negativa"),
+            ("peluches", "Búsqueda genérica, misma razón.", "Exacta negativa"),
+        ],
+    },
+    {
+        "nombre": "Pou - Pruebas", "grupo": "Pruebas - Competencia", "perfil": "pou", "pendiente": True,
+        # pendiente: presupuesto sin decidir (a 7 €/día se pasaría del tope de 840 €/mes)
+        "sku": "NN-8FIP-9ZZT", "tipo": "Productos", "puja_grupo": PUJA_PRUEBA,
+        "asins": [  # búsqueda web 26/09/2026: verificar en amazon.es antes de activar
+            ("B0CZDLY26W", "Dxmcgttbd — peluche Alien Pou 22 cm. Competidor directo."),
+            ("B0CZKVTT1G", "SBJJGQIS — peluche Pou. Competidor directo."),
+            ("B0CMGSVHXP", "Yezelend — Alien Pou 22 cm. Competidor directo."),
+        ],
+        "categoria": None,
+        "negativos_producto": [("B0CPHXXHRQ", "Tu propia ficha: no pagar por salir en ella.")],
+    },
 ]
 
 
@@ -130,7 +166,8 @@ def preparar():
             ticket = sum(f["ventas"] for f in filas) / sum(f["compras"] for f in filas)
             conv = sum(f["compras"] for f in filas) / sum(f["clics"] for f in filas)
             productos[c["perfil"]] = dict(filas=filas, info=info, titulo=titulo, asin=asin, existentes=existentes,
-                                          vec=vec, mod=mod, ticket=ticket, conv=conv, elegidas=set())
+                                          vec=vec, mod=mod, ticket=ticket, conv=conv, elegidas=set(),
+                                          compras=sum(f["compras"] for f in filas))
             for f in filas:
                 historico.append((c["perfil"], asin, f))
         P = productos[c["perfil"]]
@@ -142,6 +179,8 @@ def preparar():
                 lineas.append(dict(base, texto=f'asin="{a}"', match="Producto", origen="Prueba producto",
                                    puja=PUJA_PRUEBA, pmax=P["conv"] * P["ticket"] * ACOS_OBJ, motivo=motivo,
                                    ref="obj", antes=None))
+            if not c.get("categoria"):
+                continue
             texto, motivo = c["categoria"]
             lineas.append(dict(base, texto=texto, match="Categoría", origen="Prueba categoría", puja=PUJA_PRUEBA,
                                pmax=P["conv"] * P["ticket"] * ACOS_OBJ, motivo=motivo, ref="obj", antes=None, manual=True))
@@ -181,13 +220,17 @@ def preparar():
             esp = c["especiales"][:n_esp]
         else:
             recs, _ = k.recomendar(P["filas"], P["titulo"], P["existentes"] | P["elegidas"], n_esp,
-                                   acos_objetivo=ACOS_OBJ * 100, puja_minima=0.19)
+                                   acos_objetivo=ACOS_OBJ * 100, puja_minima=c.get("puja_minima", 0.19))
             esp = [(r["palabra_clave"], "Del ranking del modelo. " + r["motivo"]) for r in recs]
         for kw, motivo in esp:
             p = k.predecir(P["vec"], P["mod"], kw, "Frase")
             pmax = p * P["ticket"] * ACOS_OBJ
-            lineas.append(dict(base, texto=kw, match="Frase", origen="Especial IA", puja=round(pmax, 2), pmax=pmax,
-                               motivo=f"{motivo} Modelo: {p:.1%} compra/clic → puja máx. rentable {pmax:.2f} € (ACOS 35%).",
+            puja, nota = round(pmax, 2), ""
+            if P["compras"] < MIN_COMPRAS_MODELO and puja > PUJA_PRUEBA:
+                puja = PUJA_PRUEBA
+                nota = f" Limitada a {PUJA_PRUEBA:.2f} €: el producto solo tiene {P['compras']:.0f} compras en el histórico y el modelo no es fiable."
+            lineas.append(dict(base, texto=kw, match="Frase", origen="Especial IA", puja=puja, pmax=pmax,
+                               motivo=f"{motivo} Modelo: {p:.1%} compra/clic → puja máx. rentable {pmax:.2f} € (ACOS 35%).{nota}",
                                ref="obj", antes=None))
     return productos, lineas, historico
 
@@ -245,7 +288,7 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
     params = [  # fila 5..
         ("ACOS objetivo", ACOS_OBJ, PCT, "Confirmado por Juan."),
         ("Presupuesto diario por campaña", PRESUPUESTO_DIARIO, EUR, "Pedido por Juan (26/09/2026): 7 €/día en cada una de las 3 campañas."),
-        ("Nº de campañas", len(CAMPANAS), "0", ""),
+        ("Nº de campañas en la cuenta", N_CAMPANAS_CUENTA, "0", "Todas las campañas activas de la cartera, no solo las de esta memoria."),
         ("Gasto máximo posible al mes", "=B6*B7*30", EUR, "21 €/día × 30 días. Coincide con el tope de la cartera."),
         ("Tope mensual de la cartera", CARTERA_MENSUAL, EUR, "Límite duro de CLAUDE.md (630 €, Juan 26/09/2026). Amazon para TODAS las campañas al llegar aquí."),
         ("Días hasta agotar la cartera", "=IFERROR(B9/(B6*B7),0)", "0.0", "Con 21 €/día, la cartera dura el mes entero."),
@@ -425,9 +468,14 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
     wt["A1"], wt["A1"].font = "Tickets — uno por cambio. 'Base' = acumulado al aplicar el cambio; 'Después' = solo lo ocurrido desde entonces.", f_bold
     header(wt, 3, tcols)
     tk = []  # (campaña, tipo, texto, match, antes, después, motivo, ref, ref_txt, como)
-    tk.append(("—", "Crear cartera", "", "", None, CARTERA_MENSUAL,
-               f"Cartera 'FreshFinder - cartera' con límite MENSUAL recurrente de {CARTERA_MENSUAL:.0f} € y las 3 campañas dentro. Es el tope duro: Amazon para todo al llegar.",
-               None, "", "A mano"))
+    if SOLO_NUEVAS:
+        tk.append(("—", "Cambiar cartera", "", "", None, CARTERA_MENSUAL,
+                   f"Subir el límite MENSUAL de la cartera 'FreshFinder - cartera' a {CARTERA_MENSUAL:.0f} € y meter dentro "
+                   f"las campañas nuevas ({', '.join(c['nombre'] for c in CAMPANAS)}).", None, "", "A mano"))
+    else:
+        tk.append(("—", "Crear cartera", "", "", None, CARTERA_MENSUAL,
+                   f"Cartera 'FreshFinder - cartera' con límite MENSUAL recurrente de {CARTERA_MENSUAL:.0f} € y las "
+                   f"{len(CAMPANAS)} campañas dentro. Es el tope duro: Amazon para todo al llegar.", None, "", "A mano"))
     for c in CAMPANAS:
         pres = c.get("presupuesto", PRESUPUESTO_DIARIO)
         tk.append((c["nombre"], "Crear campaña y grupo", "", "", None, pres,
@@ -439,8 +487,10 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
             tk.append((c["nombre"], tipo, l["texto"], l["match"], l["antes"], l["puja"], l["motivo"], ref, ref_txt,
                        "A mano" if l.get("manual") else "Hoja masiva"))
             l["ticket_idx"] = len(tk)
-        for term, motivo in c.get("negativas", []):
-            tk.append((c["nombre"], "Añadir negativa", term, "Frase negativa", None, None, motivo, None, "", "Hoja masiva"))
+        for neg in c.get("negativas", []):
+            term, motivo, tipo = (neg + ("Frase negativa",))[:3]
+            como = "Hoja masiva" if tipo in BULK_TIPOS_NEG_OK else "A mano"
+            tk.append((c["nombre"], "Añadir negativa", term, tipo, None, None, motivo, None, "", como))
         for a, motivo in c.get("negativos_producto", []):
             tk.append((c["nombre"], "Añadir negativa", f'asin="{a}"', "Producto negativo", None, None, motivo, None, "", "A mano"))
     TR = len(tk) + 60
@@ -546,7 +596,10 @@ def crear_bulk(lineas, plantilla, salida, hoy):
             else:
                 row(Entidad="Palabra clave", **ids, **{"Estado": BULK_ACTIVO, "Puja": l["puja"],
                                                        "Texto de palabra clave": l["texto"], "Tipo de coincidencia": l["match"]})
-        for term, _ in c.get("negativas", []):
+        for neg in c.get("negativas", []):
+            term, tipo = neg[0], (neg + ("Frase negativa",))[2]
+            if tipo not in BULK_TIPOS_NEG_OK:
+                continue  # tipo no validado con Amazon: se añade a mano (ticket "A mano")
             row(Entidad="Palabra clave negativa", **ids, **{"Estado": BULK_ACTIVO, "Texto de palabra clave": term,
                                                             "Tipo de coincidencia": "Frase negativa"})
         # negativos de producto: Amazon no aceptó el nombre de entidad en español -> se añaden a mano
@@ -554,13 +607,18 @@ def crear_bulk(lineas, plantilla, salida, hoy):
     return ws.max_row - 1
 
 
+N_CAMPANAS_CUENTA = sum(1 for c in CAMPANAS if not c.get("pendiente"))
+SOLO_NUEVAS = False
+
+
 def main():
-    global CAMPANAS
+    global CAMPANAS, SOLO_NUEVAS
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--fecha", default=date.today().isoformat())
     ap.add_argument("--plantilla", default="plantillas/AdvertisingBulksheetTemplate-seller.xlsx")
     ap.add_argument("--solo", help="nombres de campaña separados por comas (solo esas)")
     ap.add_argument("--memoria", default="resultados/memoria.xlsx", help="ruta de la memoria a generar")
+    ap.add_argument("--bulk", help="ruta del bulk (por defecto resultados/bulk_<fecha>.xlsx)")
     args = ap.parse_args()
     if args.solo:
         pedidas = [n.strip() for n in args.solo.split(",") if n.strip()]
@@ -568,12 +626,14 @@ def main():
         if faltan:
             raise SystemExit(f"Campañas no definidas en CAMPANAS: {faltan}")
         CAMPANAS = [c for c in CAMPANAS if c["nombre"] in pedidas]
+        SOLO_NUEVAS = True
     hoy = date.fromisoformat(args.fecha)
     productos, lineas, historico = preparar()
     n_tk = crear_memoria(productos, lineas, historico, hoy, args.memoria)
-    n_bulk = crear_bulk(lineas, args.plantilla, f"resultados/bulk_{hoy:%Y-%m-%d}.xlsx", hoy)
+    bulk = args.bulk or f"resultados/bulk_{hoy:%Y-%m-%d}.xlsx"
+    n_bulk = crear_bulk(lineas, args.plantilla, bulk, hoy)
     print(f"{args.memoria}: {len(lineas)} segmentaciones, {n_tk} tickets")
-    print(f"resultados/bulk_{hoy:%Y-%m-%d}.xlsx: {n_bulk} filas")
+    print(f"{bulk}: {n_bulk} filas")
     for c in CAMPANAS:
         print(f"  {c['nombre']}:")
         for l in (l for l in lineas if l["campana"] == c["nombre"]):

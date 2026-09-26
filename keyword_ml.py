@@ -87,6 +87,25 @@ PERFILES = {
         "atributos": ["ajustable 360", "ajustable", "360", "universal", "estable", "con gancho", "clip", "giratorio"],
         "extras": ["soporte móvil {M} {l}", "soporte móvil coche {M} {l}", "soporte teléfono {M} {l}"],
     },
+    # Productos que NO son soportes: definen sus propias cabezas y plantillas.
+    "pou": {
+        "asin": "B0CPHXXHRQ",
+        "especificas": {"pou"},
+        "montaje": "pou", "conector": "de",
+        "cabezas": ["peluche", "peluches", "muñeco", "muñeco de peluche"],
+        "plantillas": ["{c} {M} {m}", "{c} de {M} {m}", "{M} {c} {m}"],
+        "lugares": [],
+        "atributos": ["22 cm", "alienígena", "regalo", "regalo niño", "para niño", "con expresión"],
+        "marcas": [], "extras": [], "fijas": [],
+    },
+}
+# Por defecto (soportes de móvil): cabezas "soporte/sujeta/porta + móvil/teléfono" sacadas de sus
+# keywords y estas plantillas. Un perfil puede sobrescribir cualquiera de estas claves.
+DEFECTO_SOPORTE = {
+    "plantillas": ["{c} para coche {con} {M} {m}", "{c} coche {M} {m}", "{c} de {M} {m}", "{c} {M} coche {m}"],
+    "marcas": ["iphone", "samsung", "xiaomi"],
+    "fijas": ["{M} móvil coche", "{M} para móvil coche", "soporte {M} coche", "soporte {M} móvil"],
+    "fijas_atributo": ["{M} móvil coche {a}"],
 }
 PERFIL = PERFILES["pinza"]
 PALABRAS_ESPECIFICAS = PERFIL["especificas"]
@@ -366,10 +385,12 @@ def vocabulario(titulo, filas):
     t = normalizar(titulo)
     vocab = set(t.split()) | {w for f in filas for w in normalizar(f["keyword"]).split()}
     permitido = lambda frase: all(w in vocab or w in STOPWORDS for w in normalizar(frase).split())
-    cabezas = ["soporte móvil"] if "soporte movil" in t else []
     lugares = [l for l in PERFIL["lugares"] if permitido(l)]
     atributos = [a for a in PERFIL["atributos"] if permitido(a)]
-    marcas = [m for m in ["iphone", "samsung", "xiaomi"] if m in t]
+    marcas = [m for m in PERFIL.get("marcas", DEFECTO_SOPORTE["marcas"]) if m in t]
+    if "cabezas" in PERFIL:  # producto que no es un soporte: cabezas fijas del perfil
+        return [c for c in PERFIL["cabezas"] if permitido(c)], lugares, atributos, marcas
+    cabezas = ["soporte móvil"] if "soporte movil" in t else []
     for f in filas:  # cabezas que ya usan sus keywords reales
         toks = normalizar(f["keyword"]).split()
         # solo cabezas "soporte/sujeta/porta + móvil/teléfono" (evita 'soporte gps', 'soporte mobil'…)
@@ -384,17 +405,19 @@ def generar_candidatas(titulo, filas):
     cabezas, lugares, atributos, marcas = vocabulario(titulo, filas)
     M, con = PERFIL["montaje"], PERFIL["conector"]
     mods = [""] + lugares + atributos + [f"para {m}" for m in marcas]
-    plantillas = ("{c} para coche " + con + " {M} {m}", "{c} coche {M} {m}", "{c} de {M} {m}", "{c} {M} coche {m}")
+    plantillas = PERFIL.get("plantillas", DEFECTO_SOPORTE["plantillas"])
+    limpia = lambda x: re.sub(r"\s+", " ", x).strip()
     cands = set()
     for cab, mod in itertools.product(cabezas, mods):
         for plantilla in plantillas:
-            cands.add(re.sub(r"\s+", " ", plantilla.format(c=cab, M=M, m=mod)).strip())
+            cands.add(limpia(plantilla.format(c=cab, M=M, m=mod, con=con)))
     for l in lugares:
         for e in PERFIL["extras"]:
-            cands.add(re.sub(r"\s+", " ", e.format(M=M, l=l.replace("para ", ""))).strip())
+            cands.add(limpia(e.format(M=M, l=l.replace("para ", ""))))
     for a in atributos:
-        cands.add(f"{M} móvil coche {a}")
-    cands.update({f"{M} móvil coche", f"{M} para móvil coche", f"soporte {M} coche", f"soporte {M} móvil"})
+        for e in PERFIL.get("fijas_atributo", DEFECTO_SOPORTE["fijas_atributo"] if "cabezas" not in PERFIL else []):
+            cands.add(limpia(e.format(M=M, a=a)))
+    cands.update(limpia(e.format(M=M)) for e in PERFIL.get("fijas", DEFECTO_SOPORTE["fijas"]))
     return sorted(cands)
 
 
