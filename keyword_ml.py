@@ -62,6 +62,9 @@ TOTAL_KEYS = ("impresiones", "clics", "coste", "compras", "ventas")
 REGULARIZACION_C = 1.0          # más bajo = más prudente (más regularización)
 PENALIZACION_A_CIEGAS = 0.85    # al ordenar, compra/clic × esto por cada palabra sin datos
 ACOS_OBJETIVO_PCT = 35.0        # para la puja máxima rentable (confirmado por Juan: 35%)
+PALABRAS_ESPECIFICAS = {"pinza"}  # las que identifican ESTE producto (no un soporte cualquiera)
+COINCIDENCIAS = ("Amplia", "Frase", "Exacta")
+FACTOR_PUJA_AMPLIA = 0.7        # Amplia de descubrimiento: puja baja = 70% de su puja máx. rentable
 NUCLEO = {"soporte", "movil", "coche", "pinza"}  # palabras que casi todas las frases comparten
 MAX_REPETICION = 2              # veces que una misma palabra extra puede repetirse en el top
 CUOTA_MIN_GRUPO = 0.90          # un grupo con varios productos cuenta para uno si éste gasta ≥ 90%
@@ -125,7 +128,12 @@ def features(texto, coincidencia):
     f = {f"w={w}": 1.0 for w in toks}
     for a, b in zip(toks, toks[1:]):
         f[f"b={a}_{b}"] = 1.0
-    f[f"match={normalizar(coincidencia)}"] = 1.0
+    m = normalizar(coincidencia)
+    f[f"match={m}"] = 1.0
+    # coincidencia × palabra específica del producto: la Amplia con "pinza" no se comporta
+    # como la Amplia genérica ("soporte coche"), que atrae búsquedas de otros productos
+    especifica = "si" if any(w in PALABRAS_ESPECIFICAS for w in toks) else "no"
+    f[f"match={m}|especifica={especifica}"] = 1.0
     f["n_palabras"] = len(toks) / 5.0
     return f
 
@@ -256,7 +264,8 @@ def cargar_excel(path, asin=None, contiene=None):
             "id_campana": r["ID campaña"], "id_grupo": g,
             "archivo": f"{r['Campaña']} / {r['Grupo de anuncios']}",
         })
-    existentes = {firma(str(r["Keyword / segmento"])) for r in keywords if r["Coincidencia"] in ("Amplia", "Frase", "Exacta")}
+    # "ya existe" = ya se ha pujado por ella PARA ESTE PRODUCTO (que la rejilla la use no la invalida)
+    existentes = {firma(f["keyword"]) for f in filas}
     return filas, info, nombres[asin], asin, existentes
 
 
@@ -369,8 +378,14 @@ def recomendar(filas, titulo, existentes, top, acos_objetivo=ACOS_OBJETIVO_PCT, 
         if firma(kw) in existentes:
             continue
         toks = tokens_contenido(kw)
-        p_compra = predecir(vec_c, mod_c, kw, coincidencia)
+        p_match = {m: predecir(vec_c, mod_c, kw, m) for m in COINCIDENCIAS}
+        p_compra = p_match[coincidencia]
         puja_max = p_compra * ticket * acos_objetivo / 100
+        pmax_amplia = p_match["Amplia"] * ticket * acos_objetivo / 100
+        # regla: frase nueva -> Frase; Amplia solo si lleva palabra específica, con puja baja
+        # (las Exactas son para keywords que ya han demostrado vender: no aplica a candidatas nuevas)
+        amplia = (f"Sí, puja {FACTOR_PUJA_AMPLIA * pmax_amplia:.2f}€" if any(w in PALABRAS_ESPECIFICAS for w in toks)
+                  else "No (sin palabra específica: atraería búsquedas de otros productos)")
         nuevas = [w for w in toks if w not in vistos]
         aportes = sorted(((coefs.get(f"w={w}", 0.0), w) for w in toks if w in vistos), reverse=True)
         motivo = []
@@ -382,7 +397,11 @@ def recomendar(filas, titulo, existentes, top, acos_objetivo=ACOS_OBJETIVO_PCT, 
             motivo.append("sin datos (se prueba a ciegas): " + ", ".join(nuevas))
         puntuadas.append({
             "palabra_clave": kw,
-            "coincidencia_sugerida": coincidencia,
+            "coincidencia_recomendada": coincidencia,
+            "amplia_para_descubrir": amplia,
+            "compra_clic_amplia": round(p_match["Amplia"], 4),
+            "compra_clic_frase": round(p_match["Frase"], 4),
+            "compra_clic_exacta": round(p_match["Exacta"], 4),
             "prob_compra_por_clic": round(p_compra, 4),
             "clics_por_venta": round(1 / p_compra, 1) if p_compra > 0 else None,
             "puja_max_rentable_eur": round(puja_max, 2),
@@ -466,10 +485,8 @@ def _cargar_csv(args, contiene):
         if g["usado"] and g["cuota_gasto"] < 0.95:
             print(f"           ojo: el {1 - g['cuota_gasto']:.0%} del gasto de este grupo es de otro producto")
 
-    # nunca recomendar algo que ya exista en la cuenta (de cualquier producto)
-    existentes = {firma(r["Palabra clave"]) for pt, pa, rows_t, _ in grupos for r in rows_t}
-    for p in glob.glob(os.path.join(args.datos, "Sponsored_Products_Target_*.csv")):
-        existentes |= {firma(r["Palabra clave"]) for r in _read_csv(p)}
+    # "ya existe" = ya se ha pujado por ella PARA ESTE PRODUCTO
+    existentes = {firma(f["keyword"]) for f in filas}
     return filas, informe, titulo, asin, existentes
 
 
@@ -497,7 +514,8 @@ def _entrenar_y_recomendar(args, filas, informe, titulo, asin, existentes):
     os.makedirs(args.salida, exist_ok=True)
     slug = normalizar(args.asin or args.producto_contiene).replace(" ", "_")
     out = os.path.join(args.salida, f"palabras_recomendadas_{slug}.csv")
-    campos = ["rank", "palabra_clave", "coincidencia_sugerida", "prob_compra_por_clic", "clics_por_venta",
+    campos = ["rank", "palabra_clave", "coincidencia_recomendada", "compra_clic_amplia", "compra_clic_frase",
+              "compra_clic_exacta", "amplia_para_descubrir", "prob_compra_por_clic", "clics_por_venta",
               "puja_max_rentable_eur", "acos_si_pujas_cpc_medio_pct", "palabras_sin_datos", "motivo"]
     with open(out, "w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=campos)

@@ -53,7 +53,7 @@ Ejemplo: con una conversión del 11% × 11,24€ × 35% ≈ **0,44€**. Si puja
 
 1. **No decidir con pocos datos.** Menos de ~10 clics es ruido: dejar madurar.
 2. **Pujas: cada 3 días, dentro de ±50% de la puja original** (ver 5.1). Entre revisiones no se toca nada, para que los datos maduren.
-3. **Las palabras nuevas se prueban aparte:** en un grupo de pruebas con el 20% del presupuesto, nunca mezcladas con las que ya funcionan (ver 5.2).
+3. **Las pruebas van aparte:** en una campaña de pruebas con el **50% del presupuesto** (pedido por Juan el 26/09/2026), nunca mezcladas con lo que ya funciona (ver 5.2).
 4. **Stop-loss siempre activos:** lo que gasta sin vender se corta sin esperar (ver 5.3).
 5. **Promover lo que ya funciona:** términos de búsqueda reales con ventas y buen ACOS pasan a ser keywords en coincidencia **Exacta**.
 6. **Aprender por producto, nunca mezclado.** La misma palabra puede funcionar para la pinza y fallar para la rejilla.
@@ -184,27 +184,46 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 - **Sube solo si el gasto del mes lo permite.** Si el gasto proyectado del mes se acerca a 100€, solo se permiten bajadas.
 - **Por qué cada 3 días y no a diario:** Amazon tarda 24-48h en atribuir ventas a un clic. Con cambios diarios se decidiría con datos incompletos.
 
-### 5.2 Grupo de anuncios de pruebas (palabras nuevas)
+### 5.2 Campaña de pruebas (50% del presupuesto)
 
-- **Estructura:** crear un **grupo de anuncios nuevo con el mismo producto** (p. ej. "Pinza — PRUEBAS"), con segmentación manual. Aquí van **solo** las palabras nuevas: las de `keyword_ml.py` y las ideas de la IA. Las que ya funcionan se quedan en su grupo.
-- **Presupuesto: 20% del total = 20€/mes** (≈0,66€/día).
-  - ⚠️ En Amazon el presupuesto diario es **por campaña**, no por grupo de anuncios. Para limitar de verdad las pruebas al 20%, el grupo de pruebas tiene que estar en una **campaña propia** con un presupuesto diario de ~0,66€. Si se deja dentro de la campaña principal, hay que vigilar el gasto a mano.
-- **Cómo añadir palabras:**
-  - Coincidencia **Frase**.
-  - Puja inicial: la **puja máxima rentable** que da `keyword_ml.py`, o **0,30€** si no hay dato.
-  - Como máximo **3 palabras nuevas por revisión**.
-- **Graduación:** una palabra de prueba con **≥ 2 ventas y ACOS ≤ 35%** *(propuesto)* pasa al grupo principal en coincidencia **Exacta**, con su CPC medio como puja, y se pausa en el grupo de pruebas.
+- **Estructura:** una **campaña propia** "Pinza - Pruebas" (el presupuesto en Amazon es por campaña; solo así el 50% es un límite real), con el grupo "Pruebas - Competencia".
+- **Presupuesto: 50% = 50 €/mes** (≈1,67 €/día). La campaña principal se queda con los otros ≈1,67 €/día.
+- **Qué se prueba:**
+  - **Segmentación por producto (ASIN):** salir en las fichas de soportes de pinza de la competencia (OcioDual B07H996QMD, B0BS1TQJH2, BEENLE B08N4KR6PK, AUTOZOCO B09P3SZB6P). ⚠️ Sacados de búsqueda web: verificar en amazon.es que siguen a la venta y que son más caros o con peores reseñas que el tuyo.
+  - **Categoría** "Soportes montados en salpicadero para automóviles", filtrada a precio > 12 € y ≤ 4 estrellas.
+  - **Keywords nuevas** de `keyword_ml.py` que no estén en el grupo principal: en **Frase**; en **Amplia** solo si llevan "pinza", con puja baja (70% de su puja máx.).
+  - Puja inicial **0,30 €** (sin datos) o la **puja máxima rentable** del modelo. Como máximo **3 novedades por revisión**.
+- **Producto negativo:** tu propia ficha (B0DCZS1NR6), para no pagar por salir en ella.
+- **Graduación:** una prueba con **≥ 2 ventas y ACOS ≤ 35%** *(propuesto)* pasa al grupo principal (keywords en **Exacta**, con su CPC medio como puja) y se pausa en pruebas.
+
+### 5.2b Coincidencia recomendada
+
+| Situación | Coincidencia |
+|---|---|
+| Frase nueva | **Frase** (volumen con control) |
+| Keyword que ya ha demostrado vender | **Exacta** (su tráfico más rentable) |
+| Frase con "pinza" | además **Amplia** con puja baja, para descubrir búsquedas |
+| Frase genérica sin "pinza" | **nunca Amplia** (en el histórico: ACOS 122%) |
+
+`keyword_ml.py` ya aprende la diferencia entre coincidencias con y sin "pinza", y el CSV da la predicción en las 3.
+
+### 5.2c Negativas, cartera, ubicaciones y atribución
+
+- **Negativas (Frase) en el grupo principal:** ventosa, rejilla, magnetico, iman, parabrisas, moto, bicicleta, cargador. Cada 2 semanas, del informe de términos de búsqueda: **≥ 10 clics y 0 ventas → negativa exacta**.
+- **Cartera "FreshFinder - 100 €/mes"** con límite mensual recurrente de 100 € y las dos campañas dentro: el tope lo aplica Amazon.
+- **Ajustes por ubicación:** 0% al empezar. A las 2 semanas, con el informe de ubicación, subir +10-25% solo la ubicación con mejor ACOS.
+- **Atribución de 7 días:** las ventas llegan hasta 7 días después del clic. Las pujas se siguen revisando cada 3 días, pero **un cambio se evalúa a los 7 días**, y los últimos días de datos siempre parecen peores de lo que son.
+- **Términos de búsqueda:** Amazon solo los guarda **65 días** → descargarlos cada 2 semanas y guardarlos.
 
 ### 5.3 Stop-loss
 
 | Nivel | Se dispara cuando… | Acción |
 |---|---|---|
-| **Palabra de prueba** | Ha gastado **≥ 3,33€** (50% de su presupuesto de 6,67€) **sin ninguna venta** | Pausar ya, sin esperar a la siguiente revisión |
-| **Palabra de prueba** | **≥ 15 clics sin ventas** *(propuesto)*, aunque no llegue a 3,33€ | Pausar |
+| **Prueba (keyword, ASIN o categoría)** | **≥ 15 clics sin ventas** *(propuesto)* | Pausar ya, sin esperar a la siguiente revisión |
 | **Keyword normal** | **≥ 15 clics sin ventas** *(propuesto)* | Pausar |
 | **Keyword normal** | Ya está en la puja mínima (original − 50%) y sigue con **ACOS > 50%** tras ≥ 20 clics *(propuesto)* | Pausar |
 | **Keyword pausada** | Ha pasado **2 veces** por un stop-loss | No reactivar; marcar para revisión de Juan |
-| **Grupo de pruebas** | Ha gastado los **20€ del mes** | Pausar el grupo hasta el mes siguiente |
+| **Campaña de pruebas** | Ha gastado los **50 € del mes** | Pausar la campaña hasta el mes siguiente |
 | **Cuenta** | El gasto proyectado del mes llega a **100€** | Solo bajadas y pausas hasta fin de mes |
 | **Cuenta** | Todas las campañas en pausa sin haberlo hecho tú, suspensión o problema de pago | No reactivar nada; revisar Seller Central |
 
@@ -213,9 +232,10 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 | Cuándo | Qué |
 |---|---|
 | **Cada 3 días** | Exportar Segmentación (7-14 días). Aplicar 5.1 a las pujas. Revisar los stop-loss de 5.3. Graduar las palabras de prueba que cumplan 5.2. |
-| **Cada semana** | Exportar Términos de búsqueda: añadir como **negativos** los términos con ≥ 10 clics y 0 ventas, y llevar al grupo de pruebas los que tengan ventas pero aún no sean keyword. |
-| **Cada 2 semanas** | Exportar Anuncios + Segmentación (mismas fechas) y ejecutar `keyword_ml.py`. Añadir 2-3 frases nuevas al grupo de pruebas. |
-| **Cada mes** | Comprobar el gasto total (≤ 100€; pruebas ≤ 20€). Reiniciar el presupuesto de pruebas. Revisar las keywords marcadas para revisión. |
+| **Cada 7 días tras un cambio** | Evaluar su ticket (hoja Tickets del Excel): antes, las ventas aún no están atribuidas. |
+| **Cada 2 semanas** | Descargar y guardar Términos de búsqueda (solo 65 días): **negativos** los de ≥ 10 clics y 0 ventas; a pruebas los que tengan ventas y no sean keyword. Mirar el informe de ubicación. |
+| **Cada 2 semanas** | Actualizar el Excel histórico y ejecutar `keyword_ml.py`. Añadir 2-3 frases nuevas a la campaña de pruebas. |
+| **Cada mes** | Comprobar el gasto total (≤ 100€; pruebas ≤ 50€). Reiniciar el presupuesto de pruebas. Revisar las keywords marcadas para revisión. |
 
 ---
 
@@ -237,5 +257,7 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 - [ ] Selectores de `browser_agent.py` (ver 4.4).
 - [ ] **Pasar las reglas nuevas de la sección 5 al código.** `safety.py` todavía tiene ±20% por cambio y 24h entre cambios. Hay que cambiarlo a revisión cada 3 días con rango de ±50% sobre la puja original, añadir la puja original al log, el grupo de pruebas y los stop-loss nuevos. `CLAUDE.md` también debe actualizarse.
 - [ ] Confirmar los números marcados como *(propuesto)* en la sección 5.
+- [ ] `safety.py` / `CLAUDE.md` siguen con el fondo de exploración de 20 €/mes: pasar a 50% (50 €/mes) cuando se actualice el código.
+- [ ] Hablar de las operaciones en bloque (bulk sheets) como alternativa a `browser_agent.py`.
 - [ ] **Actualizar el modelo de Claude** en `ai_marketing_agent.py` y `keyword_generator.py`: ahora es `claude-sonnet-4-5`, se puede cambiar con las variables `MARKETING_AGENT_MODEL` y `KEYWORD_GENERATOR_MODEL`.
 - [ ] **Estado de la cuenta:** confirmar que las campañas ya no están en pausa por el saldo de Seller Central antes de activar nada.

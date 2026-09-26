@@ -1,7 +1,7 @@
-﻿rank,palabra_clave,coincidencia_sugerida,prob_compra_por_clic,clics_por_venta,puja_max_rentable_eur,acos_si_pujas_cpc_medio_pct,palabras_sin_datos,motivo
-1,soporte móvil coche pinza 360,Frase,0.114,8.8,0.45,47.5,0,"venden más: pinza, soporte, movil, coche"
-2,soporte móvil coche pinza para espejo retrovisor,Frase,0.1199,8.3,0.47,45.2,2,"venden más: pinza, soporte, movil, coche | sin datos (se prueba a ciegas): espejo, retrovisor"
-3,porta móvil coche pinza para salpicadero,Frase,0.08,12.5,0.31,67.7,1,"venden más: pinza, movil, coche | sin datos (se prueba a ciegas): porta"
-4,soporte teléfono coche pinza para salpicadero,Frase,0.0595,16.8,0.23,91.2,0,"venden más: pinza, soporte, coche"
-5,porta móvil coche pinza ajustable 360,Frase,0.0742,13.5,0.29,73.1,2,"venden más: pinza, movil, coche | sin datos (se prueba a ciegas): porta, ajustable"
-6,sujeta móvil coche pinza ajustable,Frase,0.0602,16.6,0.24,90.1,1,"venden más: pinza, movil, coche | venden menos: sujeta | sin datos (se prueba a ciegas): ajustable"
+﻿rank,palabra_clave,coincidencia_recomendada,compra_clic_amplia,compra_clic_frase,compra_clic_exacta,amplia_para_descubrir,prob_compra_por_clic,clics_por_venta,puja_max_rentable_eur,acos_si_pujas_cpc_medio_pct,palabras_sin_datos,motivo
+1,soporte móvil coche pinza 360,Frase,0.1032,0.113,0.0949,"Sí, puja 0.28€",0.113,8.8,0.44,48.0,0,"venden más: pinza, soporte, movil, coche"
+2,soporte móvil coche pinza para espejo retrovisor,Frase,0.1069,0.1171,0.0984,"Sí, puja 0.29€",0.1171,8.5,0.46,46.3,2,"venden más: pinza, soporte, movil, coche | sin datos (se prueba a ciegas): espejo, retrovisor"
+3,porta móvil coche pinza para salpicadero,Frase,0.0659,0.0725,0.0604,"Sí, puja 0.18€",0.0725,13.8,0.28,74.8,1,"venden más: pinza, movil, coche | sin datos (se prueba a ciegas): porta"
+4,soporte teléfono coche pinza para salpicadero,Frase,0.0517,0.0569,0.0473,"Sí, puja 0.14€",0.0569,17.6,0.22,95.2,0,"venden más: pinza, soporte, coche"
+5,porta móvil coche pinza ajustable 360,Frase,0.0648,0.0713,0.0594,"Sí, puja 0.18€",0.0713,14.0,0.28,76.0,2,"venden más: pinza, movil, coche | sin datos (se prueba a ciegas): porta, ajustable"
+6,sujeta móvil coche pinza ajustable,Frase,0.0503,0.0554,0.0461,"Sí, puja 0.14€",0.0554,18.0,0.22,97.8,1,"venden más: pinza, movil, coche | venden menos: sujeta | sin datos (se prueba a ciegas): ajustable"
