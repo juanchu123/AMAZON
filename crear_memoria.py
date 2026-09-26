@@ -12,6 +12,11 @@ Los dos salen de los mismos datos, así que siempre coinciden. Campañas:
   - Rejilla - Principal V2: keywords históricas + especiales del modelo, perfil 'rejilla'
 
 Uso:  python crear_memoria.py [--fecha 2026-09-26] [--plantilla ruta/AdvertisingBulksheetTemplate.xlsx]
+      python crear_memoria.py --solo "Termo - Principal V2" --memoria resultados/memoria_termo.xlsx
+        --solo    : solo esas campañas (separadas por comas). ¡Usarlo SIEMPRE al añadir una campaña nueva!
+                    Si no, el bulk volvería a crear las que ya existen (duplicadas en Amazon).
+        --memoria : dónde escribir la memoria. NUNCA sobrescribir una memoria que Juan ya rellena.
+Cada campaña puede llevar "presupuesto" propio (€/día); si no, PRESUPUESTO_DIARIO.
 Después hay que recalcular fórmulas (abrir en Excel, o scripts/recalc.py de LibreOffice).
 """
 
@@ -301,7 +306,7 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
     header(wc, 3, ccols)
     for i, c in enumerate(CAMPANAS, 4):
         n = sum(1 for l in lineas if l["campana"] == c["nombre"])
-        vals = [c["nombre"], c["grupo"], c["asin"], c["sku"], "Manual - " + c["tipo"], "=Leyenda!$B$6", "Pujas dinámicas: solo reducir",
+        vals = [c["nombre"], c["grupo"], c["asin"], c["sku"], "Manual - " + c["tipo"], c.get("presupuesto", "=Leyenda!$B$6"), "Pujas dinámicas: solo reducir",
                 c["puja_grupo"], "0% en las 3 (revisar a las 2 semanas)", "FreshFinder - cartera", "En pausa", round(c["ticket"], 2), n, None]
         for j, v in enumerate(vals, 1):
             put(wc, i, j, v, EUR if j in (6, 8, 12) else None, f_link if j == 6 else f_base, al=wrap)
@@ -424,8 +429,9 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
                f"Cartera 'FreshFinder - cartera' con límite MENSUAL recurrente de {CARTERA_MENSUAL:.0f} € y las 3 campañas dentro. Es el tope duro: Amazon para todo al llegar.",
                None, "", "A mano"))
     for c in CAMPANAS:
-        tk.append((c["nombre"], "Crear campaña y grupo", "", "", None, PRESUPUESTO_DIARIO,
-                   f"Campaña '{c['nombre']}' (manual, {c['tipo'].lower()}, {PRESUPUESTO_DIARIO:.0f} €/día, pujas dinámicas solo reducir) "
+        pres = c.get("presupuesto", PRESUPUESTO_DIARIO)
+        tk.append((c["nombre"], "Crear campaña y grupo", "", "", None, pres,
+                   f"Campaña '{c['nombre']}' (manual, {c['tipo'].lower()}, {pres:g} €/día, pujas dinámicas solo reducir) "
                    f"con el grupo '{c['grupo']}' y el anuncio {c['asin']} ({c['sku']}). Se crea en pausa.", None, "", "Hoja masiva"))
         for l in (l for l in lineas if l["campana"] == c["nombre"]):
             tipo = {"Histórica": "Añadir keyword (histórica)", "Especial IA": "Añadir keyword (especial IA)"}.get(l["origen"], "Añadir segmentación (prueba)")
@@ -528,7 +534,7 @@ def crear_bulk(lineas, plantilla, salida, hoy):
         C, G = c["nombre"], c["grupo"]
         ids = {"ID de la campaña": C, "ID del grupo de anuncios": G}
         row(Entidad="Campaña", **{"ID de la campaña": C, "Nombre de la campaña": C, "Fecha de inicio": ini,
-                                   "Tipo de segmentación": "Manual", "Estado": BULK_PAUSA, "Presupuesto diario": PRESUPUESTO_DIARIO,
+                                   "Tipo de segmentación": "Manual", "Estado": BULK_PAUSA, "Presupuesto diario": c.get("presupuesto", PRESUPUESTO_DIARIO),
                                    "Estrategia de pujas": BULK_ESTRATEGIA})
         row(Entidad="Grupo de anuncios", **ids, **{"Nombre del grupo de anuncios": G, "Estado": BULK_ACTIVO,
                                                   "Puja predeterminada del grupo de anuncios": c["puja_grupo"]})
@@ -549,15 +555,24 @@ def crear_bulk(lineas, plantilla, salida, hoy):
 
 
 def main():
+    global CAMPANAS
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--fecha", default=date.today().isoformat())
     ap.add_argument("--plantilla", default="plantillas/AdvertisingBulksheetTemplate-seller.xlsx")
+    ap.add_argument("--solo", help="nombres de campaña separados por comas (solo esas)")
+    ap.add_argument("--memoria", default="resultados/memoria.xlsx", help="ruta de la memoria a generar")
     args = ap.parse_args()
+    if args.solo:
+        pedidas = [n.strip() for n in args.solo.split(",") if n.strip()]
+        faltan = [n for n in pedidas if n not in {c["nombre"] for c in CAMPANAS}]
+        if faltan:
+            raise SystemExit(f"Campañas no definidas en CAMPANAS: {faltan}")
+        CAMPANAS = [c for c in CAMPANAS if c["nombre"] in pedidas]
     hoy = date.fromisoformat(args.fecha)
     productos, lineas, historico = preparar()
-    n_tk = crear_memoria(productos, lineas, historico, hoy, "resultados/memoria.xlsx")
+    n_tk = crear_memoria(productos, lineas, historico, hoy, args.memoria)
     n_bulk = crear_bulk(lineas, args.plantilla, f"resultados/bulk_{hoy:%Y-%m-%d}.xlsx", hoy)
-    print(f"resultados/memoria.xlsx: {len(lineas)} segmentaciones, {n_tk} tickets")
+    print(f"{args.memoria}: {len(lineas)} segmentaciones, {n_tk} tickets")
     print(f"resultados/bulk_{hoy:%Y-%m-%d}.xlsx: {n_bulk} filas")
     for c in CAMPANAS:
         print(f"  {c['nombre']}:")

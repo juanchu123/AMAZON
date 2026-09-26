@@ -249,6 +249,7 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 | Rejilla - Principal V2 | 4 históricas + 6 especiales del modelo (perfil `rejilla`), 9 negativas (incl. "pinza") | 7 €/día |
 
 - Pedido por Juan: **7 €/día por campaña = 21 €/día (≈630 €/mes)**. Juan sube el tope de la cartera y de CLAUDE.md a **630 €/mes**.
+- **Campaña para un producto nuevo:** skill `/crear-campana <producto>` (`.claude/skills/crear-campana/SKILL.md`): pregunta lo necesario, crea el perfil en `keyword_ml.py`, la campaña en `crear_memoria.py` y genera memoria + bulk solo de lo nuevo (`--solo`).
 - `python crear_memoria.py` genera `resultados/memoria.xlsx` (seguimiento y tickets) y `resultados/bulk_AAAA-MM-DD.xlsx` (hoja masiva para subir; todo se crea en pausa) a partir de los mismos datos.
 
 ## 6. Resultados actuales (soporte de pinza, B0DCZS1NR6)
