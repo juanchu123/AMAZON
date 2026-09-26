@@ -106,6 +106,7 @@ playwright install chromium       # solo si vas a usar el navegador automático
 
 ```bash
 python keyword_ml.py                          # soporte de pinza (por defecto; usa el Excel si está)
+python keyword_ml.py --producto rejilla       # soporte de rejilla de ventilación (B0DHYBY6MS)
 python keyword_ml.py --excel otro_historico.xlsx
 python keyword_ml.py --top 20                 # más recomendaciones
 python keyword_ml.py --asin B0DHYBY6MS        # otro producto (p. ej. rejilla)

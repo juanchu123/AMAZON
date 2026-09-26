@@ -34,8 +34,12 @@ Salida: resultados/palabras_recomendadas_<producto>.csv  (+ resumen por pantalla
 
 No toca la cuenta de Amazon Ads — solo lee CSV y escribe un CSV de recomendaciones.
 
+Productos: cada uno tiene un PERFIL (más abajo, PERFILES) con su ASIN y su vocabulario.
+Añadir un producto = añadir un perfil; el resto del código es el mismo para todos.
+
 Uso:
-    python keyword_ml.py                       # soporte de pinza, datos en la carpeta actual
+    python keyword_ml.py                       # soporte de pinza (perfil por defecto)
+    python keyword_ml.py --producto rejilla    # soporte de rejilla de ventilación
     python keyword_ml.py --datos ./exports --top 20
     python keyword_ml.py --asin B0DCZS1NR6
     python keyword_ml.py --acos-objetivo 30
@@ -62,10 +66,42 @@ TOTAL_KEYS = ("impresiones", "clics", "coste", "compras", "ventas")
 REGULARIZACION_C = 1.0          # más bajo = más prudente (más regularización)
 PENALIZACION_A_CIEGAS = 0.85    # al ordenar, compra/clic × esto por cada palabra sin datos
 ACOS_OBJETIVO_PCT = 35.0        # para la puja máxima rentable (confirmado por Juan: 35%)
-PALABRAS_ESPECIFICAS = {"pinza"}  # las que identifican ESTE producto (no un soporte cualquiera)
+# ---------------------------------------------------------------- perfiles de producto
+# Todo lo que depende del producto vive aquí. Para añadir otro producto: un perfil nuevo,
+# sin tocar el resto del código. Las piezas de vocabulario solo se usan si aparecen en el
+# título del producto o en sus propias keywords (no se inventan características).
+PERFILES = {
+    "pinza": {
+        "asin": "B0DCZS1NR6",
+        "especificas": {"pinza"},                 # identifican ESTE producto (no un soporte cualquiera)
+        "montaje": "pinza", "conector": "con",    # "soporte móvil para coche CON PINZA"
+        "lugares": ["para salpicadero", "para parasol", "para retrovisor", "para espejo retrovisor"],
+        "atributos": ["ajustable 360", "ajustable", "360", "antideslizante", "estable", "universal"],
+        "extras": ["soporte móvil {l} coche", "soporte móvil coche {l} {M}"],
+    },
+    "rejilla": {
+        "asin": "B0DHYBY6MS",
+        "especificas": {"rejilla", "ventilacion", "aire", "gancho", "clip"},
+        "montaje": "rejilla", "conector": "para",  # "soporte móvil para coche PARA REJILLA"
+        "lugares": ["ventilación", "ventilación coche", "aire", "del aire"],
+        "atributos": ["ajustable 360", "ajustable", "360", "universal", "estable", "con gancho", "clip", "giratorio"],
+        "extras": ["soporte móvil {M} {l}", "soporte móvil coche {M} {l}", "soporte teléfono {M} {l}"],
+    },
+}
+PERFIL = PERFILES["pinza"]
+PALABRAS_ESPECIFICAS = PERFIL["especificas"]
 COINCIDENCIAS = ("Amplia", "Frase", "Exacta")
 FACTOR_PUJA_AMPLIA = 0.7        # Amplia de descubrimiento: puja baja = 70% de su puja máx. rentable
-NUCLEO = {"soporte", "movil", "coche", "pinza"}  # palabras que casi todas las frases comparten
+NUCLEO = {"soporte", "movil", "coche", PERFIL["montaje"]}  # palabras que casi todas las frases comparten
+
+
+def usar_perfil(nombre):
+    """Activa el perfil de un producto (pinza, rejilla…) para features, candidatas y reglas."""
+    global PERFIL, PALABRAS_ESPECIFICAS, NUCLEO
+    PERFIL = PERFILES[nombre]
+    PALABRAS_ESPECIFICAS = PERFIL["especificas"]
+    NUCLEO = {"soporte", "movil", "coche", normalizar(PERFIL["montaje"])}
+    return PERFIL
 MAX_REPETICION = 2              # veces que una misma palabra extra puede repetirse en el top
 CUOTA_MIN_GRUPO = 0.90          # un grupo con varios productos cuenta para uno si éste gasta ≥ 90%
 TOLERANCIA_EUR = 0.02           # margen de redondeo al comparar totales entre archivos
@@ -328,9 +364,11 @@ def validacion_cruzada(filas, exito, intentos):
 def vocabulario(titulo, filas):
     """Piezas para construir frases, sacadas SOLO del título del producto y de sus keywords."""
     t = normalizar(titulo)
+    vocab = set(t.split()) | {w for f in filas for w in normalizar(f["keyword"]).split()}
+    permitido = lambda frase: all(w in vocab or w in STOPWORDS for w in normalizar(frase).split())
     cabezas = ["soporte móvil"] if "soporte movil" in t else []
-    lugares = [l for l in ["salpicadero", "parasol", "retrovisor", "espejo retrovisor"] if normalizar(l) in t]
-    atributos = [a for a in ["ajustable 360", "ajustable", "360", "antideslizante", "estable", "universal"] if normalizar(a) in t]
+    lugares = [l for l in PERFIL["lugares"] if permitido(l)]
+    atributos = [a for a in PERFIL["atributos"] if permitido(a)]
     marcas = [m for m in ["iphone", "samsung", "xiaomi"] if m in t]
     for f in filas:  # cabezas que ya usan sus keywords reales
         toks = normalizar(f["keyword"]).split()
@@ -344,17 +382,19 @@ def vocabulario(titulo, filas):
 
 def generar_candidatas(titulo, filas):
     cabezas, lugares, atributos, marcas = vocabulario(titulo, filas)
-    mods = [""] + [f"para {l}" for l in lugares] + atributos + [f"para {m}" for m in marcas]
+    M, con = PERFIL["montaje"], PERFIL["conector"]
+    mods = [""] + lugares + atributos + [f"para {m}" for m in marcas]
+    plantillas = ("{c} para coche " + con + " {M} {m}", "{c} coche {M} {m}", "{c} de {M} {m}", "{c} {M} coche {m}")
     cands = set()
     for cab, mod in itertools.product(cabezas, mods):
-        for plantilla in ("{c} para coche con pinza {m}", "{c} coche pinza {m}", "{c} de pinza {m}", "{c} pinza coche {m}"):
-            cands.add(re.sub(r"\s+", " ", plantilla.format(c=cab, m=mod)).strip())
+        for plantilla in plantillas:
+            cands.add(re.sub(r"\s+", " ", plantilla.format(c=cab, M=M, m=mod)).strip())
     for l in lugares:
-        cands.add(f"soporte móvil {l} coche")
-        cands.add(f"soporte móvil coche {l} pinza")
+        for e in PERFIL["extras"]:
+            cands.add(re.sub(r"\s+", " ", e.format(M=M, l=l.replace("para ", ""))).strip())
     for a in atributos:
-        cands.add(f"pinza móvil coche {a}")
-    cands.update({"pinza móvil coche", "pinza para móvil coche", "soporte pinza coche", "soporte pinza móvil"})
+        cands.add(f"{M} móvil coche {a}")
+    cands.update({f"{M} móvil coche", f"{M} para móvil coche", f"soporte {M} coche", f"soporte {M} móvil"})
     return sorted(cands)
 
 
@@ -442,7 +482,8 @@ def recomendar(filas, titulo, existentes, top, acos_objetivo=ACOS_OBJETIVO_PCT, 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--datos", default=".", help="carpeta con los CSV exportados de Amazon Ads")
-    ap.add_argument("--producto-contiene", default="pinza", help="texto que debe aparecer en el nombre del anuncio")
+    ap.add_argument("--producto", choices=sorted(PERFILES), default="pinza", help="perfil del producto a analizar")
+    ap.add_argument("--producto-contiene", help="(modo CSV) texto que debe aparecer en el nombre del anuncio")
     ap.add_argument("--asin", help="en vez de por nombre, filtrar por ASIN exacto")
     ap.add_argument("--top", type=int, default=15)
     ap.add_argument("--acos-objetivo", type=float, default=ACOS_OBJETIVO_PCT, help="ACOS objetivo en %% para la puja máxima rentable")
@@ -452,7 +493,9 @@ def main():
     args = ap.parse_args()
 
     excel = args.excel or (None if args.csv else next(iter(sorted(glob.glob(os.path.join(args.datos, "*historico*.xlsx")))), None))
-    contiene = None if args.asin else args.producto_contiene
+    usar_perfil(args.producto)
+    args.asin = args.asin or PERFIL["asin"]
+    contiene = None if args.asin else (args.producto_contiene or args.producto)
     if excel:
         filas, info_grupos, titulo, asin, existentes = cargar_excel(excel, asin=args.asin, contiene=contiene)
         informe = {"fuente": excel, "grupos": info_grupos}
@@ -512,7 +555,7 @@ def _entrenar_y_recomendar(args, filas, informe, titulo, asin, existentes):
               f"Se descartan las frases cuya puja máx. rentable no llega a {min(recs_baja):.2f}€.")
 
     os.makedirs(args.salida, exist_ok=True)
-    slug = normalizar(args.asin or args.producto_contiene).replace(" ", "_")
+    slug = args.producto
     out = os.path.join(args.salida, f"palabras_recomendadas_{slug}.csv")
     campos = ["rank", "palabra_clave", "coincidencia_recomendada", "compra_clic_amplia", "compra_clic_frase",
               "compra_clic_exacta", "amplia_para_descubrir", "prob_compra_por_clic", "clics_por_venta",
