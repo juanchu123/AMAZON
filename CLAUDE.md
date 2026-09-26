@@ -10,13 +10,13 @@ No es un dashboard ni un generador de listas de keywords: es un sistema de decis
 
 - **ACOS objetivo: 30-35%.** El ACOS (Advertising Cost of Sale) mide cuánto se gasta en publicidad por cada euro de venta que esa publicidad genera (gasto en ads / ventas atribuidas a ads). Por debajo del rango = rentable, subir puja. Por encima = no rentable, bajar o pausar.
 - Escala actual: ~2 campañas activas.
-- **Presupuesto máximo: 100€/mes** en total. El sistema nunca debe empujar el gasto proyectado por encima de este límite (ver Reglas de seguridad).
+- **Presupuesto máximo: 840€/mes** en total (4 campañas a 7€/día; subido por Juan el 26/09/2026: 100€ → 630€ → 840€). El sistema nunca debe empujar el gasto proyectado por encima de este límite (ver Reglas de seguridad).
 
 ## Antes de empezar: pregunta primero
 
 **Cualquier sesión de Claude Code que abra este proyecto debe preguntarle a Juan todo lo que necesite saber ANTES de escribir o ejecutar nada** — no asumir, no rellenar huecos por iniciativa propia, y menos aún ejecutar cambios reales contra la cuenta de Amazon Ads sin haber confirmado antes lo siguiente:
 
-- **Los números marcados como "asumido" o "ajustable" en este documento** (ACOS objetivo 30-35%, presupuesto mensual 100€, fondo de exploración 20€/mes, tope de 3 keywords nuevas/día, tope de 3 experimentos/día, puja inicial de experimento 0,30€, stop-loss al 50%) — estos salieron de conversaciones anteriores con Juan, pero conviene reconfirmarlos antes de que muevan dinero real, sobre todo si ha pasado tiempo desde que se escribieron.
+- **Los números marcados como "asumido" o "ajustable" en este documento** (ACOS objetivo 30-35%, presupuesto mensual 840€, fondo de exploración 20€/mes, tope de 3 keywords nuevas/día, tope de 3 experimentos/día, puja inicial de experimento 0,30€, stop-loss al 50%) — estos salieron de conversaciones anteriores con Juan, pero conviene reconfirmarlos antes de que muevan dinero real, sobre todo si ha pasado tiempo desde que se escribieron.
 - **Si `.auth/session.json` existe y está viva** — si no, hay que guiar a Juan por `capture_session.py` antes de intentar leer nada.
 - **Si `ANTHROPIC_API_KEY` está configurada** — sin ella, `keyword_generator.py` (los experimentos) no funciona; preguntar si Juan la tiene lista o si prefiere dejar los experimentos desactivados de momento.
 - **El estado real de la cuenta de Ads en ese momento** — la última vez que se miró, las campañas estaban pausadas por un problema de saldo en Seller Central (ver "Notas importantes"). Antes de activar nada, preguntar si eso ya se resolvió.
@@ -133,7 +133,7 @@ Con solo 2 campañas el aprendizaje será lento al principio (hace falta histori
 
 1. **Tope de cambio por ejecución:** máximo ±20% sobre la puja actual de una keyword en una misma ejecución.
 2. **Reset de 24h:** una vez aplicado un cambio a una keyword/combinación, no se le vuelve a tocar hasta que hayan pasado 24h completas desde el último cambio.
-3. **Presupuesto mensual duro: 100€.** Antes de aplicar cualquier subida de puja, calcular el gasto proyectado del mes con los reportes de Campaign Report. Si el proyectado ya roza el límite, no se suben más pujas ese mes aunque el rendimiento lo justifique — solo se permiten bajadas/pausas.
+3. **Presupuesto mensual duro: 840€** (cartera de Amazon con ese tope; antes 100€ y 630€, cambiado por Juan el 26/09/2026). Antes de aplicar cualquier subida de puja, calcular el gasto proyectado del mes con los reportes de Campaign Report. Si el proyectado ya roza el límite, no se suben más pujas ese mes aunque el rendimiento lo justifique — solo se permiten bajadas/pausas.
 4. Ninguna acción que no esté explícitamente cubierta por estas reglas (crear campañas nuevas, cambiar targeting, cambiar presupuestos diarios, etc.) se ejecuta sin que Juan lo pida explícitamente en el momento.
 
 ## Formato del log — `logs/decisions.jsonl`
