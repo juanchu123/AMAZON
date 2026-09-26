@@ -251,6 +251,7 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 | Pou - Pruebas | 3 ASIN de competencia (preparada, **pendiente** de presupuesto) | ? |
 
 - Pedido por Juan: **7 €/día por campaña = 21 €/día (≈630 €/mes)**. Juan sube el tope de la cartera y de CLAUDE.md a **840 €/mes** (4 campañas × 7 €/día).
+- **Investigar keywords con datos de mercado:** skill `investigar-keywords`. Export de Helium 10 (Cerebro/Magnet) en `datos/` → `python keyword_ml.py --producto <perfil> --candidatas datos/<archivo>.csv` → `resultados/investigacion_<perfil>.csv` (volumen + conversión del histórico + ¿compite?).
 - **Campaña para un producto nuevo:** skill `/crear-campana <producto>` (`.claude/skills/crear-campana/SKILL.md`): pregunta lo necesario, crea el perfil en `keyword_ml.py`, la campaña en `crear_memoria.py` y genera memoria + bulk solo de lo nuevo (`--solo`).
 - `python crear_memoria.py` genera `resultados/memoria.xlsx` (seguimiento y tickets) y `resultados/bulk_AAAA-MM-DD.xlsx` (hoja masiva para subir; todo se crea en pausa) a partir de los mismos datos.
 

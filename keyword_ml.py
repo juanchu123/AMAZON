@@ -513,6 +513,8 @@ def main():
     ap.add_argument("--salida", default="resultados")
     ap.add_argument("--excel", help="Excel consolidado (hojas Anuncios + Keywords). Por defecto, *historico*.xlsx en --datos")
     ap.add_argument("--csv", action="store_true", help="forzar el modo antiguo con CSV sueltos")
+    ap.add_argument("--candidatas", help="CSV/XLSX de frases de fuera (export de Helium 10 Cerebro/Magnet, "
+                    "u otra lista) para puntuarlas con el modelo junto a su volumen de búsqueda")
     args = ap.parse_args()
 
     excel = args.excel or (None if args.csv else next(iter(sorted(glob.glob(os.path.join(args.datos, "*historico*.xlsx")))), None))
@@ -556,6 +558,95 @@ def _cargar_csv(args, contiene):
     return filas, informe, titulo, asin, existentes
 
 
+# ---------------------------------------------------------------- frases de fuera (Helium 10…)
+
+def _col(cab, *nombres):
+    """Índice de la primera columna cuyo nombre contiene alguno de los textos (sin mayúsculas/acentos)."""
+    cn = [normalizar(str(c or "")) for c in cab]
+    for n in nombres:
+        for i, c in enumerate(cn):
+            if normalizar(n) in c:
+                return i
+    return None
+
+
+def leer_candidatas(path):
+    """Lee una lista de frases con, si las hay, volumen de búsqueda y puja sugerida.
+    Reconoce los exports de Helium 10 (Cerebro/Magnet: 'Keyword Phrase', 'Search Volume',
+    'Suggested PPC Bid', 'Competing Products') y listas propias ('palabra clave', 'volumen'…)."""
+    if path.lower().endswith((".xlsx", ".xlsm")):
+        from openpyxl import load_workbook
+        filas_x = list(load_workbook(path, read_only=True, data_only=True).active.iter_rows(values_only=True))
+    else:
+        with open(path, encoding="utf-8-sig", newline="") as f:
+            muestra = f.read(4096)
+            f.seek(0)
+            filas_x = list(csv.reader(f, dialect=csv.Sniffer().sniff(muestra, delimiters=",;\t")))
+    cab, datos = filas_x[0], filas_x[1:]
+    i_kw = _col(cab, "keyword phrase", "palabra clave", "keyword", "frase", "search term", "termino")
+    if i_kw is None:
+        raise SystemExit(f"No encuentro la columna de frases en {path}. Cabeceras: {cab}")
+    i_vol = _col(cab, "search volume", "volumen", "volume")
+    i_bid = _col(cab, "suggested ppc bid", "ppc bid", "puja sugerida", "puja")
+    i_comp = _col(cab, "competing products", "productos competidores", "competencia")
+    num = lambda v: v if isinstance(v, (int, float)) else _num(str(v)) if v not in (None, "", "-") else None
+    out = []
+    for r in datos:
+        if i_kw >= len(r) or not r[i_kw] or not str(r[i_kw]).strip():
+            continue
+        out.append({"frase": str(r[i_kw]).strip().lower(),
+                    "volumen": num(r[i_vol]) if i_vol is not None and i_vol < len(r) else None,
+                    "puja_sugerida": num(r[i_bid]) if i_bid is not None and i_bid < len(r) else None,
+                    "competencia": num(r[i_comp]) if i_comp is not None and i_comp < len(r) else None})
+    return out
+
+
+def puntuar_candidatas(filas, candidatas, existentes, acos_objetivo):
+    """Une mercado (volumen de Helium 10) y tu histórico (conversión que predice el modelo).
+    compras/mes estimadas = volumen × CTR medio del producto × P(compra|clic) en Frase.
+    Es orientativo: el CTR real depende de la posición del anuncio."""
+    vec, mod = entrenar(filas, "compras", "clics")
+    tot = {k: sum(f[k] for f in filas) for k in ("impresiones", "clics", "compras", "ventas")}
+    ticket = tot["ventas"] / tot["compras"] if tot["compras"] else 0.0
+    ctr = tot["clics"] / tot["impresiones"] if tot["impresiones"] else 0.0
+    vistos = {k.split("=", 1)[1] for k in vec.feature_names_ if k.startswith("w=")}
+    res = []
+    for c in candidatas:
+        toks = tokens_contenido(c["frase"])
+        if not toks:
+            continue
+        p = {m: predecir(vec, mod, c["frase"], m) for m in COINCIDENCIAS}
+        pmax = p["Frase"] * ticket * acos_objetivo / 100
+        especifica = any(w in PALABRAS_ESPECIFICAS for w in toks)
+        vol = c["volumen"]
+        compras_mes = vol * ctr * p["Frase"] if vol else None
+        pb = c["puja_sugerida"]
+        if pb is None:
+            compite = "sin dato"
+        elif pmax >= pb:
+            compite = "Sí"
+        elif pmax >= 0.7 * pb:
+            compite = "Justo"
+        else:
+            compite = "No (la puja rentable no llega)"
+        res.append({
+            "frase": c["frase"], "ya_probada": "Sí" if firma(c["frase"]) in existentes else "",
+            "especifica": "Sí" if especifica else "No (genérica)",
+            "volumen_busquedas": vol, "competidores": c["competencia"], "puja_sugerida_h10": pb,
+            "compra_clic_frase": round(p["Frase"], 4), "compra_clic_exacta": round(p["Exacta"], 4),
+            "puja_max_rentable_eur": round(pmax, 2), "compite": compite,
+            "compras_mes_estimadas": round(compras_mes, 2) if compras_mes is not None else None,
+            "palabras_sin_datos": ", ".join(w for w in toks if w not in vistos),
+            "coincidencia_recomendada": "Frase" if especifica else "Exacta (genérica: nunca Amplia)",
+        })
+    # primero lo que se puede ganar sin perder dinero; dentro, lo que más compras traería
+    orden_compite = {"Sí": 0, "Justo": 1, "sin dato": 2}
+    hay_vol = any(r["compras_mes_estimadas"] for r in res)
+    res.sort(key=lambda r: (orden_compite.get(r["compite"], 3),
+                            -(r["compras_mes_estimadas"] or 0) if hay_vol else -r["compra_clic_frase"]))
+    return res, {"ctr_medio": ctr, "ticket": ticket}
+
+
 def _entrenar_y_recomendar(args, filas, informe, titulo, asin, existentes):
     con_clics = [f for f in filas if f["clics"] > 0]
     print(f"\n=== 3. Entrenamiento: {asin} — {len(filas)} filas, {len({firma(f['keyword']) for f in filas})} keywords distintas, "
@@ -566,6 +657,23 @@ def _entrenar_y_recomendar(args, filas, informe, titulo, asin, existentes):
     if cv:
         print(f"  Validación (dejando fuera cada keyword): modelo {cv['logloss_modelo']:.3f} vs media {cv['logloss_media']:.3f} "
               f"-> {'mejora' if cv['mejora_pct'] > 0 else 'NO mejora'} un {abs(cv['mejora_pct']):.1f}%")
+
+    if args.candidatas:
+        cands = leer_candidatas(args.candidatas)
+        res, info = puntuar_candidatas(filas, cands, existentes, args.acos_objetivo)
+        os.makedirs(args.salida, exist_ok=True)
+        out = os.path.join(args.salida, f"investigacion_{args.producto}.csv")
+        with open(out, "w", encoding="utf-8-sig", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(res[0]) if res else ["frase"])
+            w.writeheader()
+            w.writerows(res)
+        print(f"\n=== Frases de fuera: {len(res)} puntuadas ({args.candidatas}) -> {out} ===")
+        print(f"  CTR medio del producto {info['ctr_medio']:.2%}, ticket {info['ticket']:.2f} €, ACOS objetivo {args.acos_objetivo:.0f}%")
+        for i, r in enumerate(res[:args.top], 1):
+            vol = f"{r['volumen_busquedas']:.0f}" if r["volumen_busquedas"] else "-"
+            print(f"  {i:2d}. {r['frase']:<44s} vol {vol:>6}  compra/clic {r['compra_clic_frase']:.1%}  "
+                  f"puja máx {r['puja_max_rentable_eur']:.2f}€  compite: {r['compite']:<8} {r['especifica']}{'  (ya probada)' if r['ya_probada'] else ''}")
+        return
 
     recs_baja = [f["puja_rec_baja"] for f in filas if f["puja_rec_baja"] > 0]
     recs, resumen = recomendar(filas, titulo, existentes, args.top, acos_objetivo=args.acos_objetivo,
