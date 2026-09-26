@@ -33,6 +33,14 @@ PRESUPUESTO_DIARIO = 7.0          # pedido por Juan (26/09/2026): 7 €/día en 
 CARTERA_MENSUAL = 630.0           # tope duro (CLAUDE.md): 21 €/día x 30, fijado por Juan el 26/09/2026
 PUJA_PRUEBA = 0.30
 
+# Valores de la hoja masiva en español. Informe de Amazon del 26/09/2026 (1ª subida):
+#   ✘ Estado "Habilitado"/"Pausado", ✘ Estrategia "Pujas dinámicas: solo reducir",
+#   ✘ entidad "Segmentación por productos negativa".
+#   ✔ Campaña, Grupo de anuncios, Anuncio de producto, Palabra clave, Palabra clave negativa,
+#     Segmentación por productos, Crear, Manual, Amplia/Frase/Exacta, Frase negativa.
+BULK_ACTIVO, BULK_PAUSA = "Activado", "En pausa"   # los que usa la consola en los exports
+BULK_ESTRATEGIA = None   # vacía: en campañas nuevas Amazon pone "solo reducir" por defecto
+
 NEG_COMUNES = [
     ("ventosa", "Otro tipo de montaje (tienes otro producto con ventosa)."),
     ("magnetico", "Soportes magnéticos: otro producto."),
@@ -294,7 +302,7 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
     for i, c in enumerate(CAMPANAS, 4):
         n = sum(1 for l in lineas if l["campana"] == c["nombre"])
         vals = [c["nombre"], c["grupo"], c["asin"], c["sku"], "Manual - " + c["tipo"], "=Leyenda!$B$6", "Pujas dinámicas: solo reducir",
-                c["puja_grupo"], "0% en las 3 (revisar a las 2 semanas)", "FreshFinder - cartera", "Pausado", round(c["ticket"], 2), n, None]
+                c["puja_grupo"], "0% en las 3 (revisar a las 2 semanas)", "FreshFinder - cartera", "En pausa", round(c["ticket"], 2), n, None]
         for j, v in enumerate(vals, 1):
             put(wc, i, j, v, EUR if j in (6, 8, 12) else None, f_link if j == 6 else f_base, al=wrap)
     # ---------------- Segmentación
@@ -377,7 +385,7 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
         base = {}
         if i < len(lineas):
             l = lineas[i]
-            base = {1: hoy, 2: l["campana"], 3: l["texto"], 4: l["match"], 5: "Pausado", 7: l["puja"],
+            base = {1: hoy, 2: l["campana"], 3: l["texto"], 4: l["match"], 5: "En pausa", 7: l["puja"],
                     8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 17: "Día 0: creación (sin datos todavía)"}
         for col in range(1, 18):
             c = put(wf, r, col, base.get(col), font=f_input if col not in (13, 14, 15, 16) else f_base)
@@ -396,7 +404,7 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
             wf.cell(row=r, column=col).number_format = INT
     for dv, rng in ((DataValidation(type="list", formula1=f"=Campañas!$A$4:$A${3 + len(CAMPANAS)}", allow_blank=True), f"B4:B{3 + FR}"),
                     (DataValidation(type="list", formula1='"Amplia,Frase,Exacta,Producto,Categoría"', allow_blank=True), f"D4:D{3 + FR}"),
-                    (DataValidation(type="list", formula1='"Activado,Pausado,Archivado"', allow_blank=True), f"E4:E{3 + FR}")):
+                    (DataValidation(type="list", formula1='"Activado,En pausa,Archivado"', allow_blank=True), f"E4:E{3 + FR}")):
         wf.add_data_validation(dv)
         dv.add(rng)
     wf.freeze_panes = "D4"
@@ -428,7 +436,7 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
         for term, motivo in c.get("negativas", []):
             tk.append((c["nombre"], "Añadir negativa", term, "Frase negativa", None, None, motivo, None, "", "Hoja masiva"))
         for a, motivo in c.get("negativos_producto", []):
-            tk.append((c["nombre"], "Añadir negativa", f'asin="{a}"', "Producto negativo", None, None, motivo, None, "", "Hoja masiva"))
+            tk.append((c["nombre"], "Añadir negativa", f'asin="{a}"', "Producto negativo", None, None, motivo, None, "", "A mano"))
     TR = len(tk) + 60
     for i in range(TR):
         r = 4 + i
@@ -520,24 +528,22 @@ def crear_bulk(lineas, plantilla, salida, hoy):
         C, G = c["nombre"], c["grupo"]
         ids = {"ID de la campaña": C, "ID del grupo de anuncios": G}
         row(Entidad="Campaña", **{"ID de la campaña": C, "Nombre de la campaña": C, "Fecha de inicio": ini,
-                                   "Tipo de segmentación": "Manual", "Estado": "Pausado", "Presupuesto diario": PRESUPUESTO_DIARIO,
-                                   "Estrategia de pujas": "Pujas dinámicas: solo reducir"})
-        row(Entidad="Grupo de anuncios", **ids, **{"Nombre del grupo de anuncios": G, "Estado": "Habilitado",
+                                   "Tipo de segmentación": "Manual", "Estado": BULK_PAUSA, "Presupuesto diario": PRESUPUESTO_DIARIO,
+                                   "Estrategia de pujas": BULK_ESTRATEGIA})
+        row(Entidad="Grupo de anuncios", **ids, **{"Nombre del grupo de anuncios": G, "Estado": BULK_ACTIVO,
                                                   "Puja predeterminada del grupo de anuncios": c["puja_grupo"]})
-        row(Entidad="Anuncio de producto", **ids, **{"SKU": c["sku"], "Estado": "Habilitado"})
+        row(Entidad="Anuncio de producto", **ids, **{"SKU": c["sku"], "Estado": BULK_ACTIVO})
         for l in (l for l in lineas if l["campana"] == C and not l.get("manual")):
             if l["match"] == "Producto":
-                row(Entidad="Segmentación por productos", **ids, **{"Estado": "Habilitado", "Puja": l["puja"],
+                row(Entidad="Segmentación por productos", **ids, **{"Estado": BULK_ACTIVO, "Puja": l["puja"],
                                                                    "Fórmula de segmentación por productos": l["texto"]})
             else:
-                row(Entidad="Palabra clave", **ids, **{"Estado": "Habilitado", "Puja": l["puja"],
+                row(Entidad="Palabra clave", **ids, **{"Estado": BULK_ACTIVO, "Puja": l["puja"],
                                                        "Texto de palabra clave": l["texto"], "Tipo de coincidencia": l["match"]})
         for term, _ in c.get("negativas", []):
-            row(Entidad="Palabra clave negativa", **ids, **{"Estado": "Habilitado", "Texto de palabra clave": term,
+            row(Entidad="Palabra clave negativa", **ids, **{"Estado": BULK_ACTIVO, "Texto de palabra clave": term,
                                                             "Tipo de coincidencia": "Frase negativa"})
-        for a, _ in c.get("negativos_producto", []):
-            row(Entidad="Segmentación por productos negativa", **ids, **{"Estado": "Habilitado",
-                                                                        "Fórmula de segmentación por productos": f'asin="{a}"'})
+        # negativos de producto: Amazon no aceptó el nombre de entidad en español -> se añaden a mano
     wb.save(salida)
     return ws.max_row - 1
 
