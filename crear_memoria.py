@@ -30,7 +30,7 @@ import keyword_ml as k
 EXCEL_HIST = "FreshFinder_Amazon_Ads_historico.xlsx"
 ACOS_OBJ = 0.35
 PRESUPUESTO_DIARIO = 7.0          # pedido por Juan (26/09/2026): 7 €/día en cada campaña
-CARTERA_MENSUAL = 100.0           # tope duro de CLAUDE.md; Juan decide si lo sube
+CARTERA_MENSUAL = 630.0           # tope duro (CLAUDE.md): 21 €/día x 30, fijado por Juan el 26/09/2026
 PUJA_PRUEBA = 0.30
 
 NEG_COMUNES = [
@@ -233,9 +233,9 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
         ("ACOS objetivo", ACOS_OBJ, PCT, "Confirmado por Juan."),
         ("Presupuesto diario por campaña", PRESUPUESTO_DIARIO, EUR, "Pedido por Juan (26/09/2026): 7 €/día en cada una de las 3 campañas."),
         ("Nº de campañas", len(CAMPANAS), "0", ""),
-        ("Gasto máximo posible al mes", "=B6*B7*30", EUR, "21 €/día × 30 días. ⚠ Muy por encima del límite de 100 €/mes."),
-        ("Tope mensual de la cartera", CARTERA_MENSUAL, EUR, "Límite duro de CLAUDE.md. Amazon para TODAS las campañas al llegar aquí. Súbelo solo si decides gastar más."),
-        ("Días hasta agotar la cartera", "=IFERROR(B9/(B6*B7),0)", "0.0", "Con 21 €/día, la cartera de 100 € se agota en ~5 días."),
+        ("Gasto máximo posible al mes", "=B6*B7*30", EUR, "21 €/día × 30 días. Coincide con el tope de la cartera."),
+        ("Tope mensual de la cartera", CARTERA_MENSUAL, EUR, "Límite duro de CLAUDE.md (630 €, Juan 26/09/2026). Amazon para TODAS las campañas al llegar aquí."),
+        ("Días hasta agotar la cartera", "=IFERROR(B9/(B6*B7),0)", "0.0", "Con 21 €/día, la cartera dura el mes entero."),
         ("Días entre revisiones de puja", 3, "0", "Pedido por Juan."),
         ("Rango de puja sobre la original", 0.50, PCT, "Pedido por Juan: ±50%."),
         ("Stop-loss: clics sin ventas", 15, "0", "Propuesto; pendiente de confirmar."),
@@ -247,7 +247,6 @@ def crear_memoria(productos, lineas, historico, hoy, salida):
         formula = isinstance(val, str) and val.startswith("=")
         put(ws, i, 2, val, fmt, f_base if formula else f_input, None if formula else fill_input)
         put(ws, i, 3, nota, al=wrap)
-    ws["C8"].font = Font(name=F, size=10, bold=True, color="C00000")
     P_ACOS, P_RANGO, P_STOP, P_MIN, P_EVAL = "Leyenda!$B$5", "Leyenda!$B$12", "Leyenda!$B$13", "Leyenda!$B$14", "Leyenda!$B$15"
     r = 17
     ws.cell(row=r, column=1, value="CÓMO USAR LA MEMORIA").font = f_bold

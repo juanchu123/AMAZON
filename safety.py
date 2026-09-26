@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 MAX_BID_CHANGE_PCT = 0.20      # tope: ±20% por ejecución
 RESET_HOURS = 24                # no tocar la misma keyword antes de 24h
-MONTHLY_BUDGET_CAP_EUR = 100.0  # presupuesto duro mensual
+MONTHLY_BUDGET_CAP_EUR = 630.0  # presupuesto duro mensual (Juan, 26/09/2026: 3 campañas x 7 €/día)
 MAX_NEW_KEYWORDS_PER_DAY = 3    # tope de keywords "cosechadas" (con datos reales) por ejecución
 NEW_KEYWORD_STARTING_BID_FACTOR = 1.0  # puja inicial = puja actual del grupo (ajustable)
 
