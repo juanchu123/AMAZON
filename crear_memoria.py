@@ -43,7 +43,7 @@ PUJA_PRUEBA = 0.30
 #   ✘ entidad "Segmentación por productos negativa".
 #   ✔ Campaña, Grupo de anuncios, Anuncio de producto, Palabra clave, Palabra clave negativa,
 #     Segmentación por productos, Crear, Manual, Amplia/Frase/Exacta, Frase negativa.
-BULK_ACTIVO, BULK_PAUSA = "Activado", "En pausa"   # los que usa la consola en los exports
+BULK_ACTIVO, BULK_PAUSA = "Activado", "En pausa"   # ✔ confirmados: 2ª subida (26/09/2026) sin errores
 BULK_ESTRATEGIA = None   # vacía: en campañas nuevas Amazon pone "solo reducir" por defecto
 
 NEG_COMUNES = [

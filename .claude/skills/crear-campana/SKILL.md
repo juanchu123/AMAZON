@@ -88,7 +88,7 @@ Comprueba con una copia en el scratchpad: añade una foto falsa en "Seguimiento"
 
 ## Paso 5 — Hoja masiva: valores comprobados con Amazon
 
-Informe real de Amazon (26/09/2026). Si Amazon rechaza una fila, **rechaza el archivo entero** (no aplica nada): es seguro reintentar.
+Informes reales de Amazon (26/09/2026: 1ª subida rechazada, 2ª subida **aceptada sin errores**). Si Amazon rechaza una fila, **rechaza el archivo entero** (no aplica nada): es seguro reintentar.
 
 | Columna / entidad | ✔ Aceptado | ✘ Rechazado |
 |---|---|---|
@@ -96,8 +96,8 @@ Informe real de Amazon (26/09/2026). Si Amazon rechaza una fila, **rechaza el ar
 | Operación | Crear | |
 | Tipo de segmentación | Manual | |
 | Tipo de coincidencia | Amplia, Frase, Exacta, Frase negativa | |
-| Estado | *pendiente de confirmar:* Activado / En pausa | Habilitado, Pausado |
-| Estrategia de pujas | vacía (por defecto en campañas nuevas: solo reducir) | "Pujas dinámicas: solo reducir" |
+| Estado | Activado, En pausa | Habilitado, Pausado |
+| Estrategia de pujas | vacía (por defecto en campañas nuevas: solo reducir; comprobar en la consola) | "Pujas dinámicas: solo reducir" |
 
 Cuando Juan pase un informe de errores nuevo, actualiza esta tabla y los comentarios de `crear_memoria.py` (`BULK_ACTIVO`, `BULK_PAUSA`, `BULK_ESTRATEGIA`).
 
