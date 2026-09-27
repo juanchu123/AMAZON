@@ -4,6 +4,8 @@ Este documento recoge **todo lo decidido** en la conversación de diseño (26-27
 
 **Regla de oro de esta sesión de diseño: aquí no se ha escrito ni una línea de Python.** Todo lo de abajo es especificación para que **Claude Opus** lo implemente en una sesión aparte. Sigue habiendo puntos abiertos marcados con ⚠️ — no son bloqueantes para empezar, pero hay que resolverlos antes de dar el sistema por terminado.
 
+> ✅ **Implementado el 27/09/2026** (Claude Opus). Qué archivo hace cada cosa, cómo se han interpretado los detalles que la especificación dejaba abiertos y qué falta: **sección 8**, al final.
+
 ---
 
 ## 0. Contexto
@@ -172,3 +174,45 @@ Este es el único sitio del sistema donde interviene un LLM, y su trabajo es **b
 - ⚠️ **Estado de las credenciales de la Amazon Ads API** — imprescindible para probar la Fase 1 de verdad.
 - ⚠️ La "puja máx. rentable" de las campañas de pruebas por ASIN de competencia usa hoy la conversión **media del producto entero**, no algo específico de cada ASIN competidor — se podrá refinar cuando haya datos reales de cada uno.
 - ⚠️ Una palabra suelta de Juan sin aclarar del todo ("sbs", en el contexto de crear campañas nuevas desde el fondo de experimentación) — no bloquea nada, ya está cubierto por la sección 2.6, pero si tenía otro significado, revisar.
+
+---
+
+## 8. Estado de la implementación (27/09/2026)
+
+### Dónde está cada cosa
+
+| Sección | Archivo | Notas |
+|---|---|---|
+| 2.1 ronda + madurez 7 días | `analyzer.py`, `documento.py` (`Series.maduro`) | Con la API, "maduro" = clics de días con más de 7 días (hoja Diario). Con la hoja masiva, la foto de hace ≥ 7 días |
+| 2.2 puja | `analyzer.py`, `prediccion.py` | `P × ticket × ACOS`; el ACOS va de 30 % (agresividad 0,2) a 35 % (agresividad 1). P = modelo mezclado con los clics maduros propios (20 clics propios pesan como el modelo) |
+| 2.3 12 keywords + ≤ 30 % | `analyzer.py` (`_rellenar_huecos`), `prediccion.py` (`candidatas`) | Candidatas: histórico del producto, frases del modelo, hoja Investigación. Nunca palabras de otro producto ni Amplia genérica |
+| 2.4 stop-loss | `analyzer.py` | Cuenta desde que el agente creó el elemento (o desde que hay datos). Pausada 2 veces → "Requiere revisión" |
+| 2.5 presupuesto | `presupuesto.py`, `safety.py` | Tope del día = min(840 / días del mes, lo que queda / días que faltan) |
+| 2.6 campañas nuevas | `campanas.py` | Máx. 1 por ronda |
+| 2.7 elegibilidad | `analyzer.py` (`elegibilidad_grupo`) | Por `servingStatus` de los anuncios del grupo |
+| 2.8 verificación | `ads_api.py` (`_actualizar`, `_crear`), `agente.py` | Relectura + 1 reintento; si falla la creación de campaña a medias, se pausa |
+| 2.9 / 2.9-bis alertas | `alertas.py`, `safety.py` (`problema_de_cuenta`) | Un correo por ronda; aviso inmediato (máx. 1 al día) si la cuenta está parada |
+| 2.10 competencia | hoja Competencia | Solo se usan los ASIN con "Sí" en "Confirmado por Juan" |
+| 2.11 investigación | `investigacion.py` | Claude + búsqueda web, semanal, solo si hay `ANTHROPIC_API_KEY`. Devuelve datos a la hoja Investigación |
+| 3 aprendizaje | `learner.py` | Veredicto con ≥ 10 clics maduros tras el cambio y antes del siguiente |
+| 4 documento único | `documento.py` → `resultados/memoria_agente.xlsx` | Escritura atómica + copia `.bak` |
+| 6.1 extracción API | `ads_api.py` | Sin credenciales todavía: probado solo con una API falsa (`tests/`) |
+| 6.10 legacy | `legacy/` | Movido, no borrado |
+
+### Decisiones de implementación que conviene que Juan conozca
+
+1. **Informes diarios de la API (cambio respecto a §5).** Los listados de la Amazon Ads API (campañas, keywords…) **no traen clics, gasto ni ventas**: esas métricas solo salen de la Reporting API. El agente pide el informe diario `spTargeting` (cada fila lleva su fecha) y lo guarda en la hoja "Diario"; las fotos de "Seguimiento" se siguen guardando para leerlas a simple vista. Ventaja: la regla de los 7 días es exacta. La primera ejecución pide 60 días; después, los últimos 10 (las ventas llegan hasta 7 días tarde).
+2. **Modo sin API.** Mientras no haya credenciales, el mismo motor funciona con la hoja masiva descargada (`fuente_bulk.py`): genera `bulk_cambios_<fecha>.xlsx` para subir a mano y confirma cada cambio al leer la descarga siguiente (a los 14 días sin reflejarse → fallido). ⚠️ El valor "Actualizar" de la columna Operación aún no está confirmado por un informe de Amazon.
+3. **Documento aparte.** `resultados/memoria_agente.xlsx` es un archivo nuevo (se siembra con el histórico y la competencia). `memoria.xlsx` y `memoria_pou.xlsx` son de la etapa manual y tienen fórmulas y tickets de Juan: no se pisan.
+4. **"ACOS predicho" de una candidata** = CPC para competir / (P(compra|clic) × ticket). CPC para competir = la puja recomendada baja de Amazon para esa frase; si es nueva, la mediana de las frases parecidas del producto (específicas y genéricas por separado, porque las genéricas cuestan 3-4 veces más).
+5. **Qué es "probado" (80 %)**: producto con ≥ 10 compras en el histórico y campaña que no es de pruebas, o cualquier campaña que ya haya hecho ≥ 3 compras maduras con ACOS ≤ 35 % (se "gradúa"). Lo demás (pruebas, Pou, campañas abiertas por el agente) es experimentación, a partes iguales dentro del 20 %.
+6. **Coste de oportunidad de abrir campaña (§2.6):** solo se abre si, repartiendo el 20 % entre una campaña experimental más, a cada una le siguen tocando ≥ 2,50 €/día. Con los presupuestos actuales (Pou y Pinza - Pruebas ya son experimentales), el agente **no abrirá campañas nuevas** hasta que alguna se gradúe o se pause.
+7. **Primer efecto esperado en presupuestos**: hoy las 4 campañas están a 7 €/día. Con la regla 80/20, Pou - Principal V2 y Pinza - Pruebas (experimentales) bajarían a ≈2,80 €/día cada una y Pinza/Rejilla - Principal V2 se repartirían ≈22,40 €/día según su ACOS (la pinza se lleva más).
+8. **El agente nunca pausa campañas** (mínimo 1 €/día), así que "todo en pausa" siempre es algo externo → aviso y parada. La única excepción es una campaña que él mismo crea y falla a medias: la pausa y la excluye de esa comprobación.
+
+### Sigue abierto
+
+- ⚠️ Credenciales de la Amazon Ads API (sin ellas `ads_api.py` solo está probado con una API falsa).
+- ⚠️ Correo: falta configurar SMTP (sin él, los correos quedan en `resultados/correos_pendientes/`).
+- ⚠️ ASIN de competencia: conversión media del producto (sin cambios).
+- ⚠️ "sbs": sin aclarar; no bloquea.

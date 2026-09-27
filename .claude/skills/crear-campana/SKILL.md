@@ -20,7 +20,7 @@ Pregunta en UN solo mensaje lo que falte (usa lo que ya haya dicho):
 
 1. **Producto**: nombre o ASIN. Si no lo sabe, lista los productos de la hoja "Anuncios" del histórico (ASIN, SKU, nombre, gasto, compras).
 2. **Presupuesto diario** de la campaña (hasta ahora: 7 €/día por campaña).
-3. **Tope mensual**: suma de TODOS los presupuestos diarios activos × 30. Si pasa del "Presupuesto máximo" de `CLAUDE.md` (hoy 630 €/mes), **para y pregunta** si sube el tope. Solo Juan puede cambiarlo; si lo sube, actualiza `CLAUDE.md`, `safety.py` (`MONTHLY_BUDGET_CAP_EUR`), `marketingV2.md` y `CARTERA_MENSUAL` en `crear_memoria.py`.
+3. **Tope mensual**: suma de TODOS los presupuestos diarios activos × 30. Si pasa del tope de `CLAUDE.md` (hoy 840 €/mes), **para y pregunta** si sube el tope. Solo Juan puede cambiarlo; si lo sube, actualiza `CLAUDE.md`, `config.py` (`TOPE_MENSUAL_EUR`), `marketingV2.md` y `CARTERA_MENSUAL` en `crear_memoria.py`. Ojo: con el agente autónomo en marcha, los presupuestos los reparte él (80/20); el que pongas aquí es solo el de salida.
 4. **¿Campaña de pruebas con ASIN de la competencia?** (como "Pinza - Pruebas"). Si sí, necesitas ASIN competidores: búscalos con WebSearch (amazon.es suele estar bloqueado para WebFetch) y márcalos "a verificar por Juan".
 5. **Estado de la cuenta**: ¿se resolvió el saldo de Seller Central? (si no, las campañas no servirán anuncios aunque estén activas).
 

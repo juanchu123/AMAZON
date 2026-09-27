@@ -1,83 +1,85 @@
-# FreshFinder — Optimizador de Amazon Ads
+# FreshFinder — Agente autónomo de Amazon Ads
 
-Ver `CLAUDE.md` para el diseño completo. Esto es el "cómo lo pongo en marcha".
+Diseño: `AGENTE_AUTONOMO.md` (qué decide y por qué) y `CLAUDE.md` (resumen para Claude Code).
+Esto es el "cómo lo pongo en marcha".
 
-## 0. Requisitos
+## 1. Instalar (una vez)
 
-- Python 3.10+
-- Una cuenta de Amazon Ads con acceso a FreshFinder (la tuya)
-- Una API key de Anthropic propia, desde [console.anthropic.com](https://console.anthropic.com) (distinta de tu acceso a Claude en el chat o en Claude Code) — la usa `keyword_generator.py` para inventar ideas de keywords nuevas. Tiene coste propio de uso de API, separado de cualquier suscripción de Claude.
-
-## 1. Instalar dependencias
+Python 3.10 o más nuevo.
 
 ```bash
-cd freshfinder-ads-agent
+cd AMAZON
 python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-playwright install chromium
 ```
 
-Configura tu API key de Anthropic (para `keyword_generator.py`):
+## 2. Configurar (variables de entorno, en TU ordenador)
+
+Nunca pegues estas claves en un chat ni las subas a GitHub.
+
+| Variable | Para qué | Obligatoria |
+|---|---|---|
+| `AMAZON_ADS_CLIENT_ID` | App de Login with Amazon con acceso a la Amazon Ads API | Sí (modo API) |
+| `AMAZON_ADS_CLIENT_SECRET` | ídem | Sí (modo API) |
+| `AMAZON_ADS_REFRESH_TOKEN` | el token que da el alta OAuth de tu cuenta de Ads | Sí (modo API) |
+| `AMAZON_ADS_PROFILE_ID` | perfil de anunciante; si falta, se usa el de España | No |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | enviar los correos a yubunama62@gmail.com (Gmail: `smtp.gmail.com`, 587, contraseña de aplicación) | No: sin ellas los correos quedan en `resultados/correos_pendientes/` |
+| `ANTHROPIC_API_KEY` | investigación de mercado semanal con Claude (unos céntimos por producto y semana) | No: sin ella no se investiga |
+| `AGENTE_MODELO_LLM` | modelo para la investigación (por defecto `claude-opus-5`) | No |
+| `AGENTE_DOCUMENTO` | dónde está el documento único (por defecto `resultados/memoria_agente.xlsx`) | No |
+
+Mac/Linux: `export VARIABLE=valor` (o en `~/.bashrc`). Windows: `setx VARIABLE valor`.
+
+## 3. Primera ejecución: simulación
+
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...   # Windows: set ANTHROPIC_API_KEY=sk-ant-...
+python agente.py --simular
 ```
 
-## 2. Capturar tu sesión (una vez, a mano)
+Lee la cuenta, guarda los datos del día en el documento único y **cuenta lo que haría sin tocar Amazon** (lo verás en pantalla y en un correo "(simulación)"). Compáralo con lo que ves en la consola de Amazon Ads.
+
+Si todas las campañas están en pausa, el agente te avisa y se para: no reactiva nada. Actívalas tú cuando la cuenta esté bien.
+
+## 4. Modo real
 
 ```bash
-python src/capture_session.py
+python agente.py
 ```
 
-Se abrirá una ventana de Chrome. Inicia sesión tú mismo en Amazon Ads
-(usuario, contraseña, verificación en dos pasos si la tienes activada).
-Cuando veas la lista de campañas de FreshFinder, vuelve a la terminal y
-pulsa Enter. Esto guarda `.auth/session.json` — el agente lo reutilizará
-sin volver a pedirte credenciales.
+- Con credenciales de la API: aplica los cambios, **relee Amazon para confirmar cada uno** y te manda un correo con todo lo que cambió.
+- Sin API: usa la hoja masiva más reciente de `datos/` (Operaciones en bloque → descargar Sponsored Products, desde la creación de las campañas hasta hoy) y genera `resultados/bulk_cambios_<fecha>.xlsx` para que la subas. Los cambios se confirman al leer la siguiente descarga.
 
-**Repite este paso cada vez que `run_daily.py` te avise de que la sesión
-ha caducado.**
+Se puede lanzar las veces que quieras (cada keyword lleva su propio reloj). Recomendado: una vez al día.
 
-## 3. ⚠️ Antes de usarlo con dinero real: fijar los selectores
+- Mac/Linux: `crontab -e` → `15 9 * * * cd /ruta/AMAZON && venv/bin/python agente.py >> resultados/agente.log 2>&1`
+- Windows: Programador de tareas → `venv\Scripts\python.exe agente.py`, con la carpeta del proyecto como directorio de trabajo.
 
-`browser_agent.py` tiene dos funciones sin terminar a propósito:
-`get_keyword_performance()` y `update_bid()`. Los selectores exactos de
-la tabla de keywords y del campo de puja dependen de la estructura real
-del HTML de tu cuenta, que cambia con el tiempo y que yo no puedo fijar
-a ciegas sin verlo en directo.
+Opciones: `--investigar` (fuerza la investigación de mercado), `--sin-investigacion`, `--fuente api|bulk`, `--bulk datos/archivo.xlsx`, `--documento ruta.xlsx`.
 
-Cómo completarlos:
-1. Ejecuta `python src/run_daily.py` una vez cambiando `headless=True`
-   por `headless=False` en `BrowserAgent(...)` — así ves el navegador.
-2. Con el navegador abierto sobre una campaña real, botón derecho >
-   Inspeccionar sobre la tabla de keywords y sobre el campo de puja.
-3. Copia los selectores reales (data-testid, clases, etc.) a
-   `browser_agent.py`, sustituyendo los `TODO` y el `NotImplementedError`.
+Códigos de salida: 0 bien, 1 error (te llega un correo con el detalle), 2 parado por la cuenta.
 
-Dile a Claude Code "ayúdame a terminar browser_agent.py mirando este HTML"
-y pégale el HTML de la tabla — con eso puede escribir el scraper exacto.
+## 5. El documento único
 
-## 4. Probar en modo lectura primero
+`resultados/memoria_agente.xlsx`. Lo que más vas a mirar:
 
-Antes de dejar que aplique cambios reales, comenta las líneas de
-`process_keyword()` en `run_daily.py` que llaman a `agent.update_bid(...)`
-y ejecuta el script. Debe imprimir qué haría, sin tocar nada. Compara esas
-decisiones contra lo que ves tú mismo en la consola de Amazon Ads.
+- **Resumen**: la última ronda en cifras (gasto del mes, tope, cambios).
+- **Segmentación**: cada keyword/ASIN, su estado y la decisión de esta ronda. Columna "Requiere revisión de Juan".
+- **Tickets**: cada cambio con motivo, si se confirmó en Amazon y su veredicto (mejora/empeora) cuando madura.
+- **Competencia**: ASIN de la competencia. **Pon "Sí" en "Confirmado por Juan"** en los que quieras que el agente pueda usar.
 
-## 5. Programarlo para que corra solo cada día
+Ciérralo mientras corre el agente. Si quieres que Claude/Cowork lo vea, haz commit y push.
 
-**Mac/Linux (cron):**
+## 6. Tests
+
 ```bash
-crontab -e
-# Añade (ejecuta cada día a las 9:00):
-0 9 * * * cd /ruta/a/freshfinder-ads-agent && venv/bin/python src/run_daily.py >> logs/run.log 2>&1
+python -m pytest tests/ -q
 ```
 
-**Windows (Task Scheduler):**
-Crea una tarea que ejecute `venv\Scripts\python.exe src\run_daily.py`
-diariamente, con el directorio de trabajo en la carpeta del proyecto.
+Prueban todas las reglas con una API de Amazon falsa (nunca tocan tu cuenta).
 
-## 6. Revisar el histórico
+## 7. Otras herramientas
 
-`logs/decisions.jsonl` — una línea por cambio aplicado. Ábrelo con
-cualquier editor de texto, o pídele a Claude que te lo resuma.
+- `python keyword_ml.py --producto pinza` — el modelo de keywords por producto.
+- `python crear_memoria.py …` — campañas iniciales en hoja masiva (skill `crear-campana`).
+- `legacy/` — el sistema anterior (navegador + LLM decidiendo). Ya no se usa.

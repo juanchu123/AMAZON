@@ -1,3 +1,8 @@
 .auth/
 __pycache__/
 *.pyc
+.pytest_cache/
+# el agente: correos sin enviar y copias de seguridad del documento
+resultados/correos_pendientes/
+resultados/*.bak.xlsx
+resultados/.tmp_*

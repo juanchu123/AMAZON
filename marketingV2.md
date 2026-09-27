@@ -64,16 +64,18 @@ Ejemplo: con una conversión del 11% × 11,24€ × 35% ≈ **0,44€**. Si puja
 
 ## 3. Qué piezas hay y para qué sirve cada una
 
+Desde el 27/09/2026 el sistema es el **agente autónomo** (`AGENTE_AUTONOMO.md`, `README.md`). Resumen:
+
 | Archivo | Qué hace | Estado |
 |---|---|---|
-| `keyword_ml.py` | **Machine learning de keywords.** Lee los CSV de Amazon Ads, relaciona palabras con producto, aprende qué palabras venden y **recomienda frases nuevas para probar**. | ✅ Funciona |
-| `import_historical_data.py` | Importa el rendimiento histórico (CSV) para que la IA lo tenga en cuenta. | ✅ Funciona |
-| `ai_marketing_agent.py` | Claude (vía API) razona cada día con los datos y propone pujas y experimentos. `sanitize_commands()` recorta todo a los límites de seguridad. | ⚠️ Necesita `ANTHROPIC_API_KEY` |
-| `keyword_generator.py` | Claude inventa frases nuevas para experimentos. | ⚠️ Necesita `ANTHROPIC_API_KEY` |
-| `analyzer.py`, `learner.py`, `safety.py`, `marketing_agent.py`, `commands.py` | Reglas de negocio, memoria de decisiones y límites. | ✅ Código listo |
-| `browser_agent.py` | Lee y cambia la cuenta de Amazon Ads con un navegador automático. | ❌ Faltan los selectores (7 `NotImplementedError`) |
-| `capture_session.py` | Login manual una sola vez; guarda la sesión. | ✅ Listo para usar |
-| `run_daily.py` | Orquesta todo cada día. | ❌ Depende de `browser_agent.py` |
+| `agente.py` | Una ronda completa: lee, decide, aplica, verifica, guarda y avisa | ✅ Probado con una API falsa |
+| `ads_api.py` | Amazon Ads API oficial: leer, informe diario, escribir y releer | ⚠️ Falta probarlo con tus credenciales |
+| `fuente_bulk.py` | Sin API: lee la hoja masiva descargada y genera la de cambios | ✅ |
+| `analyzer.py`, `presupuesto.py`, `campanas.py`, `safety.py`, `learner.py` | Reglas de pujas/stop-loss/huecos, reparto 80/20, campañas nuevas, límites y aprendizaje | ✅ |
+| `investigacion.py` | Claude busca y ordena frases candidatas (solo datos) | ⚠️ Necesita `ANTHROPIC_API_KEY` |
+| `keyword_ml.py` | **Machine learning de keywords**: P(compra\|clic) por frase y producto | ✅ |
+| `crear_memoria.py` | Campañas iniciales en hoja masiva (skill `crear-campana`) | ✅ |
+| `legacy/` | Sistema anterior (navegador + LLM decidiendo) | Retirado |
 
 ---
 
@@ -136,33 +138,15 @@ Sin Python instalado también se puede usar en [Google Colab](https://colab.rese
 python import_historical_data.py export.csv --producto B0DCZS1NR6 --campana "Nombre de la campaña" --ad-group Pinza
 ```
 
-### 4.4 Sistema automático diario — ❌ todavía no está listo para usar
+### 4.4 Agente autónomo — ✅ listo, falta conectar la API
 
-En este orden, y sin saltarse ninguno:
-
-1. **Clave de API de Claude** (de [console.anthropic.com](https://console.anthropic.com); tiene coste propio):
-   ```bash
-   export ANTHROPIC_API_KEY=sk-ant-...     # Windows: set ANTHROPIC_API_KEY=sk-ant-...
-   ```
-2. **Capturar la sesión de Amazon Ads** (login manual, una vez):
-   ```bash
-   python capture_session.py
-   ```
-   Se guarda en `.auth/session.json`. **Nunca debe subirse a GitHub** (ver pendientes).
-3. **Completar los selectores de `browser_agent.py`.** Abre el navegador con `headless=False`, inspecciona las tablas reales (clic derecho → Inspeccionar) y pásale el HTML a Claude Code para que escriba el scraper exacto. **No se inventan.**
-4. **Primera ejecución solo de lectura**, sin aplicar cambios: comprobar que lee bien campañas, keywords y términos de búsqueda.
-   ```bash
-   python run_daily.py
-   ```
-5. **Activar los cambios reales** solo cuando las lecturas coincidan con lo que ves en la consola.
-6. **Programarlo una vez al día:**
-   - Mac/Linux: `crontab -e` → `0 9 * * * cd /ruta/proyecto && venv/bin/python run_daily.py >> logs/run.log 2>&1`
-   - Windows: Programador de tareas → `venv\Scripts\python.exe run_daily.py`, con la carpeta del proyecto como directorio de trabajo.
-7. **Revisar** `logs/decisions.jsonl`: una línea por cada cambio aplicado y su resultado.
+Instrucciones completas en `README.md`: variables de entorno (Amazon Ads API, correo, Claude), primera ejecución `python agente.py --simular`, después `python agente.py` una vez al día (cron / Programador de tareas / Cowork). Todo queda en `resultados/memoria_agente.xlsx`.
 
 ---
 
 ## 5. Rutina manual (mientras el sistema diario no esté listo)
+
+> ⚠️ **Sustituida por el agente autónomo** (27/09/2026): sus reglas están en `AGENTE_AUTONOMO.md` §2 (ronda de 3 días + 10 clics, stop-loss de 20 clics o 4 € maduros, puja = P × ticket × ACOS, 12 keywords por grupo, reparto 80/20). Lo de abajo queda como historia de la etapa manual.
 
 Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* están pendientes de su confirmación.
 
@@ -266,14 +250,10 @@ Reglas pedidas por Juan (25/09/2026). Los números marcados como *(propuesto)* e
 
 ## 7. Pendientes conocidos
 
-- [x] ~~Corregir `keyword_ml.py`~~: quitado el modelo de CPC (aprendía de las pujas, no de las palabras). Ahora ordena por compra/clic y da `puja_max_rentable_eur` con ACOS objetivo 35% (`--acos-objetivo` para cambiarlo). Descarta las frases cuya puja máxima no llega a la puja recomendada más baja de Amazon.
+- [ ] **Credenciales de la Amazon Ads API** → primera ejecución `python agente.py --simular` con la cuenta real.
+- [ ] **Correo SMTP** para los avisos (si no, quedan en `resultados/correos_pendientes/`).
 - [ ] **Coste del producto y comisiones de Amazon**, para calcular el ACOS de equilibrio y el beneficio neto real.
-- [x] ~~`Sponsored_Products_Target_Sep_25_2026 (3).csv`~~: era el grupo "Soporte pinza a ver → Pinza". Ya entra en el entrenamiento a través del Excel histórico.
-- [ ] **Falta el `.gitignore`:** su contenido está en un archivo llamado `download`. Hay que renombrarlo antes de capturar la sesión, para que `.auth/` nunca se suba.
-- [ ] Selectores de `browser_agent.py` (ver 4.4).
-- [ ] **Pasar las reglas nuevas de la sección 5 al código.** `safety.py` todavía tiene ±20% por cambio y 24h entre cambios. Hay que cambiarlo a revisión cada 3 días con rango de ±50% sobre la puja original, añadir la puja original al log, el grupo de pruebas y los stop-loss nuevos. `CLAUDE.md` también debe actualizarse.
-- [ ] Confirmar los números marcados como *(propuesto)* en la sección 5.
-- [ ] `safety.py` / `CLAUDE.md` siguen con el fondo de exploración de 20 €/mes: pasar a 50% (50 €/mes) cuando se actualice el código.
-- [ ] Hablar de las operaciones en bloque (bulk sheets) como alternativa a `browser_agent.py`.
-- [ ] **Actualizar el modelo de Claude** en `ai_marketing_agent.py` y `keyword_generator.py`: ahora es `claude-sonnet-4-5`, se puede cambiar con las variables `MARKETING_AGENT_MODEL` y `KEYWORD_GENERATOR_MODEL`.
-- [ ] **Estado de la cuenta:** confirmar que las campañas ya no están en pausa por el saldo de Seller Central antes de activar nada.
+- [ ] Confirmar con Amazon el valor "Actualizar" de la hoja masiva (modo sin API).
+- [ ] Marcar con "Sí" en la hoja Competencia los ASIN de competencia que el agente puede usar.
+- [ ] **Estado de la cuenta:** con todas las campañas en pausa el agente avisa y se para; activarlas es decisión de Juan.
+- [x] ~~Selectores de `browser_agent.py`, fondo de exploración, ±20 %/24 h, modelo de Claude de `ai_marketing_agent.py`~~: todo retirado a `legacy/`, sustituido por el agente autónomo.

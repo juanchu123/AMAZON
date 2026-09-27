@@ -1,74 +1,57 @@
 ---
 name: revision-semanal
-description: Revisión semanal de las campañas de Amazon Ads de FreshFinder a partir de la hoja masiva descargada por Juan — analiza cada keyword/ASIN con las reglas acordadas, actualiza la memoria de seguimiento, genera un bulk de cambios (pujas, pausas, negativas) y un informe. Úsala en la tarea programada de cada lunes o cuando Juan diga "revisa los ads", "revisión semanal" o suba una descarga nueva de Operaciones en bloque.
+description: Revisión semanal de las campañas de Amazon Ads de FreshFinder. Ejecuta el agente autónomo (agente.py) con la hoja masiva que Juan sube a datos/ (modo sin API), o, si el agente ya corre con la API en el ordenador de Juan, solo resume el documento único. Úsala en la tarea programada de cada lunes o cuando Juan diga "revisa los ads", "revisión semanal" o suba una descarga nueva de Operaciones en bloque.
 ---
 
 # Revisión semanal de Amazon Ads
 
-**Tú no tocas la cuenta.** Solo lees lo que Juan sube y le devuelves archivos. Él decide y sube el bulk.
+Las reglas ya no se aplican a mano: las aplica **`agente.py`** (`AGENTE_AUTONOMO.md`, `CLAUDE.md`). Tu trabajo es ejecutarlo con los datos de la semana, comprobar que todo ha ido bien y contárselo a Juan.
 Todo en español, claro, sin jerga. Rama de trabajo: `claude/eager-pascal-g76q2i` (hasta que se fusione a `main`).
 
-## 1. Buscar los datos de la semana
+**Tú nunca tocas la cuenta de Amazon.** En la nube no hay credenciales de la API: el agente solo lee la hoja masiva y prepara otra con los cambios para que Juan la suba.
+
+## 1. Preparar
 
 ```bash
 git fetch origin && git checkout claude/eager-pascal-g76q2i && git merge --no-edit origin/main
-ls -t datos/ 2>/dev/null
+pip install -q -r requirements.txt
+ls -t datos/ resultados/ 2>/dev/null | head -30
 ```
 
-Entrada esperada (la sube Juan a `datos/`):
-- **Preferida:** la hoja masiva descargada de Amazon Ads → Operaciones en bloque → "Crear hoja de cálculo para descargar" (Sponsored Products, rango **desde la creación de las campañas hasta hoy**, incluyendo campañas en pausa). Trae IDs y métricas (impresiones, clics, gasto, ventas, pedidos, ACOS).
-- **Alternativa:** exports de "Segmentación" de cada campaña (CSV/XLSX) — sin IDs, así que el bulk de cambios no se podrá generar; solo informe + memoria.
+## 2. ¿Quién lleva la cuenta esta semana?
 
-Si **no hay ningún archivo nuevo** desde la última revisión (compara con `resultados/revision_*.md`): no inventes nada. Escribe `resultados/revision_<hoy>.md` con "No hay datos nuevos: sube la hoja masiva descargada a datos/" y termina (sin commit si no cambió nada más que eso: sí haz commit del aviso).
+Abre `resultados/memoria_agente.xlsx`, hoja **Resumen** ("Fuente de datos" y "Fecha").
 
-Antes de analizar, abre el archivo y **mira las cabeceras reales** (español): no supongas nombres de columna. Localiza por nombre: Entidad, Operación, ID de campaña/grupo/palabra clave/segmentación, Nombre de campaña, Estado, Puja, Texto de palabra clave, Tipo de coincidencia, Fórmula de segmentación, Impresiones, Clics, Gasto/Coste, Ventas, Pedidos/Compras, ACOS.
+- Si la última ronda fue con la **API de Amazon Ads** hace menos de 7 días: el agente ya corre solo en el ordenador de Juan. **No lo ejecutes** (duplicarías decisiones): salta al paso 4 y solo resume.
+- Si no: sigue con el paso 3.
 
-## 2. Comprobaciones de seguridad (paran la revisión)
+## 3. Ejecutar el agente con la hoja masiva
 
-- Todas las campañas en pausa sin que Juan lo pidiera, 0 impresiones en todo, o señales de problema de cuenta → **no propongas cambios de puja**; el informe dice qué has visto y que revise Seller Central (saldo, Buy Box, stock). CLAUDE.md: nunca "reactivar" por iniciativa propia.
-- Gasto del mes proyectado (gasto del mes / días transcurridos × días del mes) ≥ 90 % del tope de `CLAUDE.md` (hoy 630 €) → **solo bajadas y pausas**.
+Entrada: la **hoja masiva descargada** de Amazon Ads → Operaciones en bloque (Sponsored Products, desde la creación de las campañas hasta hoy, con campañas en pausa), en `datos/`.
 
-## 3. Reglas de decisión (acordadas con Juan — `marketingV2.md` §5)
+Si no hay ninguna descarga más nueva que la última ronda: no inventes nada. Escribe `resultados/revision_<hoy>.md` con "No hay datos nuevos: sube la hoja masiva descargada a datos/", haz commit y termina.
 
-Por cada keyword / ASIN activo de las campañas V2 y de pruebas:
+```bash
+python agente.py --fuente bulk --bulk "datos/<descarga>.xlsx" --sin-investigacion
+echo "salida: $?"      # 0 bien · 2 parado por la cuenta (todo en pausa / problema de pago) · 1 error
+python -m pytest tests/ -q   # por si alguien ha tocado el código
+```
 
-| Situación | Acción |
-|---|---|
-| < 10 clics | No tocar (esperar) |
-| ≥ 15 clics y 0 ventas | **Pausar** (stop-loss) |
-| Puja ya en el mínimo (original −50 %), ≥ 20 clics y ACOS > 50 % | **Pausar** |
-| ACOS < 30 % | Subir 10–25 %, sin pasar de la original +50 % ni de la puja máx. rentable (conversión × ticket medio × 35 %) |
-| ACOS 30–35 % | No tocar |
-| ACOS 35–50 % | Bajar 10–25 %, sin bajar de la original −50 % |
-| ACOS > 50 % | Bajar 25–50 %, sin bajar de la original −50 % |
-| Keyword que ya pasó 2 veces por stop-loss | No reactivar; marcar para Juan |
+- Salida 2: la cuenta está parada. Es correcto que no cambie nada: díselo a Juan (revisar Seller Central: saldo, pago, Oferta Destacada, stock). Nunca reactives nada.
+- Salida 1: lee el error. Si es de lectura de la descarga (cabeceras distintas), mira las cabeceras reales del archivo y corrige `fuente_bulk.py` (búsqueda por nombre de columna); vuelve a ejecutar. No cambies reglas de negocio para "hacer que pase".
+- Si genera `resultados/bulk_cambios_<fecha>.xlsx`: es lo que Juan tiene que subir. ⚠️ El valor "Actualizar" de la columna Operación aún no está confirmado: si Amazon lo rechaza, no se aplica nada (rechaza el archivo entero) y se corrige con su informe de errores (`fuente_bulk.OP_ACTUALIZAR` y la tabla del Paso 5 de la skill `crear-campana`).
 
-- **Puja original** = la de creación (hoja "Segmentación" de la memoria, columna "Puja original"). El rango ±50 % es sobre ella, no acumulativo.
-- **Atribución de 7 días:** las ventas de los últimos 7 días aún pueden llegar. Si una keyword solo tiene clics recientes, sé prudente (preferir "esperar" a "pausar" salvo stop-loss claro).
-- No cambies una keyword que ya cambiaste hace < 7 días (mira los tickets): su efecto aún no se puede medir.
-- **Pruebas → graduación:** una prueba (ASIN o keyword) con ≥ 2 ventas y ACOS ≤ 35 % se propone para pasar a la campaña principal (keywords en Exacta con su CPC medio). Proponer, no ejecutar.
-- Si hay informe de **términos de búsqueda** en `datos/`: términos con ≥ 10 clics y 0 ventas → negativa exacta; con ventas, ACOS ≤ 35 % y que no son keyword → keyword nueva en Exacta (máx. 3 por semana).
-- Nunca subir presupuestos ni crear campañas: eso lo decide Juan (CLAUDE.md, regla 4). Si ves que una campaña se queda sin presupuesto a diario y rinde bien, **recomiéndalo** en el informe.
+## 4. Informe: `resultados/revision_<AAAA-MM-DD>.md`
 
-## 4. Salidas
+Sácalo del documento único (`resultados/memoria_agente.xlsx`), no de tu cabeza:
 
-1. **`resultados/bulk_cambios_<AAAA-MM-DD>.xlsx`** — sobre `plantillas/AdvertisingBulksheetTemplate-seller.xlsx`, hoja "Camp. de Sponsored Products", con los IDs reales del archivo descargado:
-   - Cambio de puja: Entidad "Palabra clave" (o "Segmentación por productos"), Operación de actualización, IDs de campaña/grupo/palabra clave, nueva Puja.
-   - Pausa: igual, Estado "En pausa".
-   - Negativa nueva: Entidad "Palabra clave negativa", Operación "Crear", Tipo "Frase negativa"/"Exacta negativa".
-   - ✔ Valores ya aceptados por Amazon: ver la tabla del Paso 5 de `.claude/skills/crear-campana/SKILL.md`. ⚠ El valor de la **Operación de actualización** ("Actualizar") aún no está confirmado: la primera vez díselo a Juan; si Amazon lo rechaza, no se aplica nada (rechaza el archivo entero) y se corrige con su informe. Apunta el resultado en esa tabla.
-   - Si no hay cambios que proponer, no generes bulk.
-2. **Memoria** — en la memoria que corresponda (`resultados/memoria.xlsx`, `resultados/memoria_<producto>.xlsx`): **solo añadir**, nunca borrar lo que Juan rellenó.
-   - "Seguimiento": una fila por keyword con la fecha de la descarga y sus datos acumulados.
-   - "Tickets": un ticket nuevo por cada cambio propuesto (Estado "Pendiente de aplicar", Base = acumulado actual, motivo con los números).
-   - Recalcula con el script `recalc.py` de la skill `xlsx` (0 errores).
-3. **`resultados/revision_<AAAA-MM-DD>.md`** — informe corto:
-   - Resumen por campaña: gasto, ventas, ACOS, compras (semana y acumulado) y gasto del mes vs tope.
-   - Tabla de cambios propuestos (keyword, antes → después, motivo con números).
-   - Veredictos de tickets que ya cumplen 7 días (Mejora / Empeora).
-   - Alertas (stop-loss, cuenta, presupuesto) y recomendaciones que solo Juan puede decidir.
-   - Qué tiene que hacer Juan: revisar, subir `bulk_cambios_<fecha>.xlsx`, poner "Fecha aplicado" en los tickets.
+- **Resumen**: gasto del mes, proyectado, tope del día, nº de cambios.
+- **Campañas**: fondo (probado / experimentación), presupuesto actual → objetivo, ACOS 30 días.
+- **Cambios de la semana** (hoja Tickets): tabla con campaña, keyword, antes → después, motivo y estado (confirmado / enviado en hoja masiva / fallido).
+- **Veredictos** que han madurado esta semana (mejora / empeora).
+- **Avisos** (hoja Alertas) y keywords con "Requiere revisión de Juan".
+- **Qué tiene que hacer Juan**: subir `bulk_cambios_<fecha>.xlsx` (si lo hay), revisar las marcadas, confirmar ASIN en la hoja Competencia, y la próxima semana volver a subir la descarga (así se confirman los cambios).
 
 ## 5. Entregar
 
-`git add` + commit en español + `git push -u origin claude/eager-pascal-g76q2i` (reintentar con espera si falla la red). Termina con un resumen de 5–10 líneas (es lo que le llega a Juan como aviso): nº de cambios, lo más importante, y el nombre del bulk a subir.
+`git add resultados/ datos/` + commit en español + `git push -u origin claude/eager-pascal-g76q2i` (reintentar con espera si falla la red). El documento único **se commitea siempre**: es la memoria del agente. Termina con un resumen de 5–10 líneas (es lo que le llega a Juan como aviso): nº de cambios, lo más importante y el nombre de la hoja masiva a subir.

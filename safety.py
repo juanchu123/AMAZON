@@ -1,104 +1,132 @@
 """
-safety.py
----------
-Estas reglas van SIEMPRE antes de aplicar cualquier cambio, sin excepción.
-Ninguna otra parte del sistema puede saltárselas, y no se relajan solas
-aunque el rendimiento parezca justificarlo — solo Juan las cambia, y a mano.
+safety.py — los límites que ninguna otra pieza puede saltarse.
+
+Se aplican a TODO lo que propongan analyzer.py, presupuesto.py y campanas.py, justo antes de
+ejecutar. Si algo no pasa, se descarta y queda anotado (nunca se "arregla" a ciegas).
+
+  - Puja: nunca por debajo de 0,02 € (suelo de Amazon). Sin techo artificial (§2.2), pero sí
+    uno matemático: ni con un 100 % de conversión es rentable pujar más que ticket × ACOS máx.
+  - Presupuesto: la suma de presupuestos diarios nunca permite pasar de 840 €/mes (§2.5).
+  - Subidas de puja: prohibidas si el gasto del mes proyectado ya llega al tope (CLAUDE.md).
+  - Cuenta: si todas las campañas están en pausa sin que el agente las pausara, o Amazon
+    avisa de un problema de cuenta/pago, no se toca NADA y se avisa (§2.9-bis).
+  - Nada fuera de lo que cubren las reglas: el agente nunca reactiva nada que esté en pausa.
 """
 
-from datetime import datetime, timedelta
+import calendar
 
-MAX_BID_CHANGE_PCT = 0.20      # tope: ±20% por ejecución
-RESET_HOURS = 24                # no tocar la misma keyword antes de 24h
-MONTHLY_BUDGET_CAP_EUR = 840.0  # presupuesto duro mensual (Juan, 26/09/2026: 4 campañas x 7 €/día)
-MAX_NEW_KEYWORDS_PER_DAY = 3    # tope de keywords "cosechadas" (con datos reales) por ejecución
-NEW_KEYWORD_STARTING_BID_FACTOR = 1.0  # puja inicial = puja actual del grupo (ajustable)
+import config
+from modelo import ACTIVO, CREAR_CAMPANA, NUEVA_KEYWORD, NUEVO_ASIN, PAUSAR, PRESUPUESTO, PUJA
 
-# --- Fondo de exploración: keywords 100% nuevas, inventadas, sin datos previos ---
-# Distinto del harvesting de arriba: aquí no hay ningún dato real detrás, es una
-# apuesta pura para que el sistema aprenda qué frases nuevas podrían funcionar.
-EXPLORATION_FUND_MONTHLY_EUR = 20.0   # asumido de una conversación anterior — ajustable
-MAX_NEW_EXPERIMENTS_PER_DAY = 3       # cuántas ideas nuevas se prueban por día
-EXPERIMENT_STOP_LOSS_RATIO = 0.5      # se mata al superar el 50% de su presupuesto sin ventas
-EXPERIMENT_STARTING_BID_EUR = 0.30    # puja de partida conservadora para algo sin historial
+SEÑALES_PROBLEMA_CUENTA = ("PAYMENT_FAILURE", "SUSPENDED", "ACCOUNT_OUT_OF_BUDGET", "ADVERTISER_POLICING",
+                           "ADVERTISER_OUT_OF_BUDGET", "ACCOUNT_SUSPENDED")
 
 
-def is_within_reset_window(last_change_iso: str | None, now: datetime) -> bool:
-    """True si la keyword YA fue tocada dentro de las últimas RESET_HOURS
-    horas -> en ese caso, NO se debe volver a tocar en esta ejecución.
-    """
-    if last_change_iso is None:
-        return False
-    last_change = datetime.fromisoformat(last_change_iso)
-    return (now - last_change) < timedelta(hours=RESET_HOURS)
+def dias_mes(hoy):
+    return calendar.monthrange(hoy.year, hoy.month)[1]
 
 
-def capped_new_bid(current_bid: float, direction: str, aggressiveness: float) -> float:
-    """direction: 'subir' o 'bajar'. aggressiveness: 0.0–1.0 (de learner.py).
-
-    El cambio real aplicado es aggressiveness * MAX_BID_CHANGE_PCT, nunca
-    más que el tope. aggressiveness solo decide CUÁNTO dentro del tope,
-    jamás lo supera.
-    """
-    if not (0.0 <= aggressiveness <= 1.0):
-        raise ValueError("aggressiveness debe estar entre 0 y 1")
-
-    pct_change = MAX_BID_CHANGE_PCT * aggressiveness
-
-    if direction == "subir":
-        return round(current_bid * (1 + pct_change), 2)
-    elif direction == "bajar":
-        return round(current_bid * (1 - pct_change), 2)
-    else:
-        raise ValueError("direction debe ser 'subir' o 'bajar'")
+def presupuesto_diario_total(hoy, gasto_mes):
+    """Lo máximo que pueden sumar los presupuestos diarios hoy sin pasar de 840 €/mes:
+    el ritmo medio del mes (840 / días del mes) y, si ya se ha gastado de más, lo que queda
+    repartido entre los días que faltan (hoy incluido). Lo menor de los dos."""
+    ritmo = config.TOPE_MENSUAL_EUR / dias_mes(hoy)
+    if gasto_mes is None:
+        return round(ritmo, 2)
+    quedan = dias_mes(hoy) - hoy.day + 1
+    restante = max(0.0, config.TOPE_MENSUAL_EUR - gasto_mes)
+    return round(min(ritmo, restante / quedan), 2)
 
 
-def projected_monthly_spend(spend_so_far_this_month: float, day_of_month: int) -> float:
-    """Proyección lineal simple: gasto hasta ahora / días transcurridos * 30.
-    Conservadora a propósito — mejor sobreestimar el gasto que quedarse corto.
-    """
-    if day_of_month <= 0:
-        return spend_so_far_this_month
-    daily_avg = spend_so_far_this_month / day_of_month
-    return round(daily_avg * 30, 2)
+def gasto_proyectado(hoy, gasto_mes):
+    if gasto_mes is None:
+        return None
+    transcurridos = max(1, hoy.day - 1)          # los datos llegan hasta ayer
+    return gasto_mes / transcurridos * dias_mes(hoy)
 
 
-def budget_allows_bid_increase(spend_so_far_this_month: float, day_of_month: int) -> bool:
-    """False si el gasto proyectado ya roza el presupuesto mensual — en ese
-    caso solo se permiten bajadas/pausas, ninguna subida de puja, el resto
-    del mes, aunque el rendimiento lo justifique.
-    """
-    projected = projected_monthly_spend(spend_so_far_this_month, day_of_month)
-    return projected < MONTHLY_BUDGET_CAP_EUR
+def permite_subidas(hoy, gasto_mes):
+    proy = gasto_proyectado(hoy, gasto_mes)
+    return proy is None or proy < config.TOPE_MENSUAL_EUR
 
 
-def new_keyword_bid(current_search_term_cpc: float) -> float:
-    """Puja inicial para una keyword recién promovida desde un término de
-    búsqueda: parte del CPC medio que ya venía pagando ese término (no un
-    valor arbitrario), para no sobrepagar de salida por algo sin historial
-    propio como keyword independiente.
-    """
-    return round(current_search_term_cpc * NEW_KEYWORD_STARTING_BID_FACTOR, 2)
+def puja_valida(puja, ticket):
+    """Devuelve la puja ajustada al suelo, o None si es absurda (señal de un error de datos)."""
+    if puja is None:
+        return None
+    puja = round(max(config.PUJA_MINIMA_AMAZON, puja), 2)
+    if ticket and puja > ticket * config.ACOS_OBJETIVO_MAX + 0.005:
+        return None
+    return puja
 
 
-def experiment_budget_per_keyword() -> float:
-    """Cuánto presupuesto tiene asignado, en total, cada keyword experimental
-    (inventada, sin datos previos): el fondo de exploración mensual repartido
-    entre el número de experimentos que se lanzan cada día.
-    """
-    return round(EXPLORATION_FUND_MONTHLY_EUR / MAX_NEW_EXPERIMENTS_PER_DAY, 2)
+def problema_de_cuenta(cuenta, pausadas_por_el_agente):
+    """Motivo para parar y avisar, o None si la cuenta está sana (§2.9-bis y CLAUDE.md)."""
+    if cuenta.avisos_cuenta:
+        return "Amazon avisa de un problema de cuenta: " + "; ".join(cuenta.avisos_cuenta)
+    estados = [c.estado_servicio or "" for c in cuenta.campanas.values()] + \
+              [a.estado_servicio or "" for a in cuenta.anuncios]
+    malas = sorted({s for s in estados if any(x in s.upper() for x in SEÑALES_PROBLEMA_CUENTA)})
+    if malas:
+        return "Amazon marca un problema de cuenta o de pago: " + ", ".join(malas)
+    ajenas = [c for c in cuenta.campanas.values() if c.id not in pausadas_por_el_agente]
+    if not ajenas:
+        return "No hay ninguna campaña en la cuenta (o no se ha podido leer ninguna)."
+    if not any(c.estado == ACTIVO for c in ajenas):
+        return (f"Todas las campañas ({len(ajenas)}) están en pausa y no las ha pausado el agente "
+                "(¿saldo de Seller Central, Oferta Destacada, stock, suspensión?). No se reactiva nada.")
+    return None
 
 
-def should_kill_experiment(cost_since_creation: float, orders_since_creation: int) -> bool:
-    """Stop-loss de una keyword experimental. Se revisa en cada ejecución
-    diaria para cada experimento activo — no espera a que termine el mes.
-
-    Regla: si NO ha generado ninguna venta todavía y su gasto acumulado
-    desde que se creó supera el 50% de su presupuesto asignado, se mata
-    inmediatamente. Una sola venta, aunque sea pequeña, la salva de esta
-    regla (entonces pasa a tratarse como una keyword normal, vía
-    decide_base_action en el siguiente ciclo).
-    """
-    if orders_since_creation > 0:
-        return False
-    return cost_since_creation > experiment_budget_per_keyword() * EXPERIMENT_STOP_LOSS_RATIO
+def filtrar(cambios, cuenta, hoy, gasto_mes, ticket_de):
+    """Última barrera antes de ejecutar. Devuelve (aprobados, descartados[(cambio, motivo)])."""
+    aprobados, descartados = [], []
+    subidas_ok = permite_subidas(hoy, gasto_mes)
+    tope_dia = presupuesto_diario_total(hoy, gasto_mes)
+    for c in cambios:
+        motivo = None
+        if c.tipo == PUJA:
+            el = cuenta.elementos.get(c.clave)
+            if el is None or el.estado != ACTIVO or not cuenta.grupo_activo(el.id_grupo):
+                motivo = "el elemento ya no está activo"
+            else:
+                p = puja_valida(c.despues, ticket_de(c.producto))
+                if p is None:
+                    motivo = f"puja {c.despues} fuera de lo posible (más que ticket × ACOS máx.)"
+                elif p > (c.antes or 0) and not subidas_ok:
+                    motivo = "el gasto del mes proyectado ya llega al tope: solo se permiten bajadas y pausas"
+                else:
+                    c.despues = p
+        elif c.tipo == PAUSAR:
+            el = cuenta.elementos.get(c.clave)
+            if el is None or el.estado != ACTIVO:
+                motivo = "el elemento ya no está activo"
+        elif c.tipo in (NUEVA_KEYWORD, NUEVO_ASIN):
+            if not cuenta.grupo_activo(c.id_grupo):
+                motivo = "el grupo no está activo"
+            elif puja_valida(c.despues, ticket_de(c.producto)) is None:
+                motivo = "puja fuera de lo posible"
+            elif not subidas_ok:
+                motivo = "el gasto del mes proyectado ya llega al tope: no se añade gasto nuevo"
+        elif c.tipo == PRESUPUESTO:
+            if c.despues < config.PRESUPUESTO_MINIMO_AMAZON:
+                motivo = "por debajo del mínimo de Amazon (1 €/día)"
+        elif c.tipo == CREAR_CAMPANA:
+            if not subidas_ok:
+                motivo = "el gasto del mes proyectado ya llega al tope"
+        else:
+            motivo = f"tipo de cambio no permitido: {c.tipo}"
+        if motivo:
+            descartados.append((c, motivo))
+        else:
+            aprobados.append(c)
+    # el total de presupuestos diarios (campañas activas + nuevas) nunca pasa del tope del día
+    nuevos = {c.id_campana: c.despues for c in aprobados if c.tipo == PRESUPUESTO}
+    total = sum(nuevos.get(c.id, c.presupuesto) for c in cuenta.campanas.values() if c.estado == ACTIVO)
+    total += sum(c.extra.get("presupuesto", 0) for c in aprobados if c.tipo == CREAR_CAMPANA)
+    if total > tope_dia + 0.01:
+        subidas = [c for c in aprobados if (c.tipo == PRESUPUESTO and c.despues > c.antes) or c.tipo == CREAR_CAMPANA]
+        for c in subidas:
+            aprobados.remove(c)
+            descartados.append((c, f"los presupuestos sumarían {total:.2f} €/día, más que el tope de {tope_dia:.2f} €/día"))
+    return aprobados, descartados
