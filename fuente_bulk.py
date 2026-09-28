@@ -110,7 +110,7 @@ class FuenteBulk:
             "puja_g": k.i("puja predeterminada"), "puja": k.i("puja", exacto=True), "texto": k.i("texto de palabra clave"),
             "coinc": k.i("tipo de coincidencia"), "formula": k.i("formula de segmentacion por productos"),
             "resuelta": k.i("texto de expresion resuelta", "expresion resuelta"),
-            "impr": k.i("impresiones"), "clics": k.i("clics"), "gasto": k.i("gasto", "coste"),
+            "impr": k.i("impresiones"), "clics": k.i("clics"), "gasto": k.i("gasto", "coste", "inversion"),
             "ventas": k.i("ventas"), "pedidos": k.i("pedidos", "compras"),
         }
         v = lambda r, c: r[col[c]] if col[c] is not None and col[c] < len(r) else None
