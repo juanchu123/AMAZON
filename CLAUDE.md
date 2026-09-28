@@ -78,8 +78,10 @@ Las reglas no saben de dónde vienen los datos: la API y la hoja masiva producen
 
 ## Carpetas: `entradas/` y `salidas/`, una por día (`AAAA-MM-DD`)
 
-- `entradas/<día>/`: la **hoja masiva** descargada de Amazon y `Documento_investigacion_keywords.xlsx` (Cowork). El agente usa la carpeta más reciente; la investigación se importa a la hoja "Investigación" (solo datos: entra en campaña lo que pase el filtro de ACOS predicho).
-- `salidas/<día>/`: `memoria_agente.xlsx` actualizada, `bulk_cambios_<fecha>.xlsx` para subir a Amazon y `correos_pendientes/`.
+- `entradas/<día>/`: la **hoja masiva** descargada de Amazon e `investigacion_<día>.csv` (Cowork; `ASIN;Palabra clave;Motivo;Fuente;Volumen;Puja sugerida (€)`). El agente usa la hoja masiva de la carpeta más reciente e importa la investigación de todas las carpetas hasta hoy.
+- `salidas/<día>/`: `memoria_agente.xlsx` actualizada, `bulk_cambios_<fecha>.xlsx` para subir a Amazon, `Documento_investigacion_keywords.xlsx` y `correos_pendientes/`.
+- **Investigación sin repetir:** la hoja "Investigación" es una bolsa de todas las frases de todos los días, una vez por producto (misma firma = sin acentos, mayúsculas, orden ni palabras vacías). `python investigacion.py --ya-vistas` escribe `salidas/<hoy>/frases_ya_vistas.csv` para que Cowork no busque otra vez lo ya visto. El Excel de investigación lo genera el agente con la misma función con la que decide (`prediccion.Catalogo.evaluar`).
+- El código vive solo en este repo: Cowork lo ejecuta pero no lo modifica. Su rutina diaria está en `RUTINA_COWORK.md`.
 - La memoria de cada día **parte de la del día anterior más reciente** (o de la del mismo día si se repite): nunca se empieza de cero.
 
 ## Documento único — `salidas/<día>/memoria_agente.xlsx`
@@ -100,6 +102,7 @@ Programado con cron / Programador de tareas (o Cowork) en el ordenador de Juan: 
 - `crear-campana`: campañas iniciales con memoria + bulk (manual, en pausa).
 - `investigar-keywords`: puntuar frases de Helium 10 con el modelo (manual).
 - `revision-semanal` (rutina de los lunes en la nube): corre el agente con la entrada más reciente de `entradas/` y deja el informe en `salidas/<día>/`.
+- Rutina diaria de Cowork en el ordenador de Juan: `RUTINA_COWORK.md` (descarga, investigación nueva, agente, informe).
 
 ## Estado actual / pendiente
 

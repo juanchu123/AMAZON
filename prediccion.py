@@ -130,6 +130,36 @@ class Catalogo:
         return (maduro.compras + k * p0) / (maduro.clics + k)
 
     # ------------------------------------------------------------ candidatas (§2.3)
+    def _ajenas(self, p):
+        """Palabras que identifican a OTROS productos: nunca en las keywords de este."""
+        ajenas = set().union(*(q["especificas"] for n, q in kml.PERFILES.items() if n != p.perfil))
+        return ajenas - (kml.PERFILES[p.perfil]["especificas"] if p.perfil else set())
+
+    def evaluar(self, asin, texto, coincidencia=None, pc=None, rec=None):
+        """Puntúa una frase para un producto con el mismo filtro que usa el agente para decidir.
+        Devuelve {p, cpc, acos_pred, puja, pasa, motivo}. pc: P(compra|clic) si ya se conoce
+        (si no, la del modelo); rec: puja sugerida por Amazon para esa frase, si se sabe."""
+        coincidencia = coincidencia or config.COINCIDENCIA_NUEVAS
+        p = self.producto(asin)
+        if p.perfil:
+            kml.usar_perfil(p.perfil)
+        pc = self.p_modelo(asin, texto, coincidencia) if pc is None else pc
+        cpc = self.cpc_para(asin, texto, rec)
+        res = {"p": pc, "cpc": cpc, "acos_pred": None, "puja": None, "pasa": False}
+        otras = sorted(kml.firma(texto) & self._ajenas(p))
+        if otras:
+            return res | {"motivo": "lleva palabras de otro producto: " + ", ".join(otras)}
+        if not p.ticket or not cpc or pc <= 0:
+            return res | {"motivo": "sin datos del producto para predecir"}
+        acos_pred = cpc / (pc * p.ticket)
+        puja = pc * p.ticket * config.ACOS_MAX_KEYWORD_NUEVA
+        if not p.modelo_fiable:
+            puja = min(puja, config.PUJA_MAX_SIN_MODELO)
+        pasa = acos_pred <= config.ACOS_MAX_KEYWORD_NUEVA
+        return res | {"acos_pred": acos_pred, "puja": max(config.PUJA_MINIMA_AMAZON, round(puja, 2)), "pasa": pasa,
+                      "motivo": "entra si hay hueco en un grupo del producto" if pasa else
+                                f"ACOS predicho {acos_pred:.0%} > {config.ACOS_MAX_KEYWORD_NUEVA:.0%}"}
+
     def candidatas(self, asin, ya_usadas, investigacion=()):
         """Keywords candidatas para el producto que pasan el filtro de ACOS predicho ≤ 30 %,
         ordenadas de mejor a peor. ya_usadas: firmas (keyword_ml.firma) que el producto ya tiene
@@ -159,10 +189,9 @@ class Catalogo:
         for fila in investigacion:
             texto = str(fila.get("Palabra clave") or "").strip().lower()
             if texto:
-                rec = fila.get("Puja sugerida (€)")
+                rec = num(fila.get("Puja sugerida (€)"), None)
                 brutas.append((texto, config.COINCIDENCIA_NUEVAS, self.p_modelo(asin, texto, config.COINCIDENCIA_NUEVAS),
-                               "investigación", str(fila.get("Motivo") or "")[:200],
-                               rec if isinstance(rec, (int, float)) and rec > 0 else None))
+                               "investigación", str(fila.get("Motivo") or "")[:200], rec if rec and rec > 0 else None))
         # 3) frases nuevas que genera el modelo de keyword_ml
         if p.modelo_fiable:
             try:
@@ -174,24 +203,17 @@ class Catalogo:
             except Exception:
                 pass
 
-        # palabras que identifican a OTROS productos: nunca en las keywords de este
-        ajenas = set().union(*(q["especificas"] for n, q in kml.PERFILES.items() if n != p.perfil))
-        ajenas -= kml.PERFILES[p.perfil]["especificas"] if p.perfil else set()
         out = []
         for texto, coinc, pc, fuente, motivo, rec in brutas:
             fi = kml.firma(texto)
-            cpc = self.cpc_para(asin, texto, rec)
-            if not fi or fi in vistas or pc <= 0 or not cpc or fi & ajenas:
+            if not fi or fi in vistas:
                 continue
-            vistas.add(fi)
-            acos_pred = cpc / (pc * ticket)
-            if acos_pred > config.ACOS_MAX_KEYWORD_NUEVA:
-                continue
-            puja = pc * ticket * config.ACOS_MAX_KEYWORD_NUEVA
-            if not p.modelo_fiable:
-                puja = min(puja, config.PUJA_MAX_SIN_MODELO)
-            out.append({"texto": texto, "coincidencia": coinc, "p": pc, "acos_pred": acos_pred,
-                        "puja": max(config.PUJA_MINIMA_AMAZON, round(puja, 2)), "fuente": fuente, "motivo": motivo})
+            ev = self.evaluar(asin, texto, coinc, pc, rec)
+            if ev["acos_pred"] is not None:
+                vistas.add(fi)
+            if ev["pasa"]:
+                out.append({"texto": texto, "coincidencia": coinc, "p": pc, "acos_pred": ev["acos_pred"],
+                            "puja": ev["puja"], "fuente": fuente, "motivo": motivo})
         out.sort(key=lambda c: c["acos_pred"])
         return out
 

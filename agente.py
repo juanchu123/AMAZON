@@ -15,8 +15,9 @@ cada campaña llevan su propio reloj (≥ 3 días y ≥ 10 clics nuevos), así q
   8. Guardar todo en el documento (escritura atómica) y mandar UN correo con los cambios.
 
 Carpetas (carpetas.py), una por día:
-  entradas/AAAA-MM-DD/   hoja masiva descargada de Amazon + Documento_investigacion_keywords.xlsx
-  salidas/AAAA-MM-DD/    memoria_agente.xlsx actualizada + bulk_cambios_<fecha>.xlsx + correos sin enviar
+  entradas/AAAA-MM-DD/   hoja masiva descargada de Amazon + investigacion_<día>.csv (Cowork)
+  salidas/AAAA-MM-DD/    memoria_agente.xlsx actualizada + bulk_cambios_<fecha>.xlsx +
+                         Documento_investigacion_keywords.xlsx + correos sin enviar
 Se usa la carpeta de entrada más reciente, y la memoria parte de la de la salida más reciente.
 
 Uso:
@@ -234,21 +235,31 @@ def avisar(doc, ahora, tipo, clave, asunto, cuerpo, simular, inmediato=True):
 
 
 # ---------------------------------------------------------------- la ronda
-def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto", log=print, entrada=None):
-    """entrada: carpeta de entrada del día (para leer el documento de investigación), o None."""
+def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto", log=print, entrada=None, salida=None):
+    """entrada: carpeta de entrada del día (investigación de Cowork), o None.
+    salida: carpeta de salida del día (ahí se deja el Excel de investigación), o None."""
     if doc.nuevo:
         doc.sembrar(hoy)
     resumen = [("Fecha", f"{ahora:%d/%m/%Y %H:%M}"), ("Fuente de datos", fuente.nombre),
                ("Entrada", str(entrada or getattr(fuente, "ruta", "") or "")),
                ("Memoria de partida", str(doc.origen or "ninguna (primera ejecución)")),
                ("Modo", "SIMULACIÓN (no se toca Amazon)" if simular else "real")]
-    doc_inv = carpetas.investigacion(entrada)
-    if doc_inv:
-        dia = carpetas._dia(entrada) or hoy
-        for asin, n in investigacion.importar_documento(doc, doc_inv, dia).items():
-            resumen.append((f"Investigación importada {asin} ({doc_inv.name})", n))
+    # investigación de TODAS las carpetas de entrada hasta hoy (aunque no traigan hoja masiva):
+    # lo ya importado no se repite, así que solo entra lo nuevo
+    if entrada:
+        for carpeta in reversed(carpetas.dias(Path(entrada).parent, hoy) or [Path(entrada)]):
+            for archivo, asin, n in investigacion.importar_entrada(doc, carpeta, carpetas.dia(carpeta) or hoy):
+                if n:
+                    resumen.append((f"Investigación {asin} ({archivo}): frases nuevas", n))
 
     cuenta = fuente.leer_cuenta(hoy)
+    if salida:
+        try:
+            excel = investigacion.escribir_excel(doc, catalogo, cuenta, Path(salida) / "Documento_investigacion_keywords.xlsx", hoy)
+            if excel:
+                resumen.append(("Excel de investigación", str(excel)))
+        except OSError as e:     # p. ej. el Excel está abierto en Windows: no para la ronda
+            log(f"No se pudo escribir el Excel de investigación: {e}")
     series = doc.series()
     doc.guardar_foto(hoy, cuenta, fuente.acumulados(cuenta, series, hoy), _producto_de(cuenta))
     series = doc.series()
@@ -393,7 +404,7 @@ def main(argv=None):
     doc = Documento(args.documento or salida / config.NOMBRE_MEMORIA, origen=carpetas.memoria_anterior(hoy))
     try:
         fuente = elegir_fuente(args, doc, entrada, salida)
-        res = ejecutar(fuente, doc, Catalogo(), hoy, ahora, simular=args.simular, entrada=entrada,
+        res = ejecutar(fuente, doc, Catalogo(), hoy, ahora, simular=args.simular, entrada=entrada, salida=salida,
                        investigar="no" if args.sin_investigacion else ("si" if args.investigar else "auto"))
     except SystemExit:
         raise

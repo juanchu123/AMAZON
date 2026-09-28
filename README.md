@@ -48,7 +48,7 @@ python agente.py
 ```
 
 - Con credenciales de la API: aplica los cambios, **relee Amazon para confirmar cada uno** y te manda un correo con todo lo que cambió.
-- Sin API: usa la hoja masiva de la carpeta más reciente de `entradas/AAAA-MM-DD/` (Operaciones en bloque → descargar Sponsored Products, desde la creación de las campañas hasta hoy) y genera `salidas/<hoy>/bulk_cambios_<fecha>.xlsx` para que la subas. Los cambios se confirman al leer la siguiente descarga. Si en la misma carpeta está `Documento_investigacion_keywords.xlsx`, se importa a la hoja "Investigación".
+- Sin API: usa la hoja masiva de la carpeta más reciente de `entradas/AAAA-MM-DD/` (Operaciones en bloque → descargar Sponsored Products, desde la creación de las campañas hasta hoy) y genera `salidas/<hoy>/bulk_cambios_<fecha>.xlsx` para que la subas. Los cambios se confirman al leer la siguiente descarga. Si en las carpetas de entrada hay `investigacion_<día>.csv` (Cowork), sus frases nuevas se añaden a la hoja "Investigación" (sin repetir) y en `salidas/<hoy>/` queda `Documento_investigacion_keywords.xlsx` con todas puntuadas. `python investigacion.py --ya-vistas` lista las frases que ya no hace falta investigar.
 
 Se puede lanzar las veces que quieras (cada keyword lleva su propio reloj). Recomendado: una vez al día.
 

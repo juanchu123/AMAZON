@@ -18,13 +18,17 @@ claude-opus-5). Se ejecuta como mucho una vez por semana y producto (DIAS_ENTRE_
 Coste orientativo: unos céntimos por producto y semana.
 """
 
+import argparse
+import csv
 import json
 import os
 import re
 from datetime import timedelta
+from pathlib import Path
 
 import config
 import keyword_ml as kml
+from documento import num
 
 INSTRUCCIONES = """Eres un investigador de palabras clave para anuncios Sponsored Products de Amazon.es.
 Tu único trabajo es encontrar y ordenar frases de búsqueda que compradores reales de España escribirían
@@ -153,14 +157,61 @@ def investigar(prod, existentes, cliente=None):
     return out[:config.MAX_CANDIDATAS_INVESTIGACION], archivo
 
 
-def importar_documento(doc, ruta, dia):
-    """Carga Documento_investigacion_keywords.xlsx (lo genera Cowork cada día) en la hoja Investigación.
+COLUMNAS_CSV = ("ASIN", "Palabra clave", "Motivo", "Fuente", "Volumen", "Puja sugerida (€)")
 
-    Cada hoja de producto ("Pinza (B0DCZS1NR6)"…) trae todas las frases investigadas, ordenadas de
-    mejor a peor. Se guardan con la fecha de la carpeta de entrada como la investigación vigente del
-    producto (si ya se importó ese día, se sustituye; lo que llegó de otras fuentes se queda). Solo son datos: el filtro de ACOS predicho del
-    agente decide si alguna entra. Las frases que solo propone el modelo ("Recomendada ML") no se
-    importan: el agente ya genera las suyas. Devuelve {asin: nº de frases}."""
+
+def _euros(v):
+    if v in (None, ""):
+        return None
+    try:
+        return float(str(v).replace("€", "").replace(",", ".").strip())
+    except ValueError:
+        return None
+
+
+def añadir(doc, asin, dia, filas):
+    """Añade a la hoja Investigación las frases que el producto aún no tiene. Misma firma = misma
+    frase (sin acentos, mayúsculas, orden de palabras ni palabras vacías): nunca se repite.
+    filas: [{"Palabra clave", "Motivo", "Fuente", "Volumen", "Puja sugerida (€)"}]. Devuelve cuántas son nuevas."""
+    hoja = doc.hojas["Investigación"]
+    vistas = {kml.firma(str(f.get("Palabra clave") or "")) for f in hoja if str(f["Producto (ASIN)"]) == asin}
+    rank = max((int(num(f["Rank"])) for f in hoja
+                if str(f["Producto (ASIN)"]) == asin and str(f["Fecha"])[:10] == dia.isoformat()), default=0)
+    nuevas = 0
+    for f in filas:
+        frase = str(f.get("Palabra clave") or "").strip().lower()
+        fi = kml.firma(frase)
+        if not fi or fi in vistas:
+            continue
+        vistas.add(fi)
+        rank, nuevas = rank + 1, nuevas + 1
+        hoja.append({"Fecha": dia.isoformat(), "Producto (ASIN)": asin, "Rank": rank, **f, "Palabra clave": frase})
+    return nuevas
+
+
+def importar_csv(doc, ruta, dia):
+    """investigacion_<día>.csv de Cowork (separador ';', UTF-8), cabecera exacta
+    ASIN;Palabra clave;Motivo;Fuente;Volumen;Puja sugerida (€). Devuelve {asin: frases nuevas}."""
+    with open(ruta, encoding="utf-8-sig", newline="") as fh:
+        lector = csv.DictReader(fh, delimiter=";")
+        faltan = [c for c in COLUMNAS_CSV if c not in (lector.fieldnames or [])]
+        if faltan:
+            raise SystemExit(f"{ruta.name}: faltan las columnas {faltan} (cabecera: {lector.fieldnames})")
+        por_asin = {}
+        for r in lector:
+            asin = str(r.get("ASIN") or "").strip().upper()
+            if asin.startswith("B0"):
+                por_asin.setdefault(asin, []).append({
+                    "Palabra clave": r["Palabra clave"], "Motivo": str(r.get("Motivo") or "")[:300],
+                    "Fuente": f"{r.get('Fuente') or ''} ({ruta.name})".strip(), "Volumen": r.get("Volumen") or None,
+                    "Puja sugerida (€)": _euros(r.get("Puja sugerida (€)"))})
+    return {asin: añadir(doc, asin, dia, filas) for asin, filas in por_asin.items()}
+
+
+def importar_documento(doc, ruta, dia):
+    """Documento_investigacion_keywords.xlsx: una hoja por producto ("Pinza (B0DCZS1NR6)"…) con las
+    frases investigadas. Se añaden las que el producto aún no tiene; las que solo propone el modelo
+    ("Recomendada ML") no, porque el agente ya genera las suyas. Devuelve {asin: frases nuevas}."""
     from openpyxl import load_workbook
     wb = load_workbook(ruta, read_only=True, data_only=True)
     importadas = {}
@@ -168,7 +219,7 @@ def importar_documento(doc, ruta, dia):
         m = re.search(r"\((B0[A-Z0-9]{8})\)", ws.title)
         if not m:
             continue
-        asin, filas = m[1], list(ws.iter_rows(values_only=True))
+        filas = list(ws.iter_rows(values_only=True))
         cab = next((i for i, r in enumerate(filas) if r and r[0] == "Frase"), None)
         if cab is None:
             continue
@@ -176,24 +227,141 @@ def importar_documento(doc, ruta, dia):
         nuevas = []
         for r in filas[cab + 1:]:
             d = dict(zip(cols, r))
-            frase, fuentes = str(d.get("Frase") or "").strip().lower(), str(d.get("Fuentes") or "").strip()
-            if not frase or fuentes == "Recomendada ML":
+            fuentes = str(d.get("Fuentes") or d.get("Fuente") or "").strip()
+            if not d.get("Frase") or fuentes == "Recomendada ML":
                 continue
-            motivo = f"{fuentes}. {d.get('Motivo') or ''}".strip(" .")
-            nuevas.append({"Fecha": dia.isoformat(), "Producto (ASIN)": asin, "Rank": len(nuevas) + 1,
-                           "Palabra clave": frase, "Motivo": motivo[:300], "Fuente": f"Documento de investigación ({ruta.name})",
-                           "Volumen": d.get("Señal de volumen"), "Puja sugerida (€)": d.get("Puja sugerida Amazon (€)")})
-        doc.hojas["Investigación"] = [f for f in doc.hojas["Investigación"]
-                                      if not (str(f["Producto (ASIN)"]) == asin and str(f["Fecha"])[:10] == dia.isoformat()
-                                              and str(f.get("Fuente") or "").startswith("Documento de investigación"))]
-        doc.hojas["Investigación"] += nuevas
-        importadas[asin] = len(nuevas)
+            nuevas.append({"Palabra clave": str(d["Frase"]), "Motivo": f"{fuentes}. {d.get('Motivo') or ''}".strip(" .")[:300],
+                           "Fuente": f"{fuentes} ({ruta.name})", "Volumen": d.get("Señal de volumen") or d.get("Volumen"),
+                           "Puja sugerida (€)": _euros(d.get("Puja sugerida Amazon (€)") or d.get("Puja sugerida (€)"))})
+        importadas[m[1]] = añadir(doc, m[1], dia, nuevas)
     return importadas
+
+
+def importar_entrada(doc, carpeta, dia):
+    """Todo lo de investigación que haya en una carpeta de entrada. Devuelve [(archivo, asin, nuevas)]."""
+    out = []
+    for ruta in sorted(Path(carpeta).glob("investigacion*.csv")):
+        out += [(ruta.name, a, n) for a, n in importar_csv(doc, ruta, dia).items()]
+    for ruta in sorted(Path(carpeta).glob("*.xlsx")):
+        if ruta.name.lower().startswith(config.PREFIJO_INVESTIGACION):
+            out += [(ruta.name, a, n) for a, n in importar_documento(doc, ruta, dia).items()]
+    return out
+
+
+# ---------------------------------------------------------------- para Cowork: qué no volver a buscar
+def ya_vistas(doc):
+    """Frases que ya no hace falta investigar, por producto: las investigadas (todos los días), las
+    que el producto tiene en campañas y las del histórico. [(asin, frase, firma, origen)]."""
+    out, vistas = [], set()
+
+    def poner(asin, frase, origen):
+        fi = kml.firma(str(frase or ""))
+        if asin and fi and (asin, fi) not in vistas:
+            vistas.add((asin, fi))
+            out.append((asin, str(frase).strip().lower(), " ".join(sorted(fi)), origen))
+
+    for f in doc.hojas["Investigación"]:
+        poner(str(f["Producto (ASIN)"]), f.get("Palabra clave"), f"investigada el {str(f['Fecha'])[:10]}")
+    for f in doc.hojas["Segmentación"]:
+        if f.get("Tipo") == "keyword":
+            poner(str(f.get("Producto (ASIN)") or ""), f.get("Palabra clave / segmentación"), "en campañas")
+    for f in doc.hojas["Histórico"]:
+        poner(str(f.get("Producto (ASIN)") or ""), f.get("Keyword / segmento"), "histórico")
+    return out
+
+
+def escribir_ya_vistas(doc, ruta):
+    Path(ruta).parent.mkdir(parents=True, exist_ok=True)
+    filas = ya_vistas(doc)
+    with open(ruta, "w", encoding="utf-8-sig", newline="") as fh:
+        w = csv.writer(fh, delimiter=";")
+        w.writerow(["ASIN", "Palabra clave", "Firma", "Origen"])
+        w.writerows(filas)
+    return len(filas)
+
+
+# ---------------------------------------------------------------- Excel de investigación (para Juan)
+def escribir_excel(doc, catalogo, cuenta, ruta, hoy):
+    """Documento_investigacion_keywords.xlsx: todas las frases investigadas de cada producto,
+    puntuadas con la MISMA función con la que decide el agente (prediccion.Catalogo.evaluar)."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    asins = sorted({str(f["Producto (ASIN)"]) for f in doc.hojas["Investigación"] if f.get("Producto (ASIN)")})
+    if not asins:
+        return None
+    en_campanas = {}
+    for e in cuenta.elementos.values():
+        en_campanas.setdefault(cuenta.producto_de_grupo(e.id_grupo), set()).add(kml.firma(e.texto))
+    wb = Workbook()
+    res = wb.active
+    res.title = "Resumen"
+    res.append([f"Investigación de keywords — FreshFinder ({hoy:%d/%m/%Y})"])
+    res.append(["Todas las frases investigadas (todos los días), una vez por producto, puntuadas con el filtro "
+                f"del agente: entra en campaña si el ACOS predicho es ≤ {config.ACOS_MAX_KEYWORD_NUEVA:.0%} y hay hueco."])
+    res.append([])
+    res.append(["Producto", "Hoja", "Frases", f"Pasan filtro (≤ {config.ACOS_MAX_KEYWORD_NUEVA:.0%})",
+                f"Cerca ({config.ACOS_MAX_KEYWORD_NUEVA:.0%}–{config.ACOS_OBJETIVO_MAX:.0%})", "Ya en campañas", "Nuevas hoy"])
+    cab = ["Frase", "Primera vez", "Fuente", "Volumen", "Puja sugerida (€)", "En campañas", "P(compra|clic)",
+           "CPC estimado (€)", "ACOS predicho", "¿Pasa filtro?", "Puja propuesta (€)", "Decisión del filtro",
+           "Motivo de la investigación"]
+    negrita, azul = Font(bold=True, color="FFFFFF"), PatternFill("solid", fgColor="305496")
+    for asin in asins:
+        filas = []
+        for f in doc.investigacion(asin)[1]:
+            frase = str(f["Palabra clave"])
+            ev = catalogo.evaluar(asin, frase, rec=_euros(f.get("Puja sugerida (€)")))
+            ya = kml.firma(frase) in en_campanas.get(asin, set())
+            filas.append([frase, str(f["Fecha"])[:10], f.get("Fuente"), f.get("Volumen"), _euros(f.get("Puja sugerida (€)")),
+                          "Sí" if ya else "No", round(ev["p"], 4) if ev["p"] else None,
+                          round(ev["cpc"], 2) if ev["cpc"] else None,
+                          round(ev["acos_pred"], 3) if ev["acos_pred"] is not None else None,
+                          "Sí" if ev["pasa"] and not ya else "No", ev["puja"],
+                          "ya está en campañas" if ya else ev["motivo"], f.get("Motivo")])
+        filas.sort(key=lambda r: (r[9] != "Sí", r[8] if r[8] is not None else 99))
+        titulo = f"{catalogo.producto(asin).corto} ({asin})"[:31]
+        ws = wb.create_sheet(titulo)
+        ws.append(cab)
+        for c in ws[1]:
+            c.font, c.fill = negrita, azul
+        for r in filas:
+            ws.append(r)
+        ws.freeze_panes = "A2"
+        ws.column_dimensions["A"].width = 48
+        cerca = sum(1 for r in filas if r[8] is not None and config.ACOS_MAX_KEYWORD_NUEVA < r[8] <= config.ACOS_OBJETIVO_MAX)
+        res.append([catalogo.producto(asin).corto, titulo, len(filas), sum(r[9] == "Sí" for r in filas), cerca,
+                    sum(r[5] == "Sí" for r in filas), sum(r[1] == hoy.isoformat() for r in filas)])
+    res["A1"].font = Font(bold=True, size=13)
+    Path(ruta).parent.mkdir(parents=True, exist_ok=True)
+    wb.save(ruta)
+    return ruta
 
 
 def guardar(doc, asin, hoy, candidatas, archivo):
     fuente = "LLM + búsqueda web" + (f" + {archivo}" if archivo else "")
-    for i, c in enumerate(candidatas, 1):
-        doc.hojas["Investigación"].append({"Fecha": hoy.isoformat(), "Producto (ASIN)": asin, "Rank": i,
-                                           "Palabra clave": c["palabra_clave"], "Motivo": c["motivo"],
-                                           "Fuente": fuente, "Volumen": c["volumen"]})
+    return añadir(doc, asin, hoy, [{"Palabra clave": c["palabra_clave"], "Motivo": c["motivo"], "Fuente": fuente,
+                                    "Volumen": c["volumen"]} for c in candidatas])
+
+
+def main(argv=None):
+    """python investigacion.py --ya-vistas  ->  salidas/<hoy>/frases_ya_vistas.csv (para Cowork)."""
+    from datetime import date
+    import carpetas
+    from documento import Documento
+    ap = argparse.ArgumentParser(description="Investigación de keywords: utilidades para Cowork")
+    ap.add_argument("--ya-vistas", action="store_true", help="escribe las frases que ya no hace falta investigar")
+    ap.add_argument("--hoy", help="AAAA-MM-DD (por defecto, hoy)")
+    args = ap.parse_args(argv)
+    if not args.ya_vistas:
+        ap.print_help()
+        return
+    hoy = date.fromisoformat(args.hoy) if args.hoy else date.today()
+    memoria = carpetas.memoria_anterior(hoy)
+    if not memoria:
+        raise SystemExit(f"No hay ninguna memoria en {config.SALIDAS}/: ejecuta antes el agente.")
+    ruta = carpetas.salida(hoy) / "frases_ya_vistas.csv"
+    n = escribir_ya_vistas(Documento(memoria), ruta)
+    print(f"{n} frases ya vistas (de {memoria}) -> {ruta}")
+
+
+if __name__ == "__main__":
+    main()

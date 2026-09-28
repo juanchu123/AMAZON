@@ -33,6 +33,7 @@ from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 import config
+import keyword_ml as kml
 from modelo import Metricas
 
 COLUMNAS = {
@@ -284,13 +285,18 @@ class Documento:
                 and (not solo_confirmados or str(c.get("Confirmado por Juan") or "").strip().lower() in ("sí", "si"))]
 
     def investigacion(self, asin):
-        """Última investigación del producto: [(palabra, motivo)] en orden de rank."""
-        filas = [f for f in self.hojas["Investigación"] if str(f["Producto (ASIN)"]) == asin]
+        """Todas las frases investigadas del producto, de todos los días, una por firma (sin acentos,
+        mayúsculas ni orden de palabras) y en el orden en que llegaron: (fecha de la última, filas)."""
+        filas, vistas = [], set()
+        for f in sorted((f for f in self.hojas["Investigación"] if str(f["Producto (ASIN)"]) == asin),
+                        key=lambda f: (str(f["Fecha"])[:10], num(f["Rank"], 999))):
+            fi = kml.firma(str(f.get("Palabra clave") or ""))
+            if fi and fi not in vistas:
+                vistas.add(fi)
+                filas.append(f)
         if not filas:
             return None, []
-        ult = max(str(f["Fecha"])[:10] for f in filas)
-        filas = sorted((f for f in filas if str(f["Fecha"])[:10] == ult), key=lambda f: num(f["Rank"], 999))
-        return fecha(ult), filas
+        return fecha(max(str(f["Fecha"])[:10] for f in filas)), filas
 
 
 def _celda(v):
