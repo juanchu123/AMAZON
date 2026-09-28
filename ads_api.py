@@ -27,8 +27,9 @@ from datetime import date, timedelta
 import requests
 
 import config
-from modelo import (ACTIVO, ARCHIVADO, AUTO, CATEGORIA, KEYWORD, PAUSADO, PRODUCTO, Anuncio, Campana,
-                    Cuenta, Elemento, Grupo)
+import pujas
+from modelo import (ACTIVO, ALZA_BAJA, AMAZON_BUSINESS, ARCHIVADO, AUTO, CATEGORIA, FINALIZADA, KEYWORD, PAGINA_PRODUCTO, PAUSADO,
+                    PRODUCTO, PUJA_FIJA, RESTO_BUSQUEDA, SOLO_BAJA, SUPERIOR, Anuncio, Campana, Cuenta, Elemento, Grupo)
 
 REGIONES = {
     "EU": ("https://advertising-api-eu.amazon.com", "https://api.amazon.co.uk/auth/o2/token"),
@@ -51,6 +52,10 @@ ESTADO = {"ENABLED": ACTIVO, "PAUSED": PAUSADO, "ARCHIVED": ARCHIVADO}
 ESTADO_API = {v: k for k, v in ESTADO.items()}
 COINCIDENCIA = {"BROAD": "Amplia", "PHRASE": "Frase", "EXACT": "Exacta"}
 COINCIDENCIA_API = {v: k for k, v in COINCIDENCIA.items()}
+EMPLAZAMIENTO = {"PLACEMENT_TOP": SUPERIOR, "PLACEMENT_REST_OF_SEARCH": RESTO_BUSQUEDA,
+                 "PLACEMENT_PRODUCT_PAGE": PAGINA_PRODUCTO, "SITE_AMAZON_BUSINESS": AMAZON_BUSINESS}
+EMPLAZAMIENTO_API = {v: k for k, v in EMPLAZAMIENTO.items()}
+ESTRATEGIA_API = {SOLO_BAJA: config.ESTRATEGIA_PUJAS, ALZA_BAJA: "AUTO_FOR_SALES", PUJA_FIJA: "MANUAL"}
 
 COLUMNAS_INFORME = ["date", "campaignId", "adGroupId", "keywordId", "impressions", "clicks", "cost",
                     "purchases7d", "sales7d"]
@@ -155,12 +160,20 @@ class AmazonAdsAPI:
         estados = {"stateFilter": {"include": ["ENABLED", "PAUSED"]}}
         for c in self._listar("campaigns", estados):
             ext = c.get("extendedData") or {}
+            puj = c.get("dynamicBidding") or {}
+            fin = date.fromisoformat(c["endDate"][:10]) if c.get("endDate") else None
+            estado = ESTADO.get(c.get("state"), PAUSADO)
             cuenta.campanas[str(c["campaignId"])] = Campana(
-                id=str(c["campaignId"]), nombre=c.get("name", ""), estado=ESTADO.get(c.get("state"), PAUSADO),
+                id=str(c["campaignId"]), nombre=c.get("name", ""),
+                estado=FINALIZADA if estado == ACTIVO and fin and fin < cuenta.fecha else estado,
                 presupuesto=float((c.get("budget") or {}).get("budget") or 0),
                 segmentacion=c.get("targetingType", "MANUAL"),
                 id_cartera=str(c["portfolioId"]) if c.get("portfolioId") else None,
-                estado_servicio=ext.get("servingStatus", ""))
+                estado_servicio=ext.get("servingStatus", ""),
+                estrategia_pujas=pujas.normalizar_estrategia(puj.get("strategy")),
+                ajustes_emplazamiento={EMPLAZAMIENTO[x["placement"]]: float(x.get("percentage") or 0)
+                                       for x in puj.get("placementBidding") or [] if x.get("placement") in EMPLAZAMIENTO},
+                fecha_fin=fin)
         for g in self._listar("adGroups", estados):
             cuenta.grupos[str(g["adGroupId"])] = Grupo(
                 id=str(g["adGroupId"]), id_campana=str(g["campaignId"]), nombre=g.get("name", ""),
@@ -267,6 +280,15 @@ class AmazonAdsAPI:
     def cambiar_presupuesto(self, id_campana, euros):
         return self._actualizar("campaigns", id_campana, {"budget": {"budget": round(euros, 2), "budgetType": "DAILY"}},
                                 lambda f: abs(float((f.get("budget") or {}).get("budget") or 0) - round(euros, 2)) < 0.005)
+
+    def cambiar_estrategia(self, campana, estrategia):
+        """Cambia la estrategia de pujas conservando los ajustes de emplazamiento que tenga."""
+        valor = ESTRATEGIA_API[estrategia]
+        ajustes = [{"placement": EMPLAZAMIENTO_API[e], "percentage": int(round(v))}
+                   for e, v in (campana.ajustes_emplazamiento or {}).items() if e in EMPLAZAMIENTO_API]
+        return self._actualizar("campaigns", campana.id,
+                                {"dynamicBidding": {"strategy": valor, "placementBidding": ajustes}},
+                                lambda f: (f.get("dynamicBidding") or {}).get("strategy") == valor)
 
     def _crear(self, entidad, fila, comprobar):
         """POST + relectura. Devuelve (id | None, detalle)."""

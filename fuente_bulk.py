@@ -16,15 +16,17 @@ columnas "(Solo informativo)" que cambian con el tiempo.
 """
 
 import re
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from openpyxl import load_workbook
 
 import config
 import keyword_ml as kml
-from modelo import (ACTIVO, ARCHIVADO, AUTO, CATEGORIA, KEYWORD, NUEVA_KEYWORD, NUEVO_ASIN, PAUSADO, PAUSAR,
-                    PRESUPUESTO, PRODUCTO, PUJA, CREAR_CAMPANA, Anuncio, Campana, Cuenta, Elemento, Grupo, Metricas)
+import pujas
+from modelo import (ACTIVO, ARCHIVADO, AUTO, CATEGORIA, ESTRATEGIA, FINALIZADA, KEYWORD, NUEVA_KEYWORD, NUEVO_ASIN,
+                    PAUSADO, PAUSAR, PRESUPUESTO, PRODUCTO, PUJA, SOLO_BAJA, CREAR_CAMPANA, Anuncio, Campana, Cuenta,
+                    Elemento, Grupo, Metricas)
 
 HOJA = "Camp. de Sponsored Products"
 PLANTILLA = config.RAIZ / "plantillas" / "AdvertisingBulksheetTemplate-seller.xlsx"
@@ -41,6 +43,16 @@ def _estado(v):
     if "activ" in s or "enabled" in s or "habilit" in s:
         return ACTIVO
     return PAUSADO
+
+
+def _fecha(v):
+    """'20250121', una fecha de Excel o nada."""
+    if isinstance(v, datetime):
+        return v.date()
+    if isinstance(v, date):
+        return v
+    m = re.fullmatch(r"(20\d\d)-?(\d\d)-?(\d\d)", str(v or "").strip())
+    return date(int(m[1]), int(m[2]), int(m[3])) if m else None
 
 
 def _num(v):
@@ -109,6 +121,8 @@ class FuenteBulk:
             "presupuesto": k.i("presupuesto diario", "presupuesto"), "sku": k.i("sku"), "asin": k.i("asin"),
             "puja_g": k.i("puja predeterminada"), "puja": k.i("puja", exacto=True), "texto": k.i("texto de palabra clave"),
             "coinc": k.i("tipo de coincidencia"), "formula": k.i("formula de segmentacion por productos"),
+            "estrategia": k.i("estrategia de pujas"), "emplazamiento": k.i("emplazamiento", exacto=True),
+            "porcentaje": k.i("porcentaje", exacto=True), "fin": k.i("fecha de finalizacion"),
             "resuelta": k.i("texto de expresion resuelta", "expresion resuelta"),
             "impr": k.i("impresiones"), "clics": k.i("clics"), "gasto": k.i("gasto", "coste", "inversion"),
             "ventas": k.i("ventas"), "pedidos": k.i("pedidos", "compras"),
@@ -116,6 +130,7 @@ class FuenteBulk:
         v = lambda r, c: r[col[c]] if col[c] is not None and col[c] < len(r) else None
         s = lambda r, c: str(v(r, c)).strip() if v(r, c) not in (None, "") else ""
         cuenta = Cuenta(fecha=hoy or date.today())
+        ajustes = []
         for r in filas[1:]:
             ent = kml.normalizar(s(r, "entidad"))
             met = Metricas(_num(v(r, "clics")), _num(v(r, "gasto")), _num(v(r, "pedidos")), _num(v(r, "ventas")),
@@ -125,7 +140,10 @@ class FuenteBulk:
                     id=s(r, "id_c"), nombre=s(r, "nombre_c") or s(r, "id_c"), estado=_estado(v(r, "estado")),
                     presupuesto=_num(v(r, "presupuesto")),
                     segmentacion="AUTO" if "autom" in kml.normalizar(s(r, "tipo_seg")) else "MANUAL",
-                    id_cartera=s(r, "id_cart") or None)
+                    id_cartera=s(r, "id_cart") or None, estrategia_pujas=pujas.normalizar_estrategia(v(r, "estrategia")),
+                    fecha_fin=_fecha(v(r, "fin")))
+            elif ent == "ajuste de puja":
+                ajustes.append((s(r, "id_c"), pujas.normalizar_emplazamiento(v(r, "emplazamiento")), _num(v(r, "porcentaje"))))
             elif ent == "grupo de anuncios":
                 cuenta.grupos[s(r, "id_g")] = Grupo(id=s(r, "id_g"), id_campana=s(r, "id_c"),
                                                     nombre=s(r, "nombre_g") or s(r, "id_g"), estado=_estado(v(r, "estado")),
@@ -151,6 +169,12 @@ class FuenteBulk:
                 cuenta.elementos[s(r, "id_t")] = Elemento(
                     clave=s(r, "id_t"), tipo=tipo, id_campana=s(r, "id_c"), id_grupo=s(r, "id_g"), texto=texto,
                     coincidencia=coinc, estado=_estado(v(r, "estado")), puja=_num(v(r, "puja")) or None, metricas=met)
+        for id_c, lugar, pct in ajustes:
+            if id_c in cuenta.campanas and lugar:
+                cuenta.campanas[id_c].ajustes_emplazamiento[lugar] = pct
+        for c in cuenta.campanas.values():
+            if c.estado == ACTIVO and c.fecha_fin and c.fecha_fin < cuenta.fecha:
+                c.estado = FINALIZADA
         # la puja por defecto del grupo cuando la fila no trae puja propia
         for e in cuenta.elementos.values():
             if e.puja is None and e.id_grupo in cuenta.grupos:
@@ -191,6 +215,9 @@ class FuenteBulk:
             elif c.tipo == PRESUPUESTO:
                 fila(Entidad="Campaña", Operación=OP_ACTUALIZAR, **{"ID de la campaña": c.id_campana,
                                                                      "Presupuesto diario": c.despues})
+            elif c.tipo == ESTRATEGIA:
+                fila(Entidad="Campaña", Operación=OP_ACTUALIZAR, **{"ID de la campaña": c.id_campana,
+                                                                     "Estrategia de pujas": c.despues})
             elif c.tipo == NUEVA_KEYWORD:
                 fila(Entidad="Palabra clave", Operación="Crear", **ids, **{
                     "Estado": ACTIVADO, "Puja": c.despues, "Texto de palabra clave": c.texto,
@@ -204,7 +231,7 @@ class FuenteBulk:
                 fila(Entidad="Campaña", Operación="Crear", **{
                     "ID de la campaña": x["nombre"], "Nombre de la campaña": x["nombre"], "Fecha de inicio": f"{hoy:%Y%m%d}",
                     "Tipo de segmentación": "Manual", "Estado": ACTIVADO, "Presupuesto diario": x["presupuesto"],
-                    "ID de la cartera": x.get("id_cartera")})
+                    "Estrategia de pujas": SOLO_BAJA, "ID de la cartera": x.get("id_cartera")})
                 fila(Entidad="Grupo de anuncios", Operación="Crear", **ref, **{
                     "Nombre del grupo de anuncios": x["nombre_grupo"], "Estado": ACTIVADO,
                     "Puja predeterminada del grupo de anuncios": x["puja_grupo"]})

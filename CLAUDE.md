@@ -32,6 +32,7 @@ agente.py  (orquestador: una ejecución = una ronda; se puede lanzar cuantas vec
  ├─ documento.py      documento único (resultados/memoria_agente.xlsx), escritura atómica
  ├─ learner.py        veredicto de cada cambio (con clics maduros) y agresividad / confianza aprendidas
  ├─ analyzer.py       por keyword/ASIN: elegibilidad, ronda, stop-loss, puja, huecos hasta 12
+ ├─ pujas.py          sistema de pujas: puja objetivo, tope rentable, multiplicador de Amazon y estrategia de cada campaña
  ├─ prediccion.py     por producto: ticket, conversión, modelo de keyword_ml.py, candidatas (ACOS predicho)
  ├─ presupuesto.py    reparto 80/20 del tope del día entre campañas
  ├─ campanas.py       ¿abrir campaña nueva? (solo si el 20 % da para pagarla de verdad)
@@ -53,7 +54,8 @@ Las reglas no saben de dónde vienen los datos: la API y la hoja masiva producen
 1. **Elegibilidad (§2.7):** si el anuncio del grupo no se puede mostrar (sin Oferta Destacada, sin stock, ficha rechazada…) no se toca nada del grupo y se avisa.
 2. **Ronda (§2.1):** un elemento solo se decide con **≥ 3 días** desde su último cambio **y ≥ 10 clics nuevos**. Clic **maduro** = más de 7 días (atribución de Amazon).
 3. **Stop-loss (§2.4):** **20 clics maduros o 4 € maduros sin ninguna venta → pausar** (nunca borrar). Una venta lo libra. Pausada 2 veces → "Requiere revisión de Juan"; el agente **nunca reactiva nada**.
-4. **Puja (§2.2):** `P(compra|clic) × ticket medio × ACOS objetivo`, con el ACOS entre 30 % y 35 % según la agresividad aprendida. P(compra|clic) = modelo de `keyword_ml.py` mezclado con los clics maduros propios. **Suelo 0,02 €, sin techo artificial**, estrategia "solo reducir".
+4. **Puja (§2.2, `pujas.py`):** `P(compra|clic) × ticket medio × ACOS objetivo`, con el ACOS entre 30 % y 35 % según la agresividad aprendida. P(compra|clic) = modelo de `keyword_ml.py` mezclado con los clics maduros propios. **Suelo 0,02 €, sin techo artificial**, pero la puja escrita nunca pasa de `tope rentable / multiplicador` (tope = P × ticket × ACOS de equilibrio; multiplicador = lo que Amazon puede subirla por estrategia y emplazamiento), así que el clic más caro posible no pasa del equilibrio.
+   **Estrategia de pujas (la elige el agente por campaña):** "al alza y a la baja" solo si la campaña tiene ≥ 10 compras maduras en 30 días con ACOS ≤ equilibrio y el margen deja que Amazon suba la puja sin pasar del equilibrio; si no, "solo a la baja". El cambio va en la misma ronda que las pujas. Campañas con la fecha de finalización pasada = terminadas: no se tocan.
 5. **Huecos (§2.3):** máximo **12 keywords/ASIN activos por grupo**, cada producto por su cuenta; los huecos se rellenan con candidatas (histórico, modelo, investigación) con **ACOS predicho ≤ 30 %**. ASIN de competencia: solo los de la hoja "Competencia" con "Sí" de Juan.
 6. **Presupuesto (§2.5):** tope del día = lo que permite no pasar de 840 €/mes; 20 % a experimentación a partes iguales, 80 % a campañas probadas por puntuación (ACOS de 30 días × confianza aprendida). Mínimo 1 €/día por campaña; nunca se pausa una campaña por presupuesto.
 7. **Campañas nuevas (§2.6):** por defecto se añade a la campaña existente. Se abre una nueva (máx. 1 por ronda) solo si el producto no tiene ninguna, o todas están 12/12 y hay una candidata claramente buena (≤ 25 %), y además a cada campaña experimental le seguirían tocando ≥ 2,50 €/día.
@@ -63,7 +65,7 @@ Las reglas no saben de dónde vienen los datos: la API y la hoja masiva producen
 
 1. **Tope mensual 840 €.** Si el gasto proyectado del mes ya llega al tope: solo bajadas y pausas.
 2. **Cuenta parada (§2.9-bis):** si todas las campañas están en pausa sin que las pausara el agente, o Amazon marca un problema de cuenta o de pago → correo inmediato y **parar sin tocar nada**. Nunca se reactiva nada por iniciativa propia.
-3. Nada fuera de estas reglas (negativas automáticas, Sponsored Brands/Display, ubicaciones, cambiar la cartera…) sin que Juan lo pida.
+3. Nada fuera de estas reglas (negativas automáticas, Sponsored Brands/Display, ajustes de emplazamiento, cambiar la cartera…) sin que Juan lo pida. La **estrategia de pujas** sí la gestiona el agente (autorizado por Juan, 28/09/2026). Los ajustes de emplazamiento se leen y cuentan en la puja, pero no se tocan (si hay alguno > 0 se avisa).
 4. Cualquier cambio de estas reglas lo pide Juan explícitamente; no se relajan porque "los datos lo justifiquen".
 
 ## Aprendizaje (learner.py)
@@ -100,6 +102,8 @@ Programado con cron / Programador de tareas (o Cowork) en el ordenador de Juan: 
 - [ ] La conversión de los ASIN de competencia usa la media del producto (se refinará con datos reales de cada ASIN).
 - [ ] Coste del producto y comisiones de Amazon para calcular el ACOS de equilibrio real.
 - [ ] (Futuro) Negativas automáticas — aplazado por Juan.
+- [ ] Hoja "Economía" con los costes reales por producto (P0-B §2): hasta entonces el ACOS de equilibrio es el 35 % del objetivo (`config.acos_equilibrio`).
+- [ ] Resto de la especificación de mejoras (28/09/2026): P0-A completo, P0-B §1-3 y §5, P1, P2. Hecho: P0-B §4 (sistema de pujas).
 
 ## Notas importantes
 

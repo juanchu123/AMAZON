@@ -33,7 +33,7 @@ DIAS_MADUREZ = 7                    # atribución de Amazon: un clic "madura" a 
 
 # ---------------------------------------------------------------- pujas (§2.2)
 PUJA_MINIMA_AMAZON = 0.02           # suelo real de Amazon (único límite duro de la puja)
-ESTRATEGIA_PUJAS = "LEGACY_FOR_SALES"  # "Pujas dinámicas: solo reducir" en la API v3
+ESTRATEGIA_PUJAS = "LEGACY_FOR_SALES"  # "Pujas dinámicas: solo a la baja" en la API v3
 CAMBIO_MINIMO_PUJA_EUR = 0.02       # no se mueve una puja por menos de esto…
 CAMBIO_MINIMO_PUJA_PCT = 0.05       # …ni por menos del 5 % (evita ruido: cambios que no cambian nada)
 PRIOR_CLICS = 20                    # peso del modelo frente a los datos propios de la keyword:
@@ -41,6 +41,22 @@ PRIOR_CLICS = 20                    # peso del modelo frente a los datos propios
 MIN_COMPRAS_MODELO = 10             # producto con < 10 compras: el modelo no es fiable (se usa
 PUJA_MAX_SIN_MODELO = 0.30          # su conversión media) y las keywords nuevas pujan ≤ 0,30 €
 PUJA_GRUPO_DEFECTO = 0.30
+
+# ---------------------------------------------------------------- estrategia de pujas (mejoras P0-B §4)
+# Gestión autorizada por Juan (especificación de mejoras, 28/09/2026): el agente elige por campaña
+# entre "solo a la baja" y "al alza y a la baja" (pujas.elegir_estrategia).
+ALZA_MIN_COMPRAS_30D = 10           # "al alza y a la baja" solo con ≥ 10 compras maduras en 30 días…
+                                    # …y ACOS ≤ equilibrio (campaña probada, como el fondo del 80 %)
+# Cuánto puede subir Amazon la puja escrita con "al alza y a la baja" (ayuda de Amazon Ads):
+SUBIDA_DINAMICA_SUPERIOR = 1.00     # hasta +100 % en la parte superior de la búsqueda (1ª página)
+SUBIDA_DINAMICA_RESTO = 0.50        # hasta +50 % en el resto de emplazamientos
+# ACOS a partir del cual cada venta pierde dinero. Hasta que exista la hoja "Economía" con los
+# costes reales de cada producto (P0-B §2), se usa el máximo del objetivo que fijó Juan (35 %).
+ACOS_EQUILIBRIO_DEFECTO = ACOS_OBJETIVO_MAX
+
+
+def acos_equilibrio(asin=None):
+    return ACOS_EQUILIBRIO_DEFECTO
 
 # ---------------------------------------------------------------- keywords (§2.3, §2.4)
 MAX_KEYWORDS_POR_GRUPO = 12         # por campaña / grupo de anuncios, cada producto por su cuenta

@@ -8,8 +8,9 @@ Para cada elemento de un grupo activo:
      ≥ 10 clics nuevos desde entonces. Si no, "esperar".
   2. Stop-loss (§2.4): 20 clics MADUROS (>7 días) o 4 € en clics maduros sin ninguna venta
      -> PAUSAR (nunca borrar). Una sola venta lo libra. Segunda pausa -> revisión de Juan.
-  3. Puja (§2.2): P(compra|clic) × ticket medio × ACOS objetivo, con el ACOS dentro del
-     30-35 % según la agresividad que ha aprendido learner.py para esa keyword.
+  3. Puja (§2.2): la calcula pujas.py — P(compra|clic) × ticket medio × ACOS objetivo (30-35 % según
+     la agresividad que ha aprendido learner.py), limitada para que ni con lo que Amazon suba por la
+     estrategia y los emplazamientos se pague un clic por encima del equilibrio.
 Y por cada grupo:
   4. Huecos (§2.3): hasta 12 keywords (o ASIN) activas; los huecos se rellenan con las mejores
      candidatas con ACOS predicho ≤ 30 %.
@@ -20,6 +21,7 @@ No ejecuta nada: devuelve Cambios que pasan por safety.py y después por la fuen
 import config
 import keyword_ml as kml
 import learner
+import pujas
 from modelo import (ACTIVO, AUTO, KEYWORD, NUEVA_KEYWORD, NUEVO_ASIN, PAUSAR, PRODUCTO, PUJA, CATEGORIA,
                     Cambio, Metricas)
 
@@ -137,17 +139,18 @@ def _decidir_elemento(el, cuenta, doc, series, catalogo, hoy, d):
     mad_total = series.maduro(el.clave, hoy)
     p = catalogo.p_compra(asin, el.texto, el.coincidencia, mad_total)
     aggr = learner.agresividad(doc, asin, el.texto, el.coincidencia)
-    acos = config.ACOS_OBJETIVO_MIN + (config.ACOS_OBJETIVO_MAX - config.ACOS_OBJETIVO_MIN) * aggr
-    objetivo = round(max(config.PUJA_MINIMA_AMAZON, p * ticket * acos), 2)
-    diferencia = abs(objetivo - el.puja)
+    calc = pujas.calcular(cuenta.campanas[el.id_campana], p, ticket, aggr, asin)
+    nueva = calc.puja
+    diferencia = abs(nueva - el.puja)
     if diferencia < max(config.CAMBIO_MINIMO_PUJA_EUR, config.CAMBIO_MINIMO_PUJA_PCT * el.puja):
-        d.notas[el.clave] = f"Mantener: puja {el.puja:.2f} € ya está en su punto ({objetivo:.2f} €)"
+        d.notas[el.clave] = f"Mantener: puja {el.puja:.2f} € ya está en su punto ({nueva:.2f} €)"
         return None
-    sentido = "Subir" if objetivo > el.puja else "Bajar"
-    d.notas[el.clave] = f"{sentido} puja {el.puja:.2f} -> {objetivo:.2f} €"
-    return Cambio(tipo=PUJA, antes=el.puja, despues=objetivo,
-                  motivo=(f"{sentido}: P(compra|clic) {p:.1%} × ticket {ticket:.2f} € × ACOS {acos:.1%} = {objetivo:.2f} € "
+    sentido = "Subir" if nueva > el.puja else "Bajar"
+    d.notas[el.clave] = f"{sentido} puja {el.puja:.2f} -> {nueva:.2f} €"
+    return Cambio(tipo=PUJA, antes=el.puja, despues=nueva,
+                  motivo=(f"{sentido}: {calc.explicacion(p, ticket)} "
                           f"({mad_total.clics:.0f} clics maduros, {mad_total.compras:.0f} compras; agresividad {aggr:.2f})"),
+                  extra={"tope_rentable": round(calc.tope, 4), "multiplicador": round(calc.multiplicador, 3)},
                   **comun)
 
 
@@ -183,14 +186,19 @@ def _rellenar_huecos(cuenta, doc, catalogo, hoy, d, pausadas_ahora, no_elegibles
             if asin not in investig:
                 investig[asin] = doc.investigacion(asin)[1]
             cands = catalogo.candidatas(asin, ya, investig[asin])
-        campana = cuenta.campanas[g.id_campana].nombre
+        camp = cuenta.campanas[g.id_campana]
+        campana = camp.nombre
+        ticket = (catalogo.producto(asin).ticket if catalogo.producto(asin) else None) or 0
         for c in cands[:huecos]:
             ya.add(c["texto"].upper() if de_asin else kml.firma(c["texto"]))
+            tope = c["p"] * ticket * config.acos_equilibrio(asin)
+            puja = pujas.limitar(camp, c["puja"], tope) if tope > 0 else c["puja"]
             d.cambios.append(Cambio(
                 tipo=NUEVO_ASIN if de_asin else NUEVA_KEYWORD, clave=f"nuevo:{g.id}:{c['texto']}", producto=asin,
                 id_campana=g.id_campana, id_grupo=g.id, campana=campana, texto=c["texto"],
-                coincidencia=c["coincidencia"], antes=None, despues=c["puja"],
+                coincidencia=c["coincidencia"], antes=None, despues=puja,
                 motivo=(f"Hueco {len(activos) + 1}/{config.MAX_KEYWORDS_POR_GRUPO}: ACOS predicho {c['acos_pred']:.0%} "
                         f"(≤ {config.ACOS_MAX_KEYWORD_NUEVA:.0%}), P(compra|clic) {c['p']:.1%}, fuente {c['fuente']}. {c['motivo']}"),
-                extra={"fuente": c["fuente"], "acos_pred": round(c["acos_pred"], 3)}))
+                extra={"fuente": c["fuente"], "acos_pred": round(c["acos_pred"], 3), "tope_rentable": round(tope, 4),
+                       "multiplicador": round(pujas.multiplicador(camp), 3)}))
             activos.append(None)

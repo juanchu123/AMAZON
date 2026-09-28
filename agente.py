@@ -39,10 +39,11 @@ import investigacion
 import keyword_ml as kml
 import learner
 import presupuesto
+import pujas
 import safety
 from documento import Documento, fecha, num
-from modelo import (ACTIVO, CREAR_CAMPANA, NUEVA_KEYWORD, NUEVO_ASIN, PAUSADO, PAUSAR, PRESUPUESTO, PUJA, Cambio,
-                    Metricas)
+from modelo import (ACTIVO, CREAR_CAMPANA, ESTRATEGIA, NUEVA_KEYWORD, NUEVO_ASIN, PAUSADO, PAUSAR, PRESUPUESTO, PUJA,
+                    Cambio, Metricas)
 from prediccion import Catalogo
 
 
@@ -75,6 +76,8 @@ class FuenteAPI:
                 ok, det = self.api.pausar(el)
             elif c.tipo == PRESUPUESTO:
                 ok, det = self.api.cambiar_presupuesto(c.id_campana, c.despues)
+            elif c.tipo == ESTRATEGIA:
+                ok, det = self.api.cambiar_estrategia(cuenta.campanas[c.id_campana], c.despues)
             elif c.tipo == NUEVA_KEYWORD:
                 ok, id_, det = self.api.crear_keyword(c.id_campana, c.id_grupo, c.texto, c.coincidencia, c.despues)
                 c.clave = id_ or c.clave
@@ -147,6 +150,9 @@ def verificar_enviados(doc, cuenta, hoy):
         elif tipo == PRESUPUESTO:
             c = cuenta.campanas.get(str(t["ID campaña"]))
             ok = c is not None and abs(c.presupuesto - num(t["Después"])) < 0.005
+        elif tipo == ESTRATEGIA:
+            c = cuenta.campanas.get(str(t["ID campaña"]))
+            ok = c is not None and c.estrategia_pujas == pujas.normalizar_estrategia(t["Después"])
         elif tipo in (NUEVA_KEYWORD, NUEVO_ASIN):
             texto = str(t["Palabra clave / segmentación"])
             match = next((e for e in cuenta.elementos.values() if e.id_grupo == str(t["ID grupo"]) and (
@@ -166,7 +172,10 @@ def verificar_enviados(doc, cuenta, hoy):
 
 
 def orden_de_aplicacion(c):
-    """Primero lo que reduce gasto; después lo que lo aumenta."""
+    """La estrategia primero (las pujas se calculan para ella); después lo que reduce gasto; al final
+    lo que lo aumenta."""
+    if c.tipo == ESTRATEGIA:
+        return -1
     if c.tipo == PAUSAR:
         return 0
     if c.tipo in (PUJA, PRESUPUESTO) and num(c.despues) < num(c.antes):
@@ -272,13 +281,15 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
                 doc.registrar_alerta(ahora, "investigacion", asin, f"La investigación falló: {e}"[:500], "no (solo registro)")
                 log(f"Investigación de {asin} falló: {e}")
 
-    # --- decidir
+    # --- decidir: primero la estrategia de pujas de cada campaña (las pujas se calculan para ella)
+    pujas.decidir_estrategias(cuenta, lambda id_c: presupuesto.metricas_30d(series, id_c, hoy))
     decision = analyzer.decidir(cuenta, doc, series, catalogo, hoy)
+    decision.alertas += pujas.avisos(cuenta)
     nuevas, nota_camp = campanas.proponer(cuenta, doc, series, catalogo, hoy, gasto_mes, decision.cambios)
     cambios_pres, filas_camp, por_nueva, tope = presupuesto.planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas)
     for c, eur in zip(nuevas, por_nueva):
         c.extra["presupuesto"], c.despues = eur, eur
-    cambios = decision.cambios + nuevas + cambios_pres
+    cambios = pujas.proponer_estrategias(cuenta) + decision.cambios + nuevas + cambios_pres
     aprobados, descartados = safety.filtrar(cambios, cuenta, hoy, gasto_mes,
                                             lambda a: catalogo.producto(a).ticket if a else None)
     resumen.append(("Campañas nuevas", nota_camp))

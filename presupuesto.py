@@ -88,6 +88,12 @@ def _repartir(total, pesos):
     return {k: int(v * 100) / 100 for k, v in res.items()}   # redondeo hacia abajo: nunca pasar del tope
 
 
+def _estrategia(c):
+    ajustes = ", ".join(f"{e} +{v:.0f} %" for e, v in sorted((c.ajustes_emplazamiento or {}).items()) if v)
+    return {"Estrategia de pujas": c.estrategia_pujas or "desconocida", "Estrategia elegida": c.estrategia_objetivo,
+            "Motivo de la estrategia": c.motivo_estrategia, "Ajustes de emplazamiento": ajustes or "0 %"}
+
+
 def planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas=()):
     """nuevas: campañas que se van a crear en esta ronda [{"nombre"}], financiadas por el 20 %.
     Devuelve (cambios, filas para la hoja Campañas, presupuesto por campaña nueva)."""
@@ -130,14 +136,15 @@ def planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas=()):
                       "Presupuesto diario (€)": c.presupuesto, "Presupuesto objetivo (€)": nuevo,
                       "ACOS 30 días": None if acos in (None, float("inf")) else round(acos, 3),
                       "Puntuación": round(pts, 2), "Confianza (aprendizaje)": round(conf, 2),
+                      **_estrategia(c),
                       "Creada por el agente": "Sí" if c.id in creadas_por_agente(doc) else "",
                       "Actualizado": hoy.isoformat() + (f" ({nota})" if nota else "")})
     for c in cuenta.campanas.values():
         if c.estado != ACTIVO:
             filas.append({"ID campaña": c.id, "Campaña": c.nombre, "Estado": c.estado,
                           "Producto (ASIN)": cuenta.producto_de_campana(c.id), "Fondo": "",
-                          "Presupuesto diario (€)": c.presupuesto, "Presupuesto objetivo (€)": None,
-                          "Actualizado": hoy.isoformat() + " (en pausa: no se le asigna presupuesto)"})
+                          "Presupuesto diario (€)": c.presupuesto, "Presupuesto objetivo (€)": None, **_estrategia(c),
+                          "Actualizado": hoy.isoformat() + f" ({c.estado}: no se le asigna presupuesto)"})
     por_nueva = [plan[f"nueva:{i}"] for i in range(len(nuevas))]
     return cambios, filas, por_nueva, total
 

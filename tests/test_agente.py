@@ -70,6 +70,11 @@ class APIFalsa:
         self.cuenta.campanas[id_c].presupuesto = eur
         return True, "Releído en Amazon: coincide"
 
+    def cambiar_estrategia(self, campana, estrategia):
+        self.llamadas.append(("estrategia", campana.id, estrategia))
+        self.cuenta.campanas[campana.id].estrategia_pujas = estrategia
+        return True, "Releído en Amazon: coincide"
+
     def crear_keyword(self, id_c, id_g, texto, coinc, puja):
         self.llamadas.append(("keyword", id_g, texto, puja))
         self.siguiente_id += 1

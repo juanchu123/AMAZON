@@ -11,6 +11,16 @@ from datetime import date
 from typing import Optional
 
 ACTIVO, PAUSADO, ARCHIVADO = "activo", "pausado", "archivado"
+FINALIZADA = "finalizada"               # campaña activada pero con la fecha de finalización ya pasada:
+                                        # Amazon no la sirve, así que para el agente no está activa
+
+# estrategia de pujas de una campaña (columna "Estrategia de pujas" / dynamicBidding.strategy)
+SOLO_BAJA, ALZA_BAJA, PUJA_FIJA, ESTRATEGIA_DESCONOCIDA = (
+    "Pujas dinámicas: solo a la baja", "Pujas dinámicas: al alza y a la baja", "Puja fija", "")
+
+# emplazamientos (hoja "Ajuste de puja" / dynamicBidding.placementBidding)
+SUPERIOR, RESTO_BUSQUEDA, PAGINA_PRODUCTO, AMAZON_BUSINESS = (
+    "superior", "resto de la búsqueda", "página del producto", "Amazon Business")
 
 # tipos de elemento (lo que tiene puja propia dentro de un grupo de anuncios)
 KEYWORD, PRODUCTO, CATEGORIA, AUTO = "keyword", "producto", "categoria", "auto"
@@ -48,6 +58,11 @@ class Campana:
     segmentacion: str = "MANUAL"        # MANUAL / AUTO
     id_cartera: Optional[str] = None
     estado_servicio: str = ""           # extendedData.servingStatus (informativo)
+    estrategia_pujas: str = ESTRATEGIA_DESCONOCIDA
+    ajustes_emplazamiento: dict = field(default_factory=dict)   # emplazamiento -> % (20.0 = +20 %)
+    fecha_fin: Optional[date] = None
+    estrategia_objetivo: str = ""       # la que elige el agente en esta ronda (pujas.decidir_estrategias)
+    motivo_estrategia: str = ""
 
 
 @dataclass
@@ -124,8 +139,8 @@ class Cuenta:
 
 
 # tipos de cambio (columna "Tipo" de la hoja Tickets)
-PUJA, PAUSAR, NUEVA_KEYWORD, NUEVO_ASIN, PRESUPUESTO, CREAR_CAMPANA = (
-    "puja", "pausar", "añadir_keyword", "añadir_asin", "presupuesto", "crear_campaña")
+PUJA, PAUSAR, NUEVA_KEYWORD, NUEVO_ASIN, PRESUPUESTO, CREAR_CAMPANA, ESTRATEGIA = (
+    "puja", "pausar", "añadir_keyword", "añadir_asin", "presupuesto", "crear_campaña", "estrategia")
 
 
 @dataclass

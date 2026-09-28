@@ -39,6 +39,7 @@ COLUMNAS = {
     "Resumen": ["Concepto", "Valor"],
     "Campañas": ["ID campaña", "Campaña", "Estado", "Producto (ASIN)", "Fondo", "Presupuesto diario (€)",
                  "Presupuesto objetivo (€)", "ACOS 30 días", "Puntuación", "Confianza (aprendizaje)",
+                 "Estrategia de pujas", "Estrategia elegida", "Motivo de la estrategia", "Ajustes de emplazamiento",
                  "Creada por el agente", "Actualizado"],
     "Segmentación": ["Clave", "ID campaña", "Campaña", "ID grupo", "Grupo", "Producto (ASIN)", "Tipo",
                      "Palabra clave / segmentación", "Coincidencia", "Estado", "Puja (€)", "Elegible",
@@ -68,7 +69,8 @@ LEYENDA = [
     ("'Requiere revisión de Juan' la puedes leer para saber qué mirar). Cierra el Excel mientras corre el agente.", ""),
     ("", ""),
     ("Resumen", "La última ronda en cifras."),
-    ("Campañas", "Fondo 'probado' (80 % del presupuesto) o 'experimentación' (20 %), presupuesto y puntuación."),
+    ("Campañas", "Fondo 'probado' (80 % del presupuesto) o 'experimentación' (20 %), presupuesto, puntuación "
+                 "y estrategia de pujas (la que tiene y la que elige el agente)."),
     ("Segmentación", "Estado actual de cada keyword / ASIN y la decisión de esta ronda."),
     ("Seguimiento", "Una foto por día: acumulados. 'Clics nuevos' = foto de hoy − foto del último cambio."),
     ("Diario", "Datos por día de la API. Permite saber qué clics tienen más de 7 días (maduros)."),
