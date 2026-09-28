@@ -22,6 +22,13 @@ Cualquier sesión que abra este proyecto pregunta a Juan lo que necesite **antes
 - **La primera vez, `python agente.py --simular`**: decide y lo cuenta sin tocar Amazon ni crear tickets. Solo después, ejecuciones reales.
 - Cualquier cosa ambigua o contradictoria: preguntar en un mensaje corto antes que adivinar.
 
+## Tres agentes, un solo comando (`python agente.py`)
+
+- **Marketing** (`agente.py` y sus módulos): anuncios — pujas, presupuesto, keywords, campañas. Reglas fijas.
+- **Finanzas** (`finanzas.py`): con los costes que Juan rellena en la hoja **Economía** calcula margen por unidad y **ACOS de equilibrio** por producto (el límite de las pujas de marketing; sin costes, 35 %) y la hoja **Finanzas** (beneficio después de publicidad por producto, mes en curso y 30 días; gasto del mes frente al tope). Corre antes que marketing. Suelto: `python finanzas.py`.
+- **Página de producto** (`ficha.py`): prepara `salidas/<día>/ficha_datos_<día>.xlsx` (palabras que venden, frases que gastan sin vender, investigación que pasa el filtro, quejas de la competencia); Cowork lee la ficha en amazon.es y escribe la propuesta (lunes, `RUTINA_COWORK.md`). **La ficha nunca se cambia sola: decide Juan.** Suelto: `python ficha.py`.
+- La parte que necesita un LLM (investigar, proponer la ficha, el informe) la hace **Cowork** con la suscripción de Juan, no la API.
+
 ## Arquitectura ("Camino A": reglas fijas, sin LLM decidiendo dinero)
 
 ```
@@ -38,6 +45,8 @@ agente.py  (orquestador: una ejecución = una ronda; se puede lanzar cuantas vec
  ├─ presupuesto.py    reparto 80/20 del tope del día entre campañas
  ├─ campanas.py       ¿abrir campaña nueva? (solo si el 20 % da para pagarla de verdad)
  ├─ safety.py         última barrera: suelo de puja, tope mensual, cuenta parada. Nunca se salta
+ ├─ finanzas.py       agente de finanzas: hoja Economía (costes) -> margen y ACOS de equilibrio; hoja Finanzas
+ ├─ ficha.py          agente de página de producto: datos para mejorar la ficha (la propuesta la escribe Cowork)
  ├─ alertas.py        un correo por ronda + avisos inmediatos (SMTP; si no hay, .eml pendiente)
  └─ investigacion.py  ÚNICO uso de un LLM: buscar y ordenar frases candidatas (solo datos)
 config.py            todos los números
@@ -86,7 +95,7 @@ Las reglas no saben de dónde vienen los datos: la API y la hoja masiva producen
 
 ## Documento único — `salidas/<día>/memoria_agente.xlsx`
 
-Hojas: Leyenda, Resumen, Campañas, Segmentación, Seguimiento (fotos), Diario (API), Tickets, Competencia (**la edita Juan**), Investigación, Alertas, Histórico. Las hojas que añadan Juan o Cowork (p. ej. "Productos") se conservan tal cual. Se escribe a un temporal y se sustituye al final (atómico), con copia `.bak`. Hay que commitearlo: es la memoria del agente. `resultados/memoria.xlsx` y `memoria_pou.xlsx` son la memoria de la etapa manual: no se pisan.
+Hojas: Leyenda, Resumen, Economía (**la rellena Juan**), Finanzas, Campañas, Segmentación, Seguimiento (fotos), Diario (API), Tickets, Competencia (**la edita Juan**), Investigación, Alertas, Histórico. Las hojas que añadan Juan o Cowork (p. ej. "Productos") se conservan tal cual. Se escribe a un temporal y se sustituye al final (atómico), con copia `.bak`. Hay que commitearlo: es la memoria del agente. `resultados/memoria.xlsx` y `memoria_pou.xlsx` son la memoria de la etapa manual: no se pisan.
 
 ## Cómo se ejecuta
 
@@ -112,8 +121,8 @@ Programado con cron / Programador de tareas (o Cowork) en el ordenador de Juan: 
 - [ ] La conversión de los ASIN de competencia usa la media del producto (se refinará con datos reales de cada ASIN).
 - [ ] Coste del producto y comisiones de Amazon para calcular el ACOS de equilibrio real.
 - [ ] (Futuro) Negativas automáticas — aplazado por Juan.
-- [ ] Hoja "Economía" con los costes reales por producto (P0-B §2): hasta entonces el ACOS de equilibrio es el 35 % del objetivo (`config.acos_equilibrio`).
-- [ ] Resto de la especificación de mejoras (28/09/2026): P0-A completo, P0-B §1-3 y §5, P1, P2. Hecho: P0-B §4 (sistema de pujas).
+- [ ] Juan: rellenar la hoja "Economía" (comisión de Amazon, tarifa FBA, coste de cada producto). Hasta entonces el ACOS de equilibrio es el 35 % (`config.ACOS_EQUILIBRIO_DEFECTO`).
+- [ ] Resto de la especificación de mejoras (28/09/2026): P0-A completo, P0-B §1-3 y §5, P1, P2. Hecho: P0-B §4 (sistema de pujas) y §2 (hoja Economía y ACOS de equilibrio por producto; el ACOS objetivo sigue siendo 30-35 % hasta que Juan decida).
 
 ## Notas importantes
 

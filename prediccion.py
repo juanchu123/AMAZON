@@ -52,7 +52,7 @@ class Producto:
 
     @property
     def corto(self):
-        return (self.perfil or self.nombre.split(" ")[0] or self.asin).capitalize()
+        return config.NOMBRES_CORTOS.get(self.asin) or (self.perfil or self.nombre.split(" ")[0] or self.asin).capitalize()
 
 
 class Catalogo:

@@ -42,6 +42,8 @@ import alertas
 import analyzer
 import campanas
 import carpetas
+import ficha
+import finanzas
 import config
 import investigacion
 import keyword_ml as kml
@@ -240,6 +242,9 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
     salida: carpeta de salida del día (ahí se deja el Excel de investigación), o None."""
     if doc.nuevo:
         doc.sembrar(hoy)
+    # agente de finanzas primero: su ACOS de equilibrio es el límite de las pujas de marketing
+    finanzas.sembrar(doc, catalogo)
+    equilibrios = finanzas.aplicar(doc)
     resumen = [("Fecha", f"{ahora:%d/%m/%Y %H:%M}"), ("Fuente de datos", fuente.nombre),
                ("Entrada", str(entrada or getattr(fuente, "ruta", "") or "")),
                ("Memoria de partida", str(doc.origen or "ninguna (primera ejecución)")),
@@ -258,11 +263,16 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
             excel = investigacion.escribir_excel(doc, catalogo, cuenta, Path(salida) / "Documento_investigacion_keywords.xlsx", hoy)
             if excel:
                 resumen.append(("Excel de investigación", str(excel)))
+            resumen.append(("Datos para las fichas (agente de página de producto)",
+                            str(ficha.escribir(doc, catalogo, Path(salida) / f"ficha_datos_{hoy.isoformat()}.xlsx", hoy))))
         except OSError as e:     # p. ej. el Excel está abierto en Windows: no para la ronda
-            log(f"No se pudo escribir el Excel de investigación: {e}")
+            log(f"No se pudo escribir un Excel de salida: {e}")
     series = doc.series()
     doc.guardar_foto(hoy, cuenta, fuente.acumulados(cuenta, series, hoy), _producto_de(cuenta))
     series = doc.series()
+    doc.hojas["Finanzas"] = finanzas.informe(doc, series, catalogo, hoy)
+    resumen.append(("ACOS de equilibrio (finanzas)", ", ".join(f"{a} {e:.0%}" for a, e in sorted(equilibrios.items()))
+                    or f"sin costes en la hoja Economía: se usa {config.ACOS_EQUILIBRIO_DEFECTO:.0%}"))
     confirmados = verificar_enviados(doc, cuenta, hoy)
     evaluados = learner.evaluar_pendientes(doc, series, hoy)
     resumen += [("Tickets confirmados de hojas masivas", confirmados), ("Tickets evaluados (veredicto)", evaluados)]
@@ -310,7 +320,7 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
     # --- decidir: primero la estrategia de pujas de cada campaña (las pujas se calculan para ella)
     pujas.decidir_estrategias(cuenta, lambda id_c: presupuesto.metricas_30d(series, id_c, hoy))
     decision = analyzer.decidir(cuenta, doc, series, catalogo, hoy)
-    decision.alertas += pujas.avisos(cuenta)
+    decision.alertas += pujas.avisos(cuenta) + finanzas.avisos(doc)
     nuevas, nota_camp = campanas.proponer(cuenta, doc, series, catalogo, hoy, gasto_mes, decision.cambios)
     cambios_pres, filas_camp, por_nueva, tope = presupuesto.planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas)
     for c, eur in zip(nuevas, por_nueva):

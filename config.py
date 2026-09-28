@@ -22,6 +22,8 @@ ENTRADAS = Path(os.environ.get("AGENTE_ENTRADAS", RAIZ / "entradas"))
 SALIDAS = Path(os.environ.get("AGENTE_SALIDAS", RAIZ / "salidas"))
 NOMBRE_MEMORIA = "memoria_agente.xlsx"
 PREFIJO_INVESTIGACION = "documento_investigacion"   # Documento_investigacion_keywords.xlsx (Cowork)
+NOMBRES_CORTOS = {"B0DCZS1NR6": "Pinza", "B0DHYBY6MS": "Rejilla", "B0DSV986XY": "Ventosa",
+                  "B0F746MFPQ": "3 en 1", "B0CPHXXHRQ": "Pou"}   # para hojas, informes y nombres de campaña
 HISTORICO_XLSX = Path(os.environ.get("AGENTE_HISTORICO", RAIZ / "FreshFinder_Amazon_Ads_historico.xlsx"))
 CORREOS_PENDIENTES = SALIDAS / "correos_pendientes"   # agente.py la pone dentro de la carpeta del día
 
@@ -55,13 +57,14 @@ ALZA_MIN_COMPRAS_30D = 10           # "al alza y a la baja" solo con ≥ 10 comp
 # Cuánto puede subir Amazon la puja escrita con "al alza y a la baja" (ayuda de Amazon Ads):
 SUBIDA_DINAMICA_SUPERIOR = 1.00     # hasta +100 % en la parte superior de la búsqueda (1ª página)
 SUBIDA_DINAMICA_RESTO = 0.50        # hasta +50 % en el resto de emplazamientos
-# ACOS a partir del cual cada venta pierde dinero. Hasta que exista la hoja "Economía" con los
-# costes reales de cada producto (P0-B §2), se usa el máximo del objetivo que fijó Juan (35 %).
+# ACOS a partir del cual cada venta pierde dinero. Lo calcula finanzas.py con los costes de la hoja
+# "Economía" (P0-B §2); para los productos sin costes rellenados, el máximo del objetivo (35 %).
 ACOS_EQUILIBRIO_DEFECTO = ACOS_OBJETIVO_MAX
+ACOS_EQUILIBRIO_POR_ASIN = {}       # lo rellena finanzas.aplicar() en cada ronda
 
 
 def acos_equilibrio(asin=None):
-    return ACOS_EQUILIBRIO_DEFECTO
+    return ACOS_EQUILIBRIO_POR_ASIN.get(asin, ACOS_EQUILIBRIO_DEFECTO)
 
 # ---------------------------------------------------------------- keywords (§2.3, §2.4)
 MAX_KEYWORDS_POR_GRUPO = 12         # por campaña / grupo de anuncios, cada producto por su cuenta

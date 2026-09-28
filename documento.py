@@ -38,6 +38,12 @@ from modelo import Metricas
 
 COLUMNAS = {
     "Resumen": ["Concepto", "Valor"],
+    "Economía": ["Producto (ASIN)", "Producto", "Ticket medio con IVA (€)", "IVA", "Comisión Amazon",
+                 "Tarifa FBA (€/ud)", "Coste del producto (€/ud)", "Devoluciones", "Margen por unidad (€)",
+                 "ACOS de equilibrio", "Notas"],
+    "Finanzas": ["Producto (ASIN)", "Producto", "Periodo", "Gasto en anuncios (€)", "Ventas por anuncios (€)",
+                 "Compras por anuncios", "ACOS", "ACOS de equilibrio", "Margen antes de publicidad (€)",
+                 "Beneficio después de publicidad (€)", "Situación"],
     "Campañas": ["ID campaña", "Campaña", "Estado", "Producto (ASIN)", "Fondo", "Presupuesto diario (€)",
                  "Presupuesto objetivo (€)", "ACOS 30 días", "Puntuación", "Confianza (aprendizaje)",
                  "Estrategia de pujas", "Estrategia elegida", "Motivo de la estrategia", "Ajustes de emplazamiento",
@@ -66,10 +72,14 @@ COLUMNAS = {
 
 LEYENDA = [
     ("Documento único del agente autónomo de Amazon Ads (FreshFinder).", ""),
-    ("Lo escribe agente.py en cada ejecución. Solo edita a mano: 'Competencia' (y, si quieres, la columna", ""),
+    ("Lo escribe agente.py en cada ejecución. Solo edita a mano: 'Economía', 'Competencia' (y, si quieres, la columna", ""),
     ("'Requiere revisión de Juan' la puedes leer para saber qué mirar). Cierra el Excel mientras corre el agente.", ""),
     ("", ""),
     ("Resumen", "La última ronda en cifras."),
+    ("Economía", "LA RELLENA JUAN: comisión de Amazon, tarifa FBA y coste de cada producto. De ahí sale el margen y el "
+                 "ACOS de equilibrio, que el agente usa como límite de las pujas."),
+    ("Finanzas", "Por producto: gasto y ventas por anuncios, beneficio después de publicidad (mes y 30 días) y gasto "
+                 "del mes frente al tope."),
     ("Campañas", "Fondo 'probado' (80 % del presupuesto) o 'experimentación' (20 %), presupuesto, puntuación "
                  "y estrategia de pujas (la que tiene y la que elige el agente)."),
     ("Segmentación", "Estado actual de cada keyword / ASIN y la decisión de esta ronda."),

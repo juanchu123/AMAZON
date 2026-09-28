@@ -61,7 +61,7 @@ Códigos de salida: 0 bien, 1 error (te llega un correo con el detalle), 2 parad
 
 ## 5. El documento único
 
-`salidas/<día>/memoria_agente.xlsx` (cada día parte de la del día anterior). Lo que más vas a mirar:
+`salidas/<día>/memoria_agente.xlsx` (cada día parte de la del día anterior). **Rellena la hoja "Economía"** con la comisión de Amazon, la tarifa FBA y el coste de cada producto: con eso el agente sabe a partir de qué ACOS pierdes dinero y te dice en "Finanzas" cuánto ganas o pierdes con los anuncios. `ficha_datos_<día>.xlsx` tiene los datos para mejorar tus fichas (Cowork te escribe la propuesta los lunes). Lo que más vas a mirar:
 
 - **Resumen**: la última ronda en cifras (gasto del mes, tope, cambios).
 - **Segmentación**: cada keyword/ASIN, su estado y la decisión de esta ronda. Columna "Requiere revisión de Juan".
