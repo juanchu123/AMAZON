@@ -1,6 +1,6 @@
 # Rutina diaria de Cowork (para pegar en la tarea programada)
 
-Rutina DIARIA del agente de Amazon Ads de FreshFinder (Juan). Todo en español. Hoy = fecha de Madrid (AAAA-MM-DD). La carpeta del agente está en el ordenador de Juan: "C:\Documentos\AMAZON PROJECT\AMAZON" (usa las herramientas mcp__remote-devices__*). Lee primero su CLAUDE.md y entradas/README.md.
+Rutina DIARIA del agente de Amazon Ads de FreshFinder (Juan). Todo en español. Hoy = fecha de Madrid (AAAA-MM-DD). La carpeta del agente está en el ordenador de Juan: "C:\Documentos\AMAZON PROJECT\agente_amazon_ads_v3" (usa las herramientas mcp__remote-devices__*). Lee primero su CLAUDE.md y entradas/README.md.
 
 REGLAS FIJAS: nunca escribas contraseñas ni credenciales; nunca crees, actives, guardes ni cambies nada en la cuenta de Amazon (solo lectura y "Descargar/Exportar"); nada irreversible; no borres archivos; NO modifiques el código (los .py, plantillas/, tests/): si ves un fallo, descríbelo en el informe. Keywords: solo español, sin marcas, nada de lo que el producto no es (pinza B0DCZS1NR6 no es imán/ventosa/rejilla; rejilla B0DHYBY6MS no es imán/ventosa/salpicadero/pinza), nunca "homologado"/"DGT".
 
@@ -14,6 +14,6 @@ REGLAS FIJAS: nunca escribas contraseñas ni credenciales; nunca crees, actives,
 
 5. INFORME: escribe salidas/<hoy>/informe_<hoy>.md: estado de la cuenta, cambios propuestos (tickets enviado_bulk de hoy: campaña, antes → después, motivo), veredictos maduros (mejora/empeora), investigación (frases nuevas de hoy y cuántas pasan el filtro ACOS predicho ≤ 30 %, sácalo del Documento_investigacion_keywords.xlsx de hoy), avisos (hoja Alertas, "Requiere revisión de Juan") y "Qué tienes que hacer" (subir salidas/<hoy>/bulk_cambios_<hoy>.xlsx si existe). Señala cualquier subida de presupuesto en campañas con ACOS > 50 %.
 
-6. GUARDAR EN EL ORDENADOR: sube con device_commit_files entradas/<hoy>/ y salidas/<hoy>/ completas a "C:\Documentos\AMAZON PROJECT\AMAZON\entradas\<hoy>\" y "...\salidas\<hoy>\". No sobrescribas nada de otros días.
+6. GUARDAR EN EL ORDENADOR: sube con device_commit_files entradas/<hoy>/ y salidas/<hoy>/ completas a "C:\Documentos\AMAZON PROJECT\agente_amazon_ads_v3\entradas\<hoy>\" y "...\salidas\<hoy>\". No sobrescribas nada de otros días.
 
 7. Termina con un resumen de 5-10 líneas en español para Juan: nº de cambios, lo más importante, nº de keywords nuevas y el archivo a subir a Amazon.
