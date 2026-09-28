@@ -515,6 +515,8 @@ def main():
     ap.add_argument("--csv", action="store_true", help="forzar el modo antiguo con CSV sueltos")
     ap.add_argument("--candidatas", help="CSV/XLSX de frases de fuera (export de Helium 10 Cerebro/Magnet, "
                     "u otra lista) para puntuarlas con el modelo junto a su volumen de búsqueda")
+    ap.add_argument("--frase", help="una sola frase suelta a analizar (sin CSV de candidatas): "
+                    "P(compra|clic) por tipo de coincidencia, puja máxima rentable y ACOS estimado")
     args = ap.parse_args()
 
     excel = args.excel or (None if args.csv else next(iter(sorted(glob.glob(os.path.join(args.datos, "*historico*.xlsx")))), None))
@@ -531,7 +533,34 @@ def main():
         filas, informe, titulo, asin, existentes = _cargar_csv(args, contiene)
     if not filas:
         raise SystemExit("Ningún grupo de anuncios corresponde a ese producto.")
+    if args.frase:
+        puntuar_frase(filas, args.frase, args.acos_objetivo)
+        return
     _entrenar_y_recomendar(args, filas, informe, titulo, asin, existentes)
+
+
+def puntuar_frase(filas, frase, acos_objetivo=ACOS_OBJETIVO_PCT):
+    """Analiza UNA frase suelta con el modelo ya entrenado sobre el histórico del producto:
+    P(compra|clic) por tipo de coincidencia, puja máxima rentable y ACOS estimado a esa puja.
+    Para consultas rápidas desde fuera (Cowork, otro script) sin tener que montar un CSV de candidatas."""
+    vec, mod = entrenar(filas, "compras", "clics")
+    tot = {k: sum(f[k] for f in filas) for k in ("clics", "coste", "compras", "ventas")}
+    ticket = tot["ventas"] / tot["compras"] if tot["compras"] else 0.0
+    cpc_global = tot["coste"] / tot["clics"] if tot["clics"] else 0.0
+    toks = tokens_contenido(frase)
+    vistos = {k.split("=", 1)[1] for k in vec.feature_names_ if k.startswith("w=")}
+    sin_datos = [w for w in toks if w not in vistos]
+
+    resultado = {"frase": frase, "ticket_medio_eur": round(ticket, 2), "palabras_sin_datos": sin_datos, "por_coincidencia": {}}
+    for m in COINCIDENCIAS:
+        p = predecir(vec, mod, frase, m)
+        puja_max = round(p * ticket * acos_objetivo / 100, 2)
+        acos_a_cpc_medio = round(100 * cpc_global / (p * ticket), 1) if p * ticket > 0 else None
+        resultado["por_coincidencia"][m] = {
+            "prob_compra_por_clic": round(p, 4), "clics_por_venta": round(1 / p, 1) if p > 0 else None,
+            "puja_max_rentable_eur": puja_max, "acos_si_pujas_cpc_medio_pct": acos_a_cpc_medio}
+    print(json.dumps(resultado, ensure_ascii=False, indent=2))
+    return resultado
 
 
 def _cargar_csv(args, contiene):
