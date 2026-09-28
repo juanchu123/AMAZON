@@ -93,7 +93,10 @@ class FuenteBulk:
         self.pendientes = []
 
     def leer_cuenta(self, hoy=None):
-        wb = load_workbook(self.ruta, read_only=True, data_only=True)
+        # sin read_only: algunas descargas de Amazon traen mal la etiqueta interna de
+        # dimensiones de la hoja (dice A1:A1 aunque hay cientos de filas reales), y en modo
+        # read_only openpyxl confía en esa etiqueta y se queda solo con la primera celda.
+        wb = load_workbook(self.ruta, data_only=True)
         filas = list(wb[HOJA].iter_rows(values_only=True))
         k = _Cols(filas[0])
         col = {
