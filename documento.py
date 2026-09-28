@@ -113,16 +113,24 @@ def num(v, defecto=0.0):
 
 
 class Documento:
-    def __init__(self, ruta=None):
-        self.ruta = Path(ruta or config.DOCUMENTO)
+    def __init__(self, ruta, origen=None):
+        """ruta: dónde se guarda. origen: de dónde se parte si ruta aún no existe (la memoria del
+        día anterior, carpetas.memoria_anterior)."""
+        self.ruta = Path(ruta)
         self.hojas = {h: [] for h in COLUMNAS}
-        self.nuevo = not self.ruta.exists()
-        if not self.nuevo:
-            self._cargar()
+        self.otras = {}    # hojas que no son del agente (Juan o Cowork): se conservan tal cual
+        leer = self.ruta if self.ruta.exists() else (Path(origen) if origen and Path(origen).exists() else None)
+        self.origen = leer
+        self.nuevo = leer is None
+        if leer:
+            self._cargar(leer)
 
     # ------------------------------------------------------------ lectura / escritura
-    def _cargar(self):
-        wb = load_workbook(self.ruta, data_only=True)
+    def _cargar(self, ruta):
+        wb = load_workbook(ruta, data_only=True)
+        for h in wb.sheetnames:
+            if h not in COLUMNAS and h != "Leyenda":
+                self.otras[h] = [list(r) for r in wb[h].iter_rows(values_only=True)]
         for h, cols in COLUMNAS.items():
             if h not in wb.sheetnames:
                 continue
@@ -160,6 +168,10 @@ class Documento:
             ws.freeze_panes = "A2"
             for i, c in enumerate(todas, 1):
                 ws.column_dimensions[get_column_letter(i)].width = max(10, min(45, len(c) + 4))
+        for h, filas in self.otras.items():
+            ws = wb.create_sheet(h)
+            for r in filas:
+                ws.append([_celda(v) for v in r])
         self.ruta.parent.mkdir(parents=True, exist_ok=True)
         fd, tmp = tempfile.mkstemp(prefix=".tmp_", suffix=".xlsx", dir=self.ruta.parent)
         os.close(fd)

@@ -10,7 +10,7 @@ Fuentes que recibe para cada producto:
   - el título del producto y sus palabras específicas (perfil de keyword_ml.py),
   - su histórico (las keywords que ya vendieron y las que gastaron sin vender),
   - las keywords que ya tiene (para no repetirlas),
-  - el export de Helium 10 u otra lista de keywords si Juan lo ha dejado en datos/,
+  - el export de Helium 10 u otra lista de keywords si Juan lo ha dejado en entradas/,
   - búsqueda web (herramienta web_search del servidor de Anthropic).
 
 Requiere ANTHROPIC_API_KEY (variable de entorno). Modelo: AGENTE_MODELO_LLM (por defecto
@@ -20,6 +20,7 @@ Coste orientativo: unos céntimos por producto y semana.
 
 import json
 import os
+import re
 from datetime import timedelta
 
 import config
@@ -95,9 +96,9 @@ def _contexto(prod, existentes, lista_externa):
 
 
 def _lista_externa(prod):
-    """Busca en datos/ un export de keywords del producto (p. ej. helium10_pinza_2026-10-01.csv)."""
+    """Busca en entradas/ un export de keywords del producto (p. ej. helium10_pinza_2026-10-01.csv)."""
     claves = {prod.asin.lower()} | ({prod.perfil} if prod.perfil else set())
-    archivos = sorted((p for p in config.CARPETA_DATOS.glob("*") if p.suffix.lower() in (".csv", ".xlsx")
+    archivos = sorted((p for p in config.ENTRADAS.rglob("*") if p.suffix.lower() in (".csv", ".xlsx")
                        and any(k in p.name.lower() for k in claves)), key=lambda p: p.stat().st_mtime)
     if not archivos:
         return [], None
@@ -150,6 +151,44 @@ def investigar(prod, existentes, cliente=None):
         out.append({"palabra_clave": frase, "motivo": str(c.get("motivo", ""))[:300],
                     "volumen": c.get("volumen_estimado")})
     return out[:config.MAX_CANDIDATAS_INVESTIGACION], archivo
+
+
+def importar_documento(doc, ruta, dia):
+    """Carga Documento_investigacion_keywords.xlsx (lo genera Cowork cada día) en la hoja Investigación.
+
+    Cada hoja de producto ("Pinza (B0DCZS1NR6)"…) trae todas las frases investigadas, ordenadas de
+    mejor a peor. Se guardan con la fecha de la carpeta de entrada como la investigación vigente del
+    producto (si ya se importó ese día, se sustituye; lo que llegó de otras fuentes se queda). Solo son datos: el filtro de ACOS predicho del
+    agente decide si alguna entra. Las frases que solo propone el modelo ("Recomendada ML") no se
+    importan: el agente ya genera las suyas. Devuelve {asin: nº de frases}."""
+    from openpyxl import load_workbook
+    wb = load_workbook(ruta, read_only=True, data_only=True)
+    importadas = {}
+    for ws in wb.worksheets:
+        m = re.search(r"\((B0[A-Z0-9]{8})\)", ws.title)
+        if not m:
+            continue
+        asin, filas = m[1], list(ws.iter_rows(values_only=True))
+        cab = next((i for i, r in enumerate(filas) if r and r[0] == "Frase"), None)
+        if cab is None:
+            continue
+        cols = [str(c or "") for c in filas[cab]]
+        nuevas = []
+        for r in filas[cab + 1:]:
+            d = dict(zip(cols, r))
+            frase, fuentes = str(d.get("Frase") or "").strip().lower(), str(d.get("Fuentes") or "").strip()
+            if not frase or fuentes == "Recomendada ML":
+                continue
+            motivo = f"{fuentes}. {d.get('Motivo') or ''}".strip(" .")
+            nuevas.append({"Fecha": dia.isoformat(), "Producto (ASIN)": asin, "Rank": len(nuevas) + 1,
+                           "Palabra clave": frase, "Motivo": motivo[:300], "Fuente": f"Documento de investigación ({ruta.name})",
+                           "Volumen": d.get("Señal de volumen"), "Puja sugerida (€)": d.get("Puja sugerida Amazon (€)")})
+        doc.hojas["Investigación"] = [f for f in doc.hojas["Investigación"]
+                                      if not (str(f["Producto (ASIN)"]) == asin and str(f["Fecha"])[:10] == dia.isoformat()
+                                              and str(f.get("Fuente") or "").startswith("Documento de investigación"))]
+        doc.hojas["Investigación"] += nuevas
+        importadas[asin] = len(nuevas)
+    return importadas
 
 
 def guardar(doc, asin, hoy, candidatas, archivo):

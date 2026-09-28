@@ -14,11 +14,16 @@ cada campaña llevan su propio reloj (≥ 3 días y ≥ 10 clics nuevos), así q
   7. Filtrar por safety.py, aplicar uno a uno (independientes) y VERIFICAR releyendo Amazon.
   8. Guardar todo en el documento (escritura atómica) y mandar UN correo con los cambios.
 
+Carpetas (carpetas.py), una por día:
+  entradas/AAAA-MM-DD/   hoja masiva descargada de Amazon + Documento_investigacion_keywords.xlsx
+  salidas/AAAA-MM-DD/    memoria_agente.xlsx actualizada + bulk_cambios_<fecha>.xlsx + correos sin enviar
+Se usa la carpeta de entrada más reciente, y la memoria parte de la de la salida más reciente.
+
 Uso:
   python agente.py                         # fuente automática: API si hay credenciales, si no la
-                                           # hoja masiva más reciente de datos/
+                                           # hoja masiva de la entrada más reciente
   python agente.py --simular               # decide y lo cuenta, pero no toca Amazon ni crea tickets
-  python agente.py --fuente bulk --bulk datos/descarga.xlsx
+  python agente.py --entrada entradas/2026-09-28
   python agente.py --investigar            # fuerza la investigación de mercado de esta ronda
 
 Variables de entorno: ver README.md (Amazon Ads API, SMTP para el correo, ANTHROPIC_API_KEY).
@@ -30,10 +35,12 @@ import sys
 import traceback
 from collections import Counter
 from datetime import date, datetime, timedelta
+from pathlib import Path
 
 import alertas
 import analyzer
 import campanas
+import carpetas
 import config
 import investigacion
 import keyword_ml as kml
@@ -120,19 +127,19 @@ class FuenteAPI:
 
 
 # ---------------------------------------------------------------- utilidades
-def elegir_fuente(args, doc):
+def elegir_fuente(args, doc, entrada, salida):
     hay_api = all(os.environ.get(v) for v in ("AMAZON_ADS_CLIENT_ID", "AMAZON_ADS_CLIENT_SECRET",
                                               "AMAZON_ADS_REFRESH_TOKEN"))
     if args.fuente == "api" or (args.fuente == "auto" and hay_api):
         from ads_api import AmazonAdsAPI
         return FuenteAPI(AmazonAdsAPI.desde_entorno(), doc)
     import fuente_bulk
-    ruta = args.bulk or fuente_bulk.buscar_descarga()
+    ruta = args.bulk or (fuente_bulk.buscar_descarga(entrada) if entrada else None)
     if not ruta:
-        raise SystemExit("No hay credenciales de la Amazon Ads API ni ninguna hoja masiva descargada en datos/.\n"
+        raise SystemExit(f"No hay credenciales de la Amazon Ads API ni ninguna hoja masiva en {config.ENTRADAS}/.\n"
                          "Configura AMAZON_ADS_CLIENT_ID / _CLIENT_SECRET / _REFRESH_TOKEN, o deja la descarga "
-                         "de Operaciones en bloque en datos/.")
-    return fuente_bulk.FuenteBulk(ruta)
+                         f"de Operaciones en bloque en {config.ENTRADAS}/AAAA-MM-DD/.")
+    return fuente_bulk.FuenteBulk(ruta, salida)
 
 
 def verificar_enviados(doc, cuenta, hoy):
@@ -227,11 +234,19 @@ def avisar(doc, ahora, tipo, clave, asunto, cuerpo, simular, inmediato=True):
 
 
 # ---------------------------------------------------------------- la ronda
-def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto", log=print):
+def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto", log=print, entrada=None):
+    """entrada: carpeta de entrada del día (para leer el documento de investigación), o None."""
     if doc.nuevo:
         doc.sembrar(hoy)
     resumen = [("Fecha", f"{ahora:%d/%m/%Y %H:%M}"), ("Fuente de datos", fuente.nombre),
+               ("Entrada", str(entrada or getattr(fuente, "ruta", "") or "")),
+               ("Memoria de partida", str(doc.origen or "ninguna (primera ejecución)")),
                ("Modo", "SIMULACIÓN (no se toca Amazon)" if simular else "real")]
+    doc_inv = carpetas.investigacion(entrada)
+    if doc_inv:
+        dia = carpetas._dia(entrada) or hoy
+        for asin, n in investigacion.importar_documento(doc, doc_inv, dia).items():
+            resumen.append((f"Investigación importada {asin} ({doc_inv.name})", n))
 
     cuenta = fuente.leer_cuenta(hoy)
     series = doc.series()
@@ -360,8 +375,10 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Agente autónomo de Amazon Ads (FreshFinder)")
     ap.add_argument("--fuente", choices=("auto", "api", "bulk"), default="auto")
-    ap.add_argument("--bulk", help="hoja masiva descargada (por defecto, la más reciente de datos/)")
-    ap.add_argument("--documento", help=f"documento único (por defecto {config.DOCUMENTO})")
+    ap.add_argument("--entrada", help="carpeta de entrada (por defecto, la más reciente de entradas/)")
+    ap.add_argument("--bulk", help="hoja masiva concreta (por defecto, la de la carpeta de entrada)")
+    ap.add_argument("--documento", help="memoria donde guardar (por defecto salidas/<hoy>/memoria_agente.xlsx, "
+                                        "partiendo de la memoria más reciente)")
     ap.add_argument("--simular", action="store_true", help="decide y lo cuenta, sin tocar Amazon ni crear tickets")
     ap.add_argument("--investigar", action="store_true", help="forzar la investigación de mercado en esta ronda")
     ap.add_argument("--sin-investigacion", action="store_true", help="no llamar al LLM en esta ronda")
@@ -370,10 +387,13 @@ def main(argv=None):
 
     ahora = datetime.now()
     hoy = date.fromisoformat(args.hoy) if args.hoy else ahora.date()
-    doc = Documento(args.documento)
+    salida = carpetas.salida(hoy)
+    config.CORREOS_PENDIENTES = salida / "correos_pendientes"
+    entrada = Path(args.entrada) if args.entrada else carpetas.entrada(hoy)
+    doc = Documento(args.documento or salida / config.NOMBRE_MEMORIA, origen=carpetas.memoria_anterior(hoy))
     try:
-        fuente = elegir_fuente(args, doc)
-        res = ejecutar(fuente, doc, Catalogo(), hoy, ahora, simular=args.simular,
+        fuente = elegir_fuente(args, doc, entrada, salida)
+        res = ejecutar(fuente, doc, Catalogo(), hoy, ahora, simular=args.simular, entrada=entrada,
                        investigar="no" if args.sin_investigacion else ("si" if args.investigar else "auto"))
     except SystemExit:
         raise

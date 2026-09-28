@@ -24,10 +24,10 @@ Nunca pegues estas claves en un chat ni las subas a GitHub.
 | `AMAZON_ADS_CLIENT_SECRET` | ídem | Sí (modo API) |
 | `AMAZON_ADS_REFRESH_TOKEN` | el token que da el alta OAuth de tu cuenta de Ads | Sí (modo API) |
 | `AMAZON_ADS_PROFILE_ID` | perfil de anunciante; si falta, se usa el de España | No |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | enviar los correos a yubunama62@gmail.com (Gmail: `smtp.gmail.com`, 587, contraseña de aplicación) | No: sin ellas los correos quedan en `resultados/correos_pendientes/` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | enviar los correos a yubunama62@gmail.com (Gmail: `smtp.gmail.com`, 587, contraseña de aplicación) | No: sin ellas los correos quedan en `salidas/<día>/correos_pendientes/` |
 | `ANTHROPIC_API_KEY` | investigación de mercado semanal con Claude (unos céntimos por producto y semana) | No: sin ella no se investiga |
 | `AGENTE_MODELO_LLM` | modelo para la investigación (por defecto `claude-opus-5`) | No |
-| `AGENTE_DOCUMENTO` | dónde está el documento único (por defecto `resultados/memoria_agente.xlsx`) | No |
+| `AGENTE_ENTRADAS`, `AGENTE_SALIDAS` | carpetas de entrada y salida (por defecto `entradas/` y `salidas/`, una subcarpeta por día) | No |
 
 Mac/Linux: `export VARIABLE=valor` (o en `~/.bashrc`). Windows: `setx VARIABLE valor`.
 
@@ -48,20 +48,20 @@ python agente.py
 ```
 
 - Con credenciales de la API: aplica los cambios, **relee Amazon para confirmar cada uno** y te manda un correo con todo lo que cambió.
-- Sin API: usa la hoja masiva más reciente de `datos/` (Operaciones en bloque → descargar Sponsored Products, desde la creación de las campañas hasta hoy) y genera `resultados/bulk_cambios_<fecha>.xlsx` para que la subas. Los cambios se confirman al leer la siguiente descarga.
+- Sin API: usa la hoja masiva de la carpeta más reciente de `entradas/AAAA-MM-DD/` (Operaciones en bloque → descargar Sponsored Products, desde la creación de las campañas hasta hoy) y genera `salidas/<hoy>/bulk_cambios_<fecha>.xlsx` para que la subas. Los cambios se confirman al leer la siguiente descarga. Si en la misma carpeta está `Documento_investigacion_keywords.xlsx`, se importa a la hoja "Investigación".
 
 Se puede lanzar las veces que quieras (cada keyword lleva su propio reloj). Recomendado: una vez al día.
 
-- Mac/Linux: `crontab -e` → `15 9 * * * cd /ruta/AMAZON && venv/bin/python agente.py >> resultados/agente.log 2>&1`
+- Mac/Linux: `crontab -e` → `15 9 * * * cd /ruta/AMAZON && venv/bin/python agente.py >> salidas/agente.log 2>&1`
 - Windows: Programador de tareas → `venv\Scripts\python.exe agente.py`, con la carpeta del proyecto como directorio de trabajo.
 
-Opciones: `--investigar` (fuerza la investigación de mercado), `--sin-investigacion`, `--fuente api|bulk`, `--bulk datos/archivo.xlsx`, `--documento ruta.xlsx`.
+Opciones: `--investigar` (fuerza la investigación de mercado), `--sin-investigacion`, `--fuente api|bulk`, `--entrada entradas/AAAA-MM-DD`, `--bulk archivo.xlsx`, `--documento ruta.xlsx`.
 
 Códigos de salida: 0 bien, 1 error (te llega un correo con el detalle), 2 parado por la cuenta.
 
 ## 5. El documento único
 
-`resultados/memoria_agente.xlsx`. Lo que más vas a mirar:
+`salidas/<día>/memoria_agente.xlsx` (cada día parte de la del día anterior). Lo que más vas a mirar:
 
 - **Resumen**: la última ronda en cifras (gasto del mes, tope, cambios).
 - **Segmentación**: cada keyword/ASIN, su estado y la decisión de esta ronda. Columna "Requiere revisión de Juan".

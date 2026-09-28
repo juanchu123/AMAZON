@@ -42,7 +42,7 @@ def sin_correo_real(tmp_path, monkeypatch):
 
 
 def leer(ruta=FIXTURE, hoy=HOY):
-    return fuente_bulk.FuenteBulk(ruta).leer_cuenta(hoy)
+    return fuente_bulk.FuenteBulk(ruta, salida_dir=FIXTURE.parent).leer_cuenta(hoy)
 
 
 def campana(estrategia, **ajustes):
@@ -178,6 +178,6 @@ def test_ronda_real_cambia_estrategia_y_pujas_dentro_del_tope(tmp_path, catalogo
 def test_todo_terminado_para_el_agente(tmp_path, catalogo):
     """La descarga real del 28/09: las 2 campañas 'activadas' ya terminaron. El agente para y avisa."""
     doc = Documento(tmp_path / "doc.xlsx")
-    res = _ronda(tmp_path, Path(__file__).parent.parent / "datos" / "hoja_masiva_2026-09-28.xlsx", doc, catalogo,
+    res = _ronda(tmp_path, Path(__file__).parent.parent / "entradas" / "2026-09-28" / "hoja_masiva_2026-09-28.xlsx", doc, catalogo,
                  date(2026, 9, 28))
     assert res["parado"] and "terminadas" in res["parado"]

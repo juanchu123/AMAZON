@@ -29,7 +29,8 @@ agente.py  (orquestador: una ejecución = una ronda; se puede lanzar cuantas vec
  ├─ fuente de datos (solo lee y ejecuta, no decide)
  │   ├─ ads_api.py     Amazon Ads API v3: listados + informe diario (Reporting API) + escritura con verificación
  │   └─ fuente_bulk.py sin API: lee la hoja masiva descargada y escribe bulk_cambios_<fecha>.xlsx para subir a mano
- ├─ documento.py      documento único (resultados/memoria_agente.xlsx), escritura atómica
+ ├─ carpetas.py       entradas/<día>/ (hoja masiva + investigación) y salidas/<día>/ (memoria + cambios)
+ ├─ documento.py      documento único (salidas/<día>/memoria_agente.xlsx), escritura atómica
  ├─ learner.py        veredicto de cada cambio (con clics maduros) y agresividad / confianza aprendidas
  ├─ analyzer.py       por keyword/ASIN: elegibilidad, ronda, stop-loss, puja, huecos hasta 12
  ├─ pujas.py          sistema de pujas: puja objetivo, tope rentable, multiplicador de Amazon y estrategia de cada campaña
@@ -75,15 +76,21 @@ Las reglas no saben de dónde vienen los datos: la API y la hoja masiva producen
 - **Nivel campaña:** lo mismo con las subidas de presupuesto (¿más ventas al día con ACOS en objetivo?). Es la "confianza" que usa el reparto del 80 %.
 - Un LLM no aprende entre llamadas: la memoria es el documento único.
 
-## Documento único — `resultados/memoria_agente.xlsx`
+## Carpetas: `entradas/` y `salidas/`, una por día (`AAAA-MM-DD`)
 
-Hojas: Leyenda, Resumen, Campañas, Segmentación, Seguimiento (fotos), Diario (API), Tickets, Competencia (**la edita Juan**), Investigación, Alertas, Histórico. Se escribe a un temporal y se sustituye al final (atómico), con copia `.bak`. Hay que commitearlo: es la memoria del agente. `resultados/memoria.xlsx` y `memoria_pou.xlsx` son la memoria de la etapa manual: no se pisan.
+- `entradas/<día>/`: la **hoja masiva** descargada de Amazon y `Documento_investigacion_keywords.xlsx` (Cowork). El agente usa la carpeta más reciente; la investigación se importa a la hoja "Investigación" (solo datos: entra en campaña lo que pase el filtro de ACOS predicho).
+- `salidas/<día>/`: `memoria_agente.xlsx` actualizada, `bulk_cambios_<fecha>.xlsx` para subir a Amazon y `correos_pendientes/`.
+- La memoria de cada día **parte de la del día anterior más reciente** (o de la del mismo día si se repite): nunca se empieza de cero.
+
+## Documento único — `salidas/<día>/memoria_agente.xlsx`
+
+Hojas: Leyenda, Resumen, Campañas, Segmentación, Seguimiento (fotos), Diario (API), Tickets, Competencia (**la edita Juan**), Investigación, Alertas, Histórico. Las hojas que añadan Juan o Cowork (p. ej. "Productos") se conservan tal cual. Se escribe a un temporal y se sustituye al final (atómico), con copia `.bak`. Hay que commitearlo: es la memoria del agente. `resultados/memoria.xlsx` y `memoria_pou.xlsx` son la memoria de la etapa manual: no se pisan.
 
 ## Cómo se ejecuta
 
 ```bash
 python agente.py --simular            # primera vez: no toca nada
-python agente.py                      # API si hay credenciales; si no, la hoja masiva más reciente de datos/
+python agente.py                      # API si hay credenciales; si no, la hoja masiva de la entrada más reciente
 python -m pytest tests/ -q            # tests con una API falsa
 ```
 Programado con cron / Programador de tareas (o Cowork) en el ordenador de Juan: el proceso corre, decide, ejecuta y termina.
@@ -92,13 +99,13 @@ Programado con cron / Programador de tareas (o Cowork) en el ordenador de Juan: 
 
 - `crear-campana`: campañas iniciales con memoria + bulk (manual, en pausa).
 - `investigar-keywords`: puntuar frases de Helium 10 con el modelo (manual).
-- `revision-semanal` (rutina de los lunes en la nube): corre el agente con la hoja masiva de `datos/` y deja el informe.
+- `revision-semanal` (rutina de los lunes en la nube): corre el agente con la entrada más reciente de `entradas/` y deja el informe en `salidas/<día>/`.
 
 ## Estado actual / pendiente
 
 - [ ] Juan: credenciales de la Amazon Ads API → primera ejecución `--simular` con la API real.
 - [ ] Confirmar con un informe de Amazon el valor "Actualizar" de la columna Operación de la hoja masiva (modo sin API).
-- [ ] Correo SMTP configurado (si no, los avisos quedan en `resultados/correos_pendientes/`).
+- [ ] Correo SMTP configurado (si no, los avisos quedan en `salidas/<día>/correos_pendientes/`).
 - [ ] La conversión de los ASIN de competencia usa la media del producto (se refinará con datos reales de cada ASIN).
 - [ ] Coste del producto y comisiones de Amazon para calcular el ACOS de equilibrio real.
 - [ ] (Futuro) Negativas automáticas — aplazado por Juan.

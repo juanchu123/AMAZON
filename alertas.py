@@ -10,7 +10,7 @@ Con Gmail, SMTP_PASSWORD es una "contraseña de aplicación" (Cuenta de Google -
 Verificación en 2 pasos -> Contraseñas de aplicaciones), no tu contraseña normal.
 
 Si no hay SMTP configurado (o falla), el correo se guarda como .eml en
-resultados/correos_pendientes/ y queda anotado en la hoja Alertas: nunca se pierde un aviso.
+salidas/<día>/correos_pendientes/ y queda anotado en la hoja Alertas: nunca se pierde un aviso.
 """
 
 import os

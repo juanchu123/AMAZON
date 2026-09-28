@@ -12,13 +12,18 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent
 
 # ---------------------------------------------------------------- archivos
-# El documento único (AGENTE_AUTONOMO.md §4). Es un archivo aparte de resultados/memoria.xlsx
-# (esa es la memoria de la etapa manual, con fórmulas y tickets que Juan rellena a mano: el
-# agente no la pisa). En la primera ejecución se siembra con el histórico y la competencia.
-DOCUMENTO = Path(os.environ.get("AGENTE_DOCUMENTO", RAIZ / "resultados" / "memoria_agente.xlsx"))
+# Una subcarpeta por día (AAAA-MM-DD) en cada una (carpetas.py):
+#   entradas/<día>/  la hoja masiva descargada de Amazon y Documento_investigacion_keywords.xlsx
+#   salidas/<día>/   la memoria actualizada (documento único, AGENTE_AUTONOMO.md §4), la hoja de
+#                    cambios para subir a Amazon y los correos que no se pudieron enviar.
+# La memoria de cada día parte de la del día anterior más reciente. resultados/memoria.xlsx y
+# memoria_pou.xlsx son la memoria de la etapa manual: el agente no las toca.
+ENTRADAS = Path(os.environ.get("AGENTE_ENTRADAS", RAIZ / "entradas"))
+SALIDAS = Path(os.environ.get("AGENTE_SALIDAS", RAIZ / "salidas"))
+NOMBRE_MEMORIA = "memoria_agente.xlsx"
+PREFIJO_INVESTIGACION = "documento_investigacion"   # Documento_investigacion_keywords.xlsx (Cowork)
 HISTORICO_XLSX = Path(os.environ.get("AGENTE_HISTORICO", RAIZ / "FreshFinder_Amazon_Ads_historico.xlsx"))
-CORREOS_PENDIENTES = RAIZ / "resultados" / "correos_pendientes"
-CARPETA_DATOS = RAIZ / "datos"
+CORREOS_PENDIENTES = SALIDAS / "correos_pendientes"   # agente.py la pone dentro de la carpeta del día
 
 # ---------------------------------------------------------------- objetivo de negocio
 ACOS_OBJETIVO_MIN = 0.30            # rango objetivo 30-35 %

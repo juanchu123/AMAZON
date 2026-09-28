@@ -159,8 +159,10 @@ class Catalogo:
         for fila in investigacion:
             texto = str(fila.get("Palabra clave") or "").strip().lower()
             if texto:
+                rec = fila.get("Puja sugerida (€)")
                 brutas.append((texto, config.COINCIDENCIA_NUEVAS, self.p_modelo(asin, texto, config.COINCIDENCIA_NUEVAS),
-                               "investigación", str(fila.get("Motivo") or "")[:200], None))
+                               "investigación", str(fila.get("Motivo") or "")[:200],
+                               rec if isinstance(rec, (int, float)) and rec > 0 else None))
         # 3) frases nuevas que genera el modelo de keyword_ml
         if p.modelo_fiable:
             try:

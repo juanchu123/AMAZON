@@ -3,11 +3,11 @@ fuente_bulk.py — fuente alternativa SIN API: la hoja masiva descargada de Amaz
 
 Mientras no estén las credenciales de la API (o si un día falla), el agente puede trabajar
 con la descarga de Operaciones en bloque (Sponsored Products, rango desde la creación de las
-campañas hasta hoy, con campañas en pausa) que se deja en datos/:
+campañas hasta hoy, con campañas en pausa) que se deja en entradas/AAAA-MM-DD/:
 
   LEER    -> la misma estructura Cuenta que da ads_api.py, con los acumulados de cada fila
              (se guardan como "foto" del día en la hoja Seguimiento).
-  APLICAR -> no toca Amazon: escribe resultados/bulk_cambios_<fecha>.xlsx sobre la plantilla
+  APLICAR -> no toca Amazon: escribe salidas/AAAA-MM-DD/bulk_cambios_<fecha>.xlsx sobre la plantilla
              oficial, para subirlo a mano. Los tickets quedan "enviado_bulk" y se CONFIRMAN
              (o se marcan fallidos) en la siguiente ejecución, al leer la nueva descarga (§2.8).
 
@@ -76,9 +76,9 @@ class _Cols:
         return None
 
 
-def buscar_descarga(carpeta=None):
-    """La hoja masiva más reciente de datos/ (xlsx con la hoja de Sponsored Products)."""
-    carpeta = Path(carpeta or config.CARPETA_DATOS)
+def buscar_descarga(carpeta):
+    """La hoja masiva más reciente de una carpeta (xlsx con la hoja de Sponsored Products)."""
+    carpeta = Path(carpeta)
     for p in sorted(carpeta.glob("*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True):
         try:
             if HOJA in load_workbook(p, read_only=True).sheetnames:
@@ -99,9 +99,9 @@ class FuenteBulk:
     nombre = "hoja masiva"
     verifica_al_momento = False
 
-    def __init__(self, ruta, salida_dir=None):
+    def __init__(self, ruta, salida_dir):
         self.ruta = Path(ruta)
-        self.salida_dir = Path(salida_dir or config.RAIZ / "resultados")
+        self.salida_dir = Path(salida_dir)
         self.pendientes = []
 
     def leer_cuenta(self, hoy=None):
