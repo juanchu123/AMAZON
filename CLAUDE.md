@@ -22,6 +22,17 @@ Cualquier sesión que abra este proyecto pregunta a Juan lo que necesite **antes
 - **La primera vez, `python agente.py --simular`**: decide y lo cuenta sin tocar Amazon ni crear tickets. Solo después, ejecuciones reales.
 - Cualquier cosa ambigua o contradictoria: preguntar en un mensaje corto antes que adivinar.
 
+## Decisiones de Juan del 30/09/2026 (pendientes de implementar; mandan sobre lo que diga más abajo)
+
+Juan pidió no tocar el código hasta estudiar el material de Amazon Ads Academy que va a pasar. Al implementarlas se actualizan las reglas de abajo:
+
+1. **Una candidata rentable entra**, sin esperar a tener 3 (también si necesita campaña nueva).
+2. **El presupuesto lo gestiona el agente entero:** fuera el reparto 80/20 y el fondo fijo de experimentación. Techo: **840 €/mes (se mantiene)**.
+3. **El agente puede cambiar lo que necesite en Amazon** a partir de los datos.
+4. **Puede reactivar** keywords y campañas pausadas si los datos lo justifican.
+5. **Se mantiene** la parada con aviso si todo está en pausa o hay un problema de cuenta/pago.
+6. **Que pruebe de forma autónoma** (el histórico es malo y hay que aprender): elegir qué probar por el potencial de cada frase (no solo la media), pérdida limitada por prueba (stop-loss), nº de pruebas según lo que quede del tope, y aprender de cada resultado qué tipo de frases funcionan.
+
 ## Tres agentes, un solo comando (`python agente.py`)
 
 - **Marketing** (`agente.py` y sus módulos): anuncios — pujas, presupuesto, keywords, campañas. Reglas fijas.
