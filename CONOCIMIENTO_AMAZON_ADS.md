@@ -85,7 +85,39 @@ Principios de la experimentación online (Kohavi, Tang y Xu, *Trustworthy Online
 - Referencias habituales del sector: TACOS 5-15 % en productos maduros, 20-30 % en lanzamiento. **Son cifras de agencias, no de Amazon, y no demuestran causalidad**: el estudio de eBay (Blake, Nosko y Tadelis, *Econometrica* 2015) mostró que parte de lo que se atribuye a los anuncios habría ocurrido igual. La única forma seria de saberlo es comparar con un grupo de control (§7.4).
 - En el agente: calcular el TACOS necesita las ventas totales, que no vienen en la hoja masiva. Saldrán del informe de transacciones de Seller Central (pendiente) en el agente de finanzas.
 
-## 12. Lo que falta por comprobar en la documentación oficial
+## 12. Eventos y estacionalidad (Prime Day, Black Friday, Navidad)
+
+- En los grandes eventos **sube el CPC** (Amazon: +11 % en Prime Day en Sponsored Products) y también la conversión; los presupuestos diarios **se agotan a mitad del día**. Amazon recomienda subir presupuestos (3-5 veces) y pujas en esos días, o usar reglas de puja por calendario.
+- Amazon dice que los productos con oferta o cupón que además se anuncian venden de media 12 veces más. Es una cifra de marketing de Amazon, sin grupo de control: no demuestra que la venta la cause el anuncio (§11).
+- En el agente: el tope reparte los 840 €/mes a partes iguales por día. **Adelantar gasto a los días de evento (y ahorrar otros días) es una decisión de Juan**, que no está implementada; el tope rentable por clic sí protege en esos días aunque el CPC suba.
+- Fuente: guías de Amazon Ads "Black Friday and Cyber Monday advertising tips", "Prime Day 2026: Advanced advertising strategies" y "Holiday advertising myths", 30/09/2026.
+
+## 13. Puja sugerida de Amazon
+
+- La puja sugerida y su rango salen de las **pujas ganadoras de anuncios parecidos recientes** en la categoría, y cambian cada día. No es lo que se paga por clic: el CPC real sale de la subasta.
+- En esta cuenta, la "puja recomendada baja" de la rejilla era 0,32 € y el CPC pagado de verdad 0,95 € (mediana 0,76 €). Por eso el ACOS predicho con la puja sugerida sale optimista (especificación P1-B: calibrar el CPC).
+- Fuente: ayuda de Amazon Ads "Understand bidding" y "Bidding strategies for Sponsored Products", 30/09/2026.
+
+## 14. Segmentación por ASIN de la competencia
+
+- Amazon la presenta como segmentación de fondo de embudo (compradores que ya comparan). Las pujas valen para todos los productos del grupo: en un grupo, productos muy parecidos. Existe la **segmentación negativa por ASIN**, para no salir junto a productos que no encajan.
+- Fuente: guías "A guide to targeting with Sponsored Products" y "Sponsored Products best practices", 30/09/2026.
+
+## 15. Diagnóstico de la cuenta con sus propios números (histórico)
+
+ACOS = CPC / (conversión × ticket). Con el histórico de la cuenta:
+
+| Producto | Clics | Compras | Conversión | Ticket | CPC pagado | ACOS | Para ACOS 35 %: conversión necesaria con ese CPC | … o CPC necesario con esa conversión |
+|---|---|---|---|---|---|---|---|---|
+| Rejilla | 1.119 | 53 | 4,7 % | 14,27 € | 0,95 € | 141 % | 19,1 % | 0,24 € |
+| Pinza | 467 | 37 | 7,9 % | 11,24 € | 0,61 € | 69 % | 15,6 % | 0,31 € |
+
+- **El problema principal no son las pujas: es la conversión.** Las referencias del sector (agencias, EE. UU.) hablan de una conversión media en Amazon de alrededor del 10 %; la rejilla está a la mitad. Con esa conversión, pujar lo que haría rentable la rejilla (≈ 0,24 €) apenas da impresiones. El agente de marketing no puede arreglar esto solo: lo que mueve la conversión es la **ficha** (título, fotos, bullets), el **precio**, las **reseñas** (cantidad y nota) y el **cupón u oferta**.
+- Consecuencia práctica: prioridad al agente de página de producto y a revisar precio y reseñas, sobre todo en la rejilla. Y usar el informe de negocio (sesiones y porcentaje de sesiones con pedido) para medir si los cambios de ficha suben la conversión.
+- Reseñas: el programa **Amazon Vine** (unidades gratis a revisores de Amazon a cambio de reseñas) se usa para lanzar productos con pocas reseñas; su coste e importe en Europa cambian, hay que mirarlo en Seller Central. Las cifras de mejora de conversión que circulan son de blogs, no de Amazon.
+- Fuentes de las referencias: AdBadger y Karooya (benchmarks 2025-2026), blogs sobre Vine (EcomCircles, SellerSonar); datos propios de `FreshFinder_Amazon_Ads_historico.xlsx`. 30/09/2026.
+
+## 16. Lo que falta por comprobar en la documentación oficial
 
 La red de esta sesión no deja abrir advertising.amazon.com (solo el buscador). Pendiente:
 - El valor en español de "Update" en la hoja masiva.
