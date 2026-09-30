@@ -117,7 +117,17 @@ ACOS = CPC / (conversión × ticket). Con el histórico de la cuenta:
 - Reseñas: el programa **Amazon Vine** (unidades gratis a revisores de Amazon a cambio de reseñas) se usa para lanzar productos con pocas reseñas; su coste e importe en Europa cambian, hay que mirarlo en Seller Central. Las cifras de mejora de conversión que circulan son de blogs, no de Amazon.
 - Fuentes de las referencias: AdBadger y Karooya (benchmarks 2025-2026), blogs sobre Vine (EcomCircles, SellerSonar); datos propios de `FreshFinder_Amazon_Ads_historico.xlsx`. 30/09/2026.
 
-## 16. Lo que falta por comprobar en la documentación oficial
+## 16. Lo que enseña el histórico propio (FreshFinder_Amazon_Ads_historico.xlsx, analizado el 30/09/2026)
+
+1. **Las keywords genéricas en amplia se comieron el dinero.** Rejilla: la amplia gastó 918 € de 1.049 € (88 %), con conversión 4,3 % y ACOS 154 %. Solo "soporte para móvil coche" (amplia) gastó 523 €, con conversión 4,0 % y CPC 1,05 €. Pinza: las genéricas convirtieron un 1,5 % (ACOS 453 %).
+2. **Lo específico del producto convierte mucho mejor.** El grupo "Pinza" de la campaña "Soporte móvil pinza" trajo 34 de las 37 compras de la pinza: conversión 11,1 %, ACOS 41 %. En la rejilla, las específicas convirtieron un 7,0 % frente a 4,8 % de las genéricas, y con un CPC más barato (0,71 € frente a 0,98 €).
+3. **La exacta convierte el doble que la amplia** (rejilla: 8,6 % frente a 4,3 %, CPC 0,74 € frente a 1,02 €). La campaña automática de la rejilla convirtió un 7,6 % (ACOS 84 %), mejor que su amplia manual.
+4. **Se pagó más de lo que se pujaba:** mediana del CPC pagado / puja escrita = 1,42 en la rejilla y 1,33 en la pinza. Casi todas las campañas antiguas tenían "al alza y a la baja". Confirma con datos reales el multiplicador de `pujas.py`.
+5. **La puja sugerida de Amazon se queda corta:** mediana del CPC pagado / "puja rec. baja" = 2,35 en la rejilla (19 keywords con ≥ 5 clics) y 1,38 en la pinza (11). Implementado como `Producto.factor_cpc` (mejoras P1-B.2): el ACOS predicho de una frase nueva usa el CPC sugerido × ese factor, que nunca baja de 1.
+
+**Consecuencia:** con el CPC calibrado, en el histórico solo queda **una frase nueva por producto** con ACOS predicho ≤ 30 % (rejilla: "soporte coche para teléfono móvil"; pinza: "soporte móvil para coche de pinza para salpicadero"). El agente casi deja de añadir keywords nuevas y no abre campañas nuevas (necesita 3 candidatas). Es lo que dicen los datos: con la conversión actual, casi ninguna frase nueva es rentable al CPC real. Salir de ahí depende de subir la conversión (§15) o de que Juan decida probar con más riesgo (por ejemplo, un umbral de ACOS predicho más alto solo en el fondo de experimentación). Es decisión de Juan.
+
+## 17. Lo que falta por comprobar en la documentación oficial
 
 La red de esta sesión no deja abrir advertising.amazon.com (solo el buscador). Pendiente:
 - El valor en español de "Update" en la hoja masiva.

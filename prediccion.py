@@ -35,6 +35,7 @@ class Producto:
     cpc_competir: float | None = None               # mediana de la "puja rec. baja" de todas sus keywords
     cpc_especificas: float | None = None            # … de las que llevan su palabra distintiva
     cpc_genericas: float | None = None              # … de las genéricas (suelen ser mucho más caras)
+    factor_cpc: float = 1.0                         # CPC pagado / puja rec. baja (≥ 1), config.FACTOR_CPC_*
     filas: list = field(default_factory=list)       # keywords del histórico (formato keyword_ml)
     modelo: tuple | None = None                     # (vec, modelo) de keyword_ml
 
@@ -93,6 +94,10 @@ class Catalogo:
                 gen = [f["puja_rec_baja"] for f in rec if not self._especifica(p, f["keyword"])]
                 p.cpc_especificas = statistics.median(esp) if esp else None
                 p.cpc_genericas = statistics.median(gen) if gen else None
+            ratios = [f["coste"] / f["clics"] / f["puja_rec_baja"] for f in filas
+                      if f["clics"] >= config.FACTOR_CPC_MIN_CLICS and f.get("puja_rec_baja", 0) > 0]
+            if len(ratios) >= config.FACTOR_CPC_MIN_FILAS:
+                p.factor_cpc = max(1.0, statistics.median(ratios))
             if p.perfil and sum(f["compras"] for f in filas) > 0:
                 p.modelo = kml.entrenar(filas, "compras", "clics")
 
@@ -101,13 +106,15 @@ class Catalogo:
         return bool(p.perfil) and any(w in kml.PERFILES[p.perfil]["especificas"] for w in kml.tokens_contenido(texto))
 
     def cpc_para(self, asin, texto, rec_propia=None):
-        """CPC para competir por una frase: la puja recomendada baja que dio Amazon para ELLA si
-        existe; si no, la mediana de las frases parecidas del producto (específicas o genéricas)."""
-        if rec_propia and rec_propia > 0:
-            return rec_propia
+        """CPC que se pagará por una frase: la puja sugerida por Amazon para ELLA si existe (si no, la
+        mediana de las frases parecidas del producto, específicas o genéricas), por el factor de
+        calibración del producto (lo que de verdad se ha pagado frente a lo que sugería Amazon)."""
         p = self.producto(asin)
+        if rec_propia and rec_propia > 0:
+            return rec_propia * p.factor_cpc
         propia = p.cpc_especificas if self._especifica(p, texto) else p.cpc_genericas
-        return propia or p.cpc_competir
+        base = propia or p.cpc_competir
+        return base * p.factor_cpc if base else base
 
     def producto(self, asin):
         if asin not in self.productos:

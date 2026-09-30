@@ -122,7 +122,7 @@ Programado con cron / Programador de tareas (o Cowork) en el ordenador de Juan: 
 - [ ] Coste del producto y comisiones de Amazon para calcular el ACOS de equilibrio real.
 - [ ] (Futuro) Negativas automáticas — aplazado por Juan.
 - [ ] Juan: rellenar la hoja "Economía" (comisión de Amazon, tarifa FBA, coste de cada producto). Hasta entonces el ACOS de equilibrio es el 35 % (`config.ACOS_EQUILIBRIO_DEFECTO`).
-- [ ] Resto de la especificación de mejoras (28/09/2026): P0-A completo, P0-B §1-3 y §5, P1, P2. Hecho: P0-B §4 (sistema de pujas) y §2 (hoja Economía y ACOS de equilibrio por producto; el ACOS objetivo sigue siendo 30-35 % hasta que Juan decida).
+- [ ] Resto de la especificación de mejoras (28/09/2026): P0-A completo, P0-B §1-3 y §5, P1, P2. Hecho: P0-B §4 (sistema de pujas), P1-B.2 (CPC calibrado con lo pagado de verdad: `Producto.factor_cpc`, nunca < 1) y P0-B §2 (hoja Economía y ACOS de equilibrio por producto; el ACOS objetivo sigue siendo 30-35 % hasta que Juan decida).
 
 ## Notas importantes
 

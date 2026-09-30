@@ -48,6 +48,12 @@ PRIOR_CLICS = 20                    # peso del modelo frente a los datos propios
 MIN_COMPRAS_MODELO = 10             # producto con < 10 compras: el modelo no es fiable (se usa
 PUJA_MAX_SIN_MODELO = 0.30          # su conversión media) y las keywords nuevas pujan ≤ 0,30 €
 PUJA_GRUPO_DEFECTO = 0.30
+# CPC calibrado (mejoras P1-B.2): la "puja recomendada baja" de Amazon se queda corta frente a lo
+# que se paga de verdad (histórico: ×2,35 en la rejilla, ×1,38 en la pinza). CPC estimado =
+# puja sugerida × mediana(CPC pagado / puja rec. baja) de las keywords del producto con ≥ 5 clics.
+# Nunca por debajo de ×1: con pocos datos el factor solo puede hacer la predicción más prudente.
+FACTOR_CPC_MIN_CLICS = 5
+FACTOR_CPC_MIN_FILAS = 5
 
 # ---------------------------------------------------------------- estrategia de pujas (mejoras P0-B §4)
 # Gestión autorizada por Juan (especificación de mejoras, 28/09/2026): el agente elige por campaña

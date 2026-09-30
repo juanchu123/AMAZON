@@ -398,9 +398,11 @@ def test_hoja_masiva_ida_y_vuelta(tmp_path, catalogo, monkeypatch):
 
 
 # ---------------------------------------------------------------- campaña nueva (§2.6)
-def test_abre_campana_para_producto_sin_campana(tmp_path, catalogo):
+def test_abre_campana_para_producto_sin_campana(tmp_path, catalogo, monkeypatch):
     # solo existe la campaña de la pinza (probada): el 20 % de experimentación está libre y la
-    # rejilla (en el catálogo, sin campaña en esta cuenta de prueba) tiene candidatas ≤ 30 %
+    # rejilla (en el catálogo, sin campaña en esta cuenta de prueba) tiene candidatas ≤ 30 % con el
+    # CPC que sugiere Amazon (sin calibrar: aquí se prueba la apertura, no la calibración)
+    monkeypatch.setattr(catalogo.producto("B0DHYBY6MS"), "factor_cpc", 1.0)
     res, api, doc = correr(tmp_path, cuenta_pinza(), [], catalogo)
     creadas = [l for l in api.llamadas if l[0] == "campana"]
     assert len(creadas) == 1                              # como mucho una por ronda
@@ -414,6 +416,15 @@ def test_abre_campana_para_producto_sin_campana(tmp_path, catalogo):
     # la suma de presupuestos no pasa del tope del día
     total = sum(c.presupuesto for c in api.cuenta.campanas.values() if c.estado == ACTIVO)
     assert total <= safety.presupuesto_diario_total(HOY, None) + 0.01
+
+
+def test_cpc_calibrado_con_lo_pagado_de_verdad(catalogo):
+    rejilla, pinza = catalogo.producto("B0DHYBY6MS"), catalogo.producto(PINZA)
+    assert rejilla.factor_cpc == pytest.approx(2.35, abs=0.01)             # pagado 2,35 × la puja rec. baja
+    assert pinza.factor_cpc == pytest.approx(1.38, abs=0.01)
+    assert catalogo.cpc_para(PINZA, "soporte pinza", rec_propia=0.30) == pytest.approx(0.30 * pinza.factor_cpc)
+    # sin datos suficientes el factor es 1: nunca abarata la predicción
+    assert catalogo.producto("B0F746MFPQ").factor_cpc == 1.0
 
 
 def test_no_abre_campana_sin_fondo(tmp_path, catalogo):
