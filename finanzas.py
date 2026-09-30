@@ -22,7 +22,8 @@ import config
 import safety
 from documento import num
 
-FALTAN = "Rellena Comisión Amazon, Tarifa FBA y Coste del producto para calcular el margen"
+FALTAN = ("Rellena Comisión Amazon (15 % accesorios de electrónica, 12 % automoción, 15 % juguetes: mira la categoría "
+          "en Seller Central), Tarifa FBA (calculadora de ingresos de Seller Central; unos 2,5-4 €) y Coste del producto")
 
 
 def _pct(v):

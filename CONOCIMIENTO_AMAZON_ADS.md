@@ -57,11 +57,41 @@ Principios de la experimentación online (Kohavi, Tang y Xu, *Trustworthy Online
 5. **Ley de Twyman:** un resultado que parece demasiado bueno probablemente es un error de datos (como el ACOS 0 % que salía cuando no se leía la columna "Inversión"). Primero se revisan los datos.
 6. **No mirar a cada rato y decidir:** mirar los datos a diario y cortar en cuanto "parece" que algo va bien o mal infla los falsos positivos. Las reglas fijan de antemano cuándo se decide (ronda: ≥ 3 días y ≥ 10 clics; veredicto: ≥ 10 clics maduros).
 
-## 8. Lo que falta por comprobar en la documentación oficial
+## 8. Economía de un producto en Amazon.es (para la hoja Economía)
+
+- **Comisión por venta (referral):** porcentaje del precio total con IVA. Según la categoría en la que esté el producto en Seller Central: *Accesorios de electrónica* 15 % (hasta 100 €) y 8 % por encima; *Automoción y deportes de motor* 12 %; *Juguetes y juegos* 15 %. Mínimo por artículo de unos 0,30. Amazon mantuvo los porcentajes en 2024-2026. **Cuál aplica a cada ASIN lo dice Seller Central** (Inventario → la categoría del producto, o la calculadora de ingresos).
+- **Tarifa FBA (logística):** para un paquete pequeño estándar (hasta unos 450 g), en la UE está en torno a **2,95 € para precios < 10 € y 3,96 € para 10-50 €** fuera de temporada alta. Desde el 1/2/2026 las **tarifas FBA reducidas de bajo precio** cubren productos de **≤ 20 €** en casi todas las categorías (unos 0,45 €/ud menos de media): **todos los productos de FreshFinder entran**. Hay recargo de temporada alta (octubre-diciembre).
+- La cifra exacta por ASIN: **calculadora de ingresos FBA de Seller Central**. Es la que hay que poner en la hoja Economía; las tablas publicadas se quedan viejas en meses.
+- Fuentes: Repricer (guía de tarifas 2026), About Amazon EU ("Update to European referral and FBA fees for 2026"), Beancount y Flexfulfillment (cambios FBA 2026), 30/09/2026.
+- Orden de magnitud para la pinza (11,24 €): 11,24/1,21 − 15 % × 11,24 − ~2,5-3 € FBA − 0,80 € coste ≈ 3,8-4,3 € de margen → **ACOS de equilibrio ≈ 34-38 %**. Con el objetivo 30-35 % se juega casi a beneficio cero en anuncios: el dinero lo tienen que dar las ventas orgánicas que arrastran (ver §11).
+
+## 9. Reglas de la ficha (para el agente de página de producto)
+
+- **Título:** máximo **200 caracteres** con espacios (desde el 21/01/2025). Ninguna palabra más de **2 veces** (singular y plural cuentan igual; preposiciones y artículos no cuentan). Prohibidos `! $ ? _ { } ^ ¬ ¦` salvo en la marca. En móvil se cortan a partir de ~80 caracteres: **lo importante, en los primeros 80**. Si no se cumple, Amazon reescribe el título solo.
+- **Bullets:** 5. Recomendado **≤ 200 caracteres cada uno** (en móvil se cortan); el límite duro depende de la categoría (lo marca Seller Central al editar).
+- **Términos de búsqueda ocultos (backend):** **< 250 bytes** (ojo: una letra con tilde ocupa 2 bytes). Sin repetir palabras del título, sin marcas propias ni ajenas, sin ASIN.
+- Fuentes: Search Engine Land ("Amazon's 2025 title policy update"), foros de Seller Central Europa (nuevos requisitos de título del 21/01/2025), guías de bullets de SellerSprite y Amalytix, 30/09/2026.
+
+## 10. Campañas automáticas y cosecha de términos
+
+- Una campaña automática tiene 4 grupos de segmentación, cada uno con su propia puja: **coincidencia cercana** (búsquedas muy parecidas al producto), **coincidencia amplia** (relacionadas de lejos), **sustitutos** (fichas de productos parecidos) y **complementos** (fichas de productos que se usan con el tuyo).
+- Uso recomendado por Amazon: la automática sirve para **descubrir**; el **informe de términos de búsqueda** dice qué escribieron los que compraron, y esos términos se pasan a campañas manuales (exacta o frase) con su propia puja. Amazon tiene una función, "Target Promotion", que lo hace. Los términos que gastan sin vender se niegan en la automática.
+- Fuente: guía "A guide to targeting with Sponsored Products" y "Harvest high performing targets with Target Promotion" (advertising.amazon.com), 30/09/2026.
+- En el agente: la hoja masiva lee los grupos automáticos (`close-match`, `loose-match`, `substitutes`, `complements`) como elementos con puja. La cosecha automática está especificada en P1-D (pendiente).
+
+## 11. ACOS no es todo: TACOS y ventas orgánicas
+
+- **TACOS** = gasto en anuncios / **ventas totales** (anuncios + orgánicas). Un ACOS estable con un TACOS que baja significa que los anuncios empujan ventas orgánicas (mejor posición, más reseñas).
+- Referencias habituales del sector: TACOS 5-15 % en productos maduros, 20-30 % en lanzamiento. **Son cifras de agencias, no de Amazon, y no demuestran causalidad**: el estudio de eBay (Blake, Nosko y Tadelis, *Econometrica* 2015) mostró que parte de lo que se atribuye a los anuncios habría ocurrido igual. La única forma seria de saberlo es comparar con un grupo de control (§7.4).
+- En el agente: calcular el TACOS necesita las ventas totales, que no vienen en la hoja masiva. Saldrán del informe de transacciones de Seller Central (pendiente) en el agente de finanzas.
+
+## 12. Lo que falta por comprobar en la documentación oficial
 
 La red de esta sesión no deja abrir advertising.amazon.com (solo el buscador). Pendiente:
 - El valor en español de "Update" en la hoja masiva.
 - La puja mínima de Sponsored Products en Amazon.es (el agente usa 0,02 €).
 - Si la atribución de 7 días se mantiene igual para la cuenta de FreshFinder.
+- La categoría (y por tanto la comisión) de cada ASIN y su tarifa FBA exacta: calculadora de ingresos de Seller Central.
+- El límite duro de caracteres de los bullets en la categoría de los soportes.
 
 Para comprobarlo: permitir `advertising.amazon.com` en la configuración de red del entorno, o que Juan pegue el texto de la página.
