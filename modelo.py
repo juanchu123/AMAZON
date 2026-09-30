@@ -63,6 +63,7 @@ class Campana:
     fecha_fin: Optional[date] = None
     estrategia_objetivo: str = ""       # la que elige el agente en esta ronda (pujas.decidir_estrategias)
     motivo_estrategia: str = ""
+    metricas_emplazamiento: dict = field(default_factory=dict)  # emplazamiento -> Metricas (acumulado)
 
 
 @dataclass
@@ -100,6 +101,34 @@ class Elemento:
 
 
 @dataclass
+class Negativa:
+    """Palabra clave negativa de un grupo de anuncios (Frase negativa / Exacta negativa)."""
+    clave: str
+    id_campana: str
+    id_grupo: str
+    texto: str
+    coincidencia: str
+    estado: str
+
+
+@dataclass
+class Termino:
+    """Una fila del informe de términos de búsqueda: lo que escribió el cliente y qué keyword o
+    segmentación de qué grupo lo cazó, con sus métricas acumuladas."""
+    id_campana: str
+    id_grupo: str
+    clave_origen: str                   # keywordId / targetId que lo cazó
+    origen: str                         # texto de esa keyword o expresión
+    coincidencia: str                   # de la keyword que lo cazó (o "Automática", "ASIN"…)
+    termino: str
+    metricas: Metricas = field(default_factory=Metricas)
+
+    @property
+    def clave(self):
+        return f"{self.id_grupo}|{self.termino.strip().lower()}"
+
+
+@dataclass
 class Cuenta:
     """Foto completa de la cuenta en el momento de leerla."""
     fecha: date
@@ -108,6 +137,10 @@ class Cuenta:
     elementos: dict = field(default_factory=dict)   # clave -> Elemento
     anuncios: list = field(default_factory=list)    # [Anuncio]
     avisos_cuenta: list = field(default_factory=list)  # problemas de cuenta detectados por la fuente
+    negativas: list = field(default_factory=list)   # [Negativa]
+    terminos: list = field(default_factory=list)    # [Termino] (informe de términos de búsqueda)
+    terminos_maduros: bool = False      # True si las métricas de los términos ya son solo de clics
+                                        # de más de 7 días (API); con la hoja masiva se usan fotos
 
     # --- consultas útiles para el motor
     def productos_de_grupo(self, id_grupo):
@@ -141,6 +174,8 @@ class Cuenta:
 # tipos de cambio (columna "Tipo" de la hoja Tickets)
 PUJA, PAUSAR, NUEVA_KEYWORD, NUEVO_ASIN, PRESUPUESTO, CREAR_CAMPANA, ESTRATEGIA = (
     "puja", "pausar", "añadir_keyword", "añadir_asin", "presupuesto", "crear_campaña", "estrategia")
+NEGATIVA, REACTIVAR, REACTIVAR_CAMPANA, EMPLAZAMIENTO = (
+    "añadir_negativa", "reactivar", "reactivar_campaña", "emplazamiento")
 
 
 @dataclass

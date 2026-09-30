@@ -12,7 +12,7 @@ learner.py — aprendizaje a dos niveles (AGENTE_AUTONOMO.md §3), leyendo la ho
    La agresividad decide dónde cae la puja dentro del ACOS objetivo 30-35 %.
 
 3. Nivel campaña: lo mismo con las subidas de presupuesto (¿trajeron más ventas al día
-   manteniendo el ACOS en objetivo?). Da la "confianza" de la campaña para repartir el 80 %.
+   manteniendo el ACOS en objetivo?). Da la "confianza" de la campaña para repartir el presupuesto.
 
 Una decisión todavía sin evaluar no cuenta ni como acierto ni como fallo.
 """
@@ -23,9 +23,9 @@ from datetime import timedelta
 import config
 import keyword_ml as kml
 from documento import fecha, num
-from modelo import NUEVA_KEYWORD, PAUSAR, PRESUPUESTO, PUJA, Metricas
+from modelo import NUEVA_KEYWORD, PAUSAR, PRESUPUESTO, PUJA, REACTIVAR, Metricas
 
-EVALUABLES = (PUJA, NUEVA_KEYWORD, "añadir_asin", PRESUPUESTO)
+EVALUABLES = (PUJA, NUEVA_KEYWORD, "añadir_asin", REACTIVAR, PRESUPUESTO)
 
 
 def _clave_aprendizaje(producto, texto, coincidencia):
@@ -64,7 +64,7 @@ def evaluar_pendientes(doc, series, hoy):
             continue
         f0 = fecha(t["Fecha"])
         siguiente = next((fecha(o["Fecha"]) for o in tickets
-                          if o["Clave"] == t["Clave"] and o["Tipo"] in (PUJA, PAUSAR, PRESUPUESTO)
+                          if o["Clave"] == t["Clave"] and o["Tipo"] in (PUJA, PAUSAR, REACTIVAR, PRESUPUESTO)
                           and fecha(o["Fecha"]) > f0), None)
         if t["Tipo"] == PRESUPUESTO:
             res = _evaluar_presupuesto(t, series, hoy, f0, siguiente)

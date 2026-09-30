@@ -5,10 +5,11 @@ Un solo Excel con todo lo que el agente sabe y ha hecho:
 
   Leyenda        qué es cada hoja (para Juan)
   Resumen        la última ronda en cifras (se reescribe en cada ejecución)
-  Campañas       estado, fondo (probado / experimentación), presupuesto y puntuación de cada campaña
+  Campañas       estado, gasto medio, si está limitada por presupuesto, presupuesto y puntuación de cada campaña
   Segmentación   estado actual de cada keyword / ASIN / categoría, como los exports de Amazon
   Seguimiento    una FOTO por día y elemento: acumulados (clics, coste, compras, ventas)
   Diario         datos por día que da la API de Amazon (informe diario); si existen, mandan sobre las fotos
+  Términos       una foto por día de cada término de búsqueda (lo que escribió el cliente) y la decisión
   Tickets        un registro por cambio: antes -> después, motivo, estado de verificación y veredicto
   Competencia    ASIN de la competencia por producto. Los edita JUAN a mano (§2.10)
   Investigación  frases candidatas que propone el módulo de investigación (§2.11)
@@ -44,8 +45,8 @@ COLUMNAS = {
     "Finanzas": ["Producto (ASIN)", "Producto", "Periodo", "Gasto en anuncios (€)", "Ventas por anuncios (€)",
                  "Compras por anuncios", "ACOS", "ACOS de equilibrio", "Margen antes de publicidad (€)",
                  "Beneficio después de publicidad (€)", "Situación"],
-    "Campañas": ["ID campaña", "Campaña", "Estado", "Producto (ASIN)", "Fondo", "Presupuesto diario (€)",
-                 "Presupuesto objetivo (€)", "ACOS 30 días", "Puntuación", "Confianza (aprendizaje)",
+    "Campañas": ["ID campaña", "Campaña", "Estado", "Producto (ASIN)", "Gasto medio 7 días (€)",
+                 "Limitada por presupuesto", "Presupuesto diario (€)", "Presupuesto objetivo (€)", "ACOS 30 días", "Puntuación", "Confianza (aprendizaje)",
                  "Estrategia de pujas", "Estrategia elegida", "Motivo de la estrategia", "Ajustes de emplazamiento",
                  "Creada por el agente", "Actualizado"],
     "Segmentación": ["Clave", "ID campaña", "Campaña", "ID grupo", "Grupo", "Producto (ASIN)", "Tipo",
@@ -57,6 +58,8 @@ COLUMNAS = {
                     "Coincidencia", "Estado", "Puja (€)", "Impresiones", "Clics", "Coste (€)", "Compras",
                     "Ventas (€)"],
     "Diario": ["Fecha", "Clave", "ID campaña", "Impresiones", "Clics", "Coste (€)", "Compras", "Ventas (€)"],
+    "Términos": ["Fecha", "Clave", "ID campaña", "ID grupo", "Término de búsqueda", "Keyword que lo cazó", "Coincidencia",
+                 "Clics", "Coste (€)", "Compras", "Ventas (€)", "Decisión"],
     "Tickets": ["Ticket", "Fecha", "Tipo", "Clave", "Producto (ASIN)", "ID campaña", "Campaña", "ID grupo",
                 "Palabra clave / segmentación", "Coincidencia", "Antes", "Después", "Motivo", "Estado",
                 "Detalle", "Requiere revisión", "Base: clics", "Base: coste", "Base: compras", "Base: ventas",
@@ -80,11 +83,12 @@ LEYENDA = [
                  "ACOS de equilibrio, que el agente usa como límite de las pujas."),
     ("Finanzas", "Por producto: gasto y ventas por anuncios, beneficio después de publicidad (mes y 30 días) y gasto "
                  "del mes frente al tope."),
-    ("Campañas", "Fondo 'probado' (80 % del presupuesto) o 'experimentación' (20 %), presupuesto, puntuación "
-                 "y estrategia de pujas (la que tiene y la que elige el agente)."),
+    ("Campañas", "Presupuesto (lo reparte el agente entero, con techo de 840 €/mes), gasto medio, si está limitada "
+                 "por presupuesto, puntuación y estrategia de pujas (la que tiene y la que elige el agente)."),
     ("Segmentación", "Estado actual de cada keyword / ASIN y la decisión de esta ronda."),
     ("Seguimiento", "Una foto por día: acumulados. 'Clics nuevos' = foto de hoy − foto del último cambio."),
     ("Diario", "Datos por día de la API. Permite saber qué clics tienen más de 7 días (maduros)."),
+    ("Términos", "Lo que escribieron los clientes: cosecha (lo que vende pasa a Exacta) y negativas (gasto > CPA sin ventas)."),
     ("Tickets", "Cada cambio: antes -> después, motivo, si se CONFIRMÓ releyendo Amazon, y el veredicto."),
     ("Competencia", "ASIN de la competencia. Pon 'Sí' en 'Confirmado por Juan' para que el agente pueda usarlos."),
     ("Investigación", "Frases candidatas del módulo de investigación (LLM). Solo son datos: las reglas deciden."),
@@ -92,10 +96,12 @@ LEYENDA = [
     ("Histórico", "Rendimiento de antes del agente, del Excel histórico."),
     ("", ""),
     ("Reglas", "Ronda: ≥3 días y ≥10 clics nuevos desde el último cambio. Clic maduro: >7 días."),
-    ("", "Puja = P(compra|clic) × ticket medio × ACOS objetivo (30-35 %). Suelo 0,02 €. Solo reducir."),
+    ("", "Puja = P(compra|clic) × ticket medio × ACOS objetivo (30-35 %), escalonada amplia ≤ frase ≤ exacta. Suelo 0,02 €."),
     ("", "Stop-loss: 20 clics maduros o 4 € maduros sin ninguna venta -> pausa (nunca borrar)."),
-    ("", "Máx. 12 keywords por grupo. Keyword nueva solo con ACOS predicho ≤ 30 %."),
-    ("", "Tope 840 €/mes. 20 % experimentación, 80 % a lo probado según puntuación."),
+    ("", "Máx. 12 keywords por grupo. Keyword nueva solo con ACOS predicho ≤ 30 %; una candidata rentable basta."),
+    ("", "Reactiva lo que está en pausa si sus datos lo justifican (nunca lo que pausó 2 veces: revisión de Juan)."),
+    ("", "Términos de búsqueda: con ventas y ACOS ≤ 35 % -> Exacta; sin ventas y gasto maduro ≥ CPA -> negativa."),
+    ("", "Tope 840 €/mes. El presupuesto lo reparte el agente entero según la puntuación de cada campaña."),
 ]
 
 FECHAS = {"Fecha", "Fecha veredicto", "Añadido", "Actualizado", "Último cambio"}

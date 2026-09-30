@@ -10,13 +10,21 @@ de keyword_ml.py y las keywords candidatas para rellenar huecos (§2.2, §2.3).
   salir con cierta regularidad); si la frase es nueva, la mediana de las frases parecidas del
   producto (las específicas por un lado, las genéricas —mucho más caras— por otro); si no hay
   ninguna, su CPC medio histórico.
+- Escalonado por coincidencia (Amazon Ads Academy; histórico propio: la amplia convierte la mitad):
+  P(compra|clic) de una frase nunca es mayor en Amplia que en Frase, ni en Frase que en Exacta
+  (la amplia caza lo mismo que la frase y más cosas). Se fuerza con una regresión isotónica
+  ponderada por los clics de cada coincidencia; así las pujas quedan amplia ≤ frase ≤ exacta.
+  Sin modelo fiable, la conversión media del producto se reparte por coincidencia con lo que
+  convierte cada una en el histórico de toda la cuenta.
 """
 
 import statistics
+from collections import Counter
 from dataclasses import dataclass, field
 
 import config
 import keyword_ml as kml
+import validacion
 from documento import num
 
 PERFIL_DE_ASIN = {p["asin"]: n for n, p in kml.PERFILES.items()}
@@ -37,6 +45,7 @@ class Producto:
     cpc_genericas: float | None = None              # … de las genéricas (suelen ser mucho más caras)
     factor_cpc: float = 1.0                         # CPC pagado / puja rec. baja (≥ 1), config.FACTOR_CPC_*
     filas: list = field(default_factory=list)       # keywords del histórico (formato keyword_ml)
+    clics_coincidencia: dict = field(default_factory=dict)   # clics del histórico por coincidencia
     modelo: tuple | None = None                     # (vec, modelo) de keyword_ml
 
     @property
@@ -56,12 +65,37 @@ class Producto:
         return config.NOMBRES_CORTOS.get(self.asin) or (self.perfil or self.nombre.split(" ")[0] or self.asin).capitalize()
 
 
+def isotonica(valores, pesos):
+    """Regresión isotónica creciente (pool adjacent violators) ponderada."""
+    bloques = [[v, w, 1] for v, w in zip(valores, pesos)]
+    i = 0
+    while i < len(bloques) - 1:
+        if bloques[i][0] > bloques[i + 1][0] + 1e-12:
+            (v1, w1, n1), (v2, w2, n2) = bloques[i], bloques[i + 1]
+            bloques[i] = [(v1 * w1 + v2 * w2) / (w1 + w2), w1 + w2, n1 + n2]
+            del bloques[i + 1]
+            i = max(i - 1, 0)
+        else:
+            i += 1
+    return [v for v, _, n in bloques for _ in range(n)]
+
+
 class Catalogo:
     def __init__(self, ruta_historico=None):
         self.productos = {}
+        self._cache_p = {}
+        self.conv_coincidencia = {}     # conversión de cada coincidencia en todo el histórico
+        self.clics_coincidencia = {}
         ruta = ruta_historico or config.HISTORICO_XLSX
         if ruta and ruta.exists():
             self._cargar(ruta)
+        clics, compras = Counter(), Counter()
+        for p in self.productos.values():
+            for f in p.filas:
+                clics[f["coincidencia"]] += f["clics"]
+                compras[f["coincidencia"]] += f["compras"]
+        self.clics_coincidencia = dict(clics)
+        self.conv_coincidencia = {m: compras[m] / clics[m] for m in kml.COINCIDENCIAS if clics[m]}
 
     def _cargar(self, ruta):
         from openpyxl import load_workbook
@@ -87,6 +121,7 @@ class Catalogo:
             except SystemExit:
                 continue
             p.filas = filas
+            p.clics_coincidencia = dict(sum((Counter({f["coincidencia"]: f["clics"]}) for f in filas), Counter()))
             rec = [f for f in filas if f.get("puja_rec_baja", 0) > 0]
             if rec:
                 p.cpc_competir = statistics.median(f["puja_rec_baja"] for f in rec)
@@ -122,13 +157,36 @@ class Catalogo:
         return self.productos[asin]
 
     # ------------------------------------------------------------ predicciones
+    def _por_coincidencia_sin_modelo(self, p):
+        """Conversión media del producto repartida por coincidencia según el histórico de la cuenta,
+        de forma que la media ponderada por los clics del producto siga siendo su conversión."""
+        base = p.conversion or 0.0
+        conv = self.conv_coincidencia
+        if not base or len(conv) < len(kml.COINCIDENCIAS):
+            return [base] * len(kml.COINCIDENCIAS)
+        total = sum(self.clics_coincidencia.values()) or 1.0
+        media = sum(self.clics_coincidencia[m] * conv[m] for m in kml.COINCIDENCIAS) / total
+        mezcla = p.clics_coincidencia if sum(p.clics_coincidencia.values()) else self.clics_coincidencia
+        n = sum(mezcla.get(m, 0) for m in kml.COINCIDENCIAS) or 1.0
+        media_mezcla = sum(mezcla.get(m, 0) * conv[m] / media for m in kml.COINCIDENCIAS) / n
+        return [base * conv[m] / media / (media_mezcla or 1.0) for m in kml.COINCIDENCIAS]
+
     def p_modelo(self, asin, texto, coincidencia):
-        """P(compra|clic) a priori (sin los datos propios del elemento)."""
+        """P(compra|clic) a priori (sin los datos propios del elemento), escalonada por coincidencia."""
         p = self.producto(asin)
-        if p.modelo_fiable and coincidencia in kml.COINCIDENCIAS:
-            kml.usar_perfil(p.perfil)
-            return kml.predecir(*p.modelo, texto, coincidencia)
-        return p.conversion or 0.0
+        if coincidencia not in kml.COINCIDENCIAS:
+            return p.conversion or 0.0
+        clave = (asin, str(texto).strip().lower())
+        if clave not in self._cache_p:
+            if p.modelo_fiable:
+                kml.usar_perfil(p.perfil)
+                crudos = [kml.predecir(*p.modelo, texto, m) for m in kml.COINCIDENCIAS]
+                pesos = [max(1.0, p.clics_coincidencia.get(m, 0)) for m in kml.COINCIDENCIAS]
+            else:
+                crudos = self._por_coincidencia_sin_modelo(p)
+                pesos = [max(1.0, self.clics_coincidencia.get(m, 0)) for m in kml.COINCIDENCIAS]
+            self._cache_p[clave] = isotonica(crudos, pesos)
+        return self._cache_p[clave][kml.COINCIDENCIAS.index(coincidencia)]
 
     def p_compra(self, asin, texto, coincidencia, maduro):
         """Mezcla el modelo con los clics maduros propios: (compras + K·p) / (clics + K)."""
@@ -153,6 +211,9 @@ class Catalogo:
         pc = self.p_modelo(asin, texto, coincidencia) if pc is None else pc
         cpc = self.cpc_para(asin, texto, rec)
         res = {"p": pc, "cpc": cpc, "acos_pred": None, "puja": None, "pasa": False}
+        valida, motivo = validacion.keyword(texto)
+        if not valida:
+            return res | {"motivo": f"Amazon no la aceptaría: {motivo}"}
         otras = sorted(kml.firma(texto) & self._ajenas(p))
         if otras:
             return res | {"motivo": "lleva palabras de otro producto: " + ", ".join(otras)}

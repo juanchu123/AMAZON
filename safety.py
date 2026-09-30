@@ -11,14 +11,19 @@ ejecutar. Si algo no pasa, se descarta y queda anotado (nunca se "arregla" a cie
   - Subidas de puja: prohibidas si el gasto del mes proyectado ya llega al tope (CLAUDE.md).
   - Cuenta: si todas las campañas están en pausa sin que el agente las pausara, o Amazon
     avisa de un problema de cuenta/pago, no se toca NADA y se avisa (§2.9-bis).
-  - Nada fuera de lo que cubren las reglas: el agente nunca reactiva nada que esté en pausa.
+  - Validación (validacion.py): nunca sale una keyword, coincidencia o estrategia que Amazon rechace.
+  - Reactivar (Juan, 30/09/2026): solo lo que está en pausa, nunca con el mes al tope, y nunca
+    una campaña terminada por fecha (Amazon no deja: se copia).
+  - Negativas: siempre permitidas (reducen gasto), si el grupo existe y el texto es válido.
 """
 
 import calendar
 
 import config
 import pujas
-from modelo import ACTIVO, CREAR_CAMPANA, ESTRATEGIA, NUEVA_KEYWORD, NUEVO_ASIN, PAUSAR, PRESUPUESTO, PUJA
+import validacion
+from modelo import (ACTIVO, ARCHIVADO, CREAR_CAMPANA, ESTRATEGIA, FINALIZADA, NEGATIVA, NUEVA_KEYWORD, NUEVO_ASIN,
+                    PAUSADO, PAUSAR, PRESUPUESTO, PUJA, REACTIVAR, REACTIVAR_CAMPANA)
 from pujas import puja_valida
 
 SEÑALES_PROBLEMA_CUENTA = ("PAYMENT_FAILURE", "SUSPENDED", "ACCOUNT_OUT_OF_BUDGET", "ADVERTISER_POLICING",
@@ -100,9 +105,18 @@ def filtrar(cambios, cuenta, hoy, gasto_mes, ticket_de):
             el = cuenta.elementos.get(c.clave)
             if el is None or el.estado != ACTIVO:
                 motivo = "el elemento ya no está activo"
-        elif c.tipo in (NUEVA_KEYWORD, NUEVO_ASIN):
+        elif c.tipo in (NUEVA_KEYWORD, NUEVO_ASIN, REACTIVAR):
+            el = cuenta.elementos.get(c.clave)
             if not cuenta.grupo_activo(c.id_grupo):
                 motivo = "el grupo no está activo"
+            elif c.tipo == REACTIVAR and (el is None or el.estado != PAUSADO):
+                motivo = "el elemento no está en pausa"
+            elif c.tipo == NUEVA_KEYWORD and not validacion.keyword(c.texto)[0]:
+                motivo = f"Amazon no aceptaría la keyword: {validacion.keyword(c.texto)[1]}"
+            elif c.tipo == NUEVA_KEYWORD and not validacion.coincidencia(c.coincidencia):
+                motivo = f"tipo de coincidencia no válido: {c.coincidencia}"
+            elif c.tipo == NUEVO_ASIN and not validacion.asin(c.texto):
+                motivo = f"ASIN no válido: {c.texto}"
             elif puja_valida(c.despues, ticket_de(c.producto), mult, c.producto) is None:
                 motivo = "puja fuera de lo posible"
             elif tope and c.despues * mult > tope + 0.005 and c.despues > config.PUJA_MINIMA_AMAZON:
@@ -113,11 +127,32 @@ def filtrar(cambios, cuenta, hoy, gasto_mes, ticket_de):
             if c.despues < config.PRESUPUESTO_MINIMO_AMAZON:
                 motivo = "por debajo del mínimo de Amazon (1 €/día)"
         elif c.tipo == CREAR_CAMPANA:
+            validas = [k for k in c.extra.get("keywords", [])
+                       if validacion.keyword(k["texto"])[0] and validacion.coincidencia(k["coincidencia"])]
+            c.extra["keywords"] = validas
             if not subidas_ok:
                 motivo = "el gasto del mes proyectado ya llega al tope"
+            elif not validas:
+                motivo = "ninguna keyword que Amazon acepte"
+        elif c.tipo == REACTIVAR_CAMPANA:
+            if camp is None or camp.estado != PAUSADO:
+                motivo = ("la campaña terminó por fecha: Amazon no deja reactivarla (se copia)"
+                          if camp is not None and camp.estado == FINALIZADA else "la campaña no está en pausa")
+            elif not subidas_ok:
+                motivo = "el gasto del mes proyectado ya llega al tope"
+        elif c.tipo == NEGATIVA:
+            g = cuenta.grupos.get(c.id_grupo)
+            if g is None or g.estado == ARCHIVADO or camp is None or camp.estado in (ARCHIVADO, FINALIZADA):
+                motivo = "el grupo o la campaña ya no existen"
+            elif not validacion.keyword(c.texto)[0]:
+                motivo = f"Amazon no aceptaría la negativa: {validacion.keyword(c.texto)[1]}"
+            elif not validacion.coincidencia(c.coincidencia, negativa=True):
+                motivo = f"tipo de coincidencia negativa no válido: {c.coincidencia}"
         elif c.tipo == ESTRATEGIA:
             if camp is None or camp.estado != ACTIVO:
                 motivo = "la campaña no está activa"
+            elif not validacion.estrategia(c.despues):
+                motivo = f"estrategia no válida: {c.despues}"
         else:
             motivo = f"tipo de cambio no permitido: {c.tipo}"
         if motivo:
@@ -127,9 +162,10 @@ def filtrar(cambios, cuenta, hoy, gasto_mes, ticket_de):
     # el total de presupuestos diarios (campañas activas + nuevas) nunca pasa del tope del día
     nuevos = {c.id_campana: c.despues for c in aprobados if c.tipo == PRESUPUESTO}
     total = sum(nuevos.get(c.id, c.presupuesto) for c in cuenta.campanas.values() if c.estado == ACTIVO)
-    total += sum(c.extra.get("presupuesto", 0) for c in aprobados if c.tipo == CREAR_CAMPANA)
+    total += sum(c.extra.get("presupuesto", 0) for c in aprobados if c.tipo in (CREAR_CAMPANA, REACTIVAR_CAMPANA))
     if total > tope_dia + 0.01:
-        subidas = [c for c in aprobados if (c.tipo == PRESUPUESTO and c.despues > c.antes) or c.tipo == CREAR_CAMPANA]
+        subidas = [c for c in aprobados if (c.tipo == PRESUPUESTO and c.despues > c.antes)
+                   or c.tipo in (CREAR_CAMPANA, REACTIVAR_CAMPANA)]
         for c in subidas:
             aprobados.remove(c)
             descartados.append((c, f"los presupuestos sumarían {total:.2f} €/día, más que el tope de {tope_dia:.2f} €/día"))

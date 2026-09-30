@@ -253,8 +253,7 @@ def test_presupuesto_nunca_pasa_del_tope(catalogo):
     cambios, filas, _, tope = presupuesto.planificar(c, doc, doc.series(), catalogo, HOY, gasto_mes=None)
     objetivo = {f["Campaña"]: f["Presupuesto objetivo (€)"] for f in filas}
     assert sum(objetivo.values()) <= config.TOPE_MENSUAL_EUR / 31 + 0.01
-    exp = objetivo["Pou - Principal V2"] + objetivo["Pinza - Pruebas"]
-    assert exp <= tope * config.PCT_EXPERIMENTACION + 0.01
+    # una sola bolsa: sin fondo fijo de experimentación, el reparto va por puntuación
     assert objetivo["Pinza - Principal V2"] > objetivo["Rejilla - Principal V2"]   # mejor ACOS histórico
     assert all(v >= 1.0 for v in objetivo.values())
 
@@ -399,16 +398,15 @@ def test_hoja_masiva_ida_y_vuelta(tmp_path, catalogo, monkeypatch):
 
 # ---------------------------------------------------------------- campaña nueva (§2.6)
 def test_abre_campana_para_producto_sin_campana(tmp_path, catalogo, monkeypatch):
-    # solo existe la campaña de la pinza (probada): el 20 % de experimentación está libre y la
-    # rejilla (en el catálogo, sin campaña en esta cuenta de prueba) tiene candidatas ≤ 30 % con el
-    # CPC que sugiere Amazon (sin calibrar: aquí se prueba la apertura, no la calibración)
+    # solo existe la campaña de la pinza y la rejilla (en el catálogo, sin campaña en esta cuenta de
+    # prueba) tiene candidatas ≤ 30 % (sin calibrar el CPC: aquí se prueba la apertura)
     monkeypatch.setattr(catalogo.producto("B0DHYBY6MS"), "factor_cpc", 1.0)
     res, api, doc = correr(tmp_path, cuenta_pinza(), [], catalogo)
     creadas = [l for l in api.llamadas if l[0] == "campana"]
     assert len(creadas) == 1                              # como mucho una por ronda
     _, nombre, eur, sku = creadas[0]
     assert "Rejilla" in nombre and sku == "5E-I8NY-S191"
-    assert eur >= config.PRESUPUESTO_MIN_CAMPANA_EXPERIMENTAL
+    assert eur >= config.PRESUPUESTO_MIN_CAMPANA_NUEVA
     kws = [l for l in api.llamadas if l[0] == "keyword" and l[1] == "GN"]
     assert len(kws) >= config.MIN_KEYWORDS_CAMPANA_NUEVA and not any("pinza" in l[2] for l in kws)
     t = next(t for t in doc.hojas["Tickets"] if t["Tipo"] == "crear_campaña")
@@ -427,9 +425,11 @@ def test_cpc_calibrado_con_lo_pagado_de_verdad(catalogo):
     assert catalogo.producto("B0F746MFPQ").factor_cpc == 1.0
 
 
-def test_no_abre_campana_sin_fondo(tmp_path, catalogo):
+def test_no_abre_campana_sin_dinero(tmp_path, catalogo, monkeypatch):
+    # con un tope de 100 €/mes (3,2 €/día) y tres campañas, a una cuarta le tocaría < 2,50 €/día
+    monkeypatch.setattr(config, "TOPE_MENSUAL_EUR", 100.0)
     cuenta = cuenta_pinza()
-    for i in range(2):   # dos campañas de pruebas ya se reparten el 20 %: con una más tocaría < 2,50 €
+    for i in range(2):
         cuenta.campanas[f"P{i}"] = Campana(f"P{i}", f"Pinza - Pruebas {i}", ACTIVO, 3.0)
         cuenta.grupos[f"PG{i}"] = Grupo(f"PG{i}", f"P{i}", "Pruebas", ACTIVO, 0.3)
         cuenta.anuncios.append(Anuncio(f"PA{i}", f"P{i}", f"PG{i}", PINZA, SKU, ACTIVO))

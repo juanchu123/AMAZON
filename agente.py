@@ -10,7 +10,9 @@ cada campaña llevan su propio reloj (≥ 3 días y ≥ 10 clics nuevos), así q
   4. Seguridad de cuenta (§2.9-bis): si todo está en pausa sin que lo pausara el agente, o
      Amazon avisa de un problema de cuenta -> correo inmediato, y PARAR sin tocar nada.
   5. Investigación de mercado semanal (LLM, solo si hay ANTHROPIC_API_KEY): frases candidatas.
-  6. Decidir: keywords (analyzer.py), campañas nuevas (campanas.py), presupuestos (presupuesto.py).
+  6. Decidir: términos de búsqueda (terminos.py: cosecha y negativas), keywords (analyzer.py: pujas,
+     stop-loss, huecos, reactivar), campañas nuevas o reactivadas (campanas.py), presupuestos
+     (presupuesto.py: el agente reparte todo el tope).
   7. Filtrar por safety.py, aplicar uno a uno (independientes) y VERIFICAR releyendo Amazon.
   8. Guardar todo en el documento (escritura atómica) y mandar UN correo con los cambios.
 
@@ -51,9 +53,10 @@ import learner
 import presupuesto
 import pujas
 import safety
+import terminos
 from documento import Documento, fecha, num
-from modelo import (ACTIVO, CREAR_CAMPANA, ESTRATEGIA, NUEVA_KEYWORD, NUEVO_ASIN, PAUSADO, PAUSAR, PRESUPUESTO, PUJA,
-                    Cambio, Metricas)
+from modelo import (ACTIVO, CREAR_CAMPANA, ESTRATEGIA, NEGATIVA, NUEVA_KEYWORD, NUEVO_ASIN, PAUSADO, PAUSAR, PRESUPUESTO,
+                    PUJA, REACTIVAR, REACTIVAR_CAMPANA, Cambio, Metricas)
 from prediccion import Catalogo
 
 
@@ -72,6 +75,11 @@ class FuenteAPI:
         desde = (max(fechas) - timedelta(days=config.DIAS_REFRESCO_INFORME)) if fechas \
             else hoy - timedelta(days=config.DIAS_INICIALES_INFORME)
         self.doc.guardar_diario(self.api.metricas_diarias(desde, hoy - timedelta(days=1)))
+        if hasattr(self.api, "terminos_busqueda"):
+            try:
+                cuenta.terminos, cuenta.terminos_maduros = self.api.terminos_busqueda(cuenta, hoy), True
+            except Exception as e:      # sin términos no hay cosecha ni negativas, pero la ronda sigue
+                cuenta.avisos_fuente = [f"No se pudo leer el informe de términos de búsqueda: {e}"[:300]]
         return cuenta
 
     def acumulados(self, cuenta, series, hoy):
@@ -88,6 +96,14 @@ class FuenteAPI:
                 ok, det = self.api.cambiar_presupuesto(c.id_campana, c.despues)
             elif c.tipo == ESTRATEGIA:
                 ok, det = self.api.cambiar_estrategia(cuenta.campanas[c.id_campana], c.despues)
+            elif c.tipo == REACTIVAR:
+                ok, det = self.api.reactivar(el, c.despues)
+            elif c.tipo == REACTIVAR_CAMPANA:
+                ok, det = self.api.reactivar_campana(c.id_campana, c.extra["presupuesto"], c.extra.get("grupos", []),
+                                                     c.extra.get("anuncios", []))
+            elif c.tipo == NEGATIVA:
+                ok, id_, det = self.api.crear_negativa(c.id_campana, c.id_grupo, c.texto, c.coincidencia)
+                c.clave = id_ or c.clave
             elif c.tipo == NUEVA_KEYWORD:
                 ok, id_, det = self.api.crear_keyword(c.id_campana, c.id_grupo, c.texto, c.coincidencia, c.despues)
                 c.clave = id_ or c.clave
@@ -163,6 +179,16 @@ def verificar_enviados(doc, cuenta, hoy):
         elif tipo == ESTRATEGIA:
             c = cuenta.campanas.get(str(t["ID campaña"]))
             ok = c is not None and c.estrategia_pujas == pujas.normalizar_estrategia(t["Después"])
+        elif tipo == REACTIVAR and el is not None:
+            ok = el.estado == ACTIVO and el.puja is not None and abs(el.puja - num(t["Después"])) < 0.005
+        elif tipo == REACTIVAR_CAMPANA:
+            c = cuenta.campanas.get(str(t["ID campaña"]))
+            ok = c is not None and c.estado == ACTIVO
+        elif tipo == NEGATIVA:
+            texto = str(t["Palabra clave / segmentación"]).strip().lower()
+            n_ = next((n for n in cuenta.negativas if n.id_grupo == str(t["ID grupo"]) and n.texto.strip().lower() == texto), None)
+            if n_:
+                t["Clave"], ok = n_.clave or t["Clave"], True
         elif tipo in (NUEVA_KEYWORD, NUEVO_ASIN):
             texto = str(t["Palabra clave / segmentación"])
             match = next((e for e in cuenta.elementos.values() if e.id_grupo == str(t["ID grupo"]) and (
@@ -186,13 +212,13 @@ def orden_de_aplicacion(c):
     lo que lo aumenta."""
     if c.tipo == ESTRATEGIA:
         return -1
-    if c.tipo == PAUSAR:
+    if c.tipo in (PAUSAR, NEGATIVA):
         return 0
     if c.tipo in (PUJA, PRESUPUESTO) and num(c.despues) < num(c.antes):
         return 1
     if c.tipo in (PUJA, PRESUPUESTO):
         return 2
-    if c.tipo in (NUEVA_KEYWORD, NUEVO_ASIN):
+    if c.tipo in (NUEVA_KEYWORD, NUEVO_ASIN, REACTIVAR):
         return 3
     return 4
 
@@ -221,7 +247,7 @@ def actualizar_segmentacion(doc, cuenta, series, hoy, decision):
             "Clics maduros": series.maduro(el.clave, hoy).clics,
             "Último cambio": ult["Fecha"] if ult else None, "Clics desde el cambio": m.clics - base.clics,
             "Decisión de esta ronda": (decision.notas.get(el.clave) if decision else None) or
-                                      ("En pausa: el agente no la reactiva" if el.estado != ACTIVO else ""),
+                                      ("En pausa: sus datos aún no justifican reactivarla" if el.estado == PAUSADO else ""),
             "Requiere revisión de Juan": "Sí" if el.clave in revision or (decision and el.clave in decision.revision) else "",
             "Actualizado": hoy.isoformat()})
     doc.hojas["Segmentación"] = filas
@@ -269,6 +295,11 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
             log(f"No se pudo escribir un Excel de salida: {e}")
     series = doc.series()
     doc.guardar_foto(hoy, cuenta, fuente.acumulados(cuenta, series, hoy), _producto_de(cuenta))
+    terminos.guardar_fotos(doc, cuenta, hoy)
+    resumen.append(("Términos de búsqueda leídos", len(cuenta.terminos) or
+                    "0 (con la hoja masiva, marca el informe de términos de búsqueda al descargarla)"))
+    for aviso in getattr(cuenta, "avisos_fuente", []):
+        resumen.append(("Aviso de la fuente", aviso))
     series = doc.series()
     doc.hojas["Finanzas"] = finanzas.informe(doc, series, catalogo, hoy)
     resumen.append(("ACOS de equilibrio (finanzas)", ", ".join(f"{a} {e:.0%}" for a, e in sorted(equilibrios.items()))
@@ -319,13 +350,20 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
 
     # --- decidir: primero la estrategia de pujas de cada campaña (las pujas se calculan para ella)
     pujas.decidir_estrategias(cuenta, lambda id_c: presupuesto.metricas_30d(series, id_c, hoy))
-    decision = analyzer.decidir(cuenta, doc, series, catalogo, hoy)
+    res_t = terminos.decidir(cuenta, doc, catalogo, hoy)
+    terminos.anotar(doc, hoy, res_t)
+    resumen += [("Términos: negativas propuestas", len(res_t.negativas)),
+                ("Términos: cosecha (pasan a Exacta)", sum(len(v) for v in res_t.cosecha.values()))]
+    decision = analyzer.decidir(cuenta, doc, series, catalogo, hoy, cosecha=res_t.cosecha)
     decision.alertas += pujas.avisos(cuenta) + finanzas.avisos(doc)
-    nuevas, nota_camp = campanas.proponer(cuenta, doc, series, catalogo, hoy, gasto_mes, decision.cambios)
+    nuevas, nota_camp = campanas.proponer(cuenta, doc, series, catalogo, hoy, gasto_mes, decision.cambios,
+                                          cosecha=res_t.cosecha)
     cambios_pres, filas_camp, por_nueva, tope = presupuesto.planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas)
     for c, eur in zip(nuevas, por_nueva):
-        c.extra["presupuesto"], c.despues = eur, eur
-    cambios = pujas.proponer_estrategias(cuenta) + decision.cambios + nuevas + cambios_pres
+        c.extra["presupuesto"] = eur
+        if c.tipo == CREAR_CAMPANA:
+            c.despues = eur
+    cambios = pujas.proponer_estrategias(cuenta) + res_t.negativas + decision.cambios + nuevas + cambios_pres
     aprobados, descartados = safety.filtrar(cambios, cuenta, hoy, gasto_mes,
                                             lambda a: catalogo.producto(a).ticket if a else None)
     resumen.append(("Campañas nuevas", nota_camp))

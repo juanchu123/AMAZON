@@ -31,12 +31,13 @@ CORREOS_PENDIENTES = SALIDAS / "correos_pendientes"   # agente.py la pone dentro
 ACOS_OBJETIVO_MIN = 0.30            # rango objetivo 30-35 %
 ACOS_OBJETIVO_MAX = 0.35
 ACOS_MAX_KEYWORD_NUEVA = 0.30       # §2.3: una keyword nueva entra solo con ACOS predicho ≤ 30 %
-ACOS_CLARAMENTE_BUENA = 0.25        # §2.6: candidata "claramente buena" para abrir campaña nueva
 
 # ---------------------------------------------------------------- ronda de decisión (§2.1)
 DIAS_ENTRE_CAMBIOS = 3              # ≥ 3 días desde el último cambio del elemento…
 MIN_CLICS_NUEVOS = 10               # …y ≥ 10 clics nuevos desde ese cambio
 DIAS_MADUREZ = 7                    # atribución de Amazon: un clic "madura" a los 7 días
+DIAS_PRIMERA_EVALUACION = 14        # lo que el agente crea o reactiva no se juzga (puja) hasta los 14 días
+                                    # (Amazon Ads Academy); el stop-loss vigila desde el primer día
 
 # ---------------------------------------------------------------- pujas (§2.2)
 PUJA_MINIMA_AMAZON = 0.02           # suelo real de Amazon (único límite duro de la puja)
@@ -79,23 +80,27 @@ STOPLOSS_CLICS_MADUROS = 20         # pausar a los 20 clics maduros…
 STOPLOSS_COSTE_MADURO_EUR = 4.0     # …o 4 € gastados en clics maduros, sin ninguna venta
 PAUSAS_PARA_REVISION = 2            # pausada 2 veces -> se marca para que Juan la revise
 
-# ---------------------------------------------------------------- presupuesto (§2.5) — NO negociable
-TOPE_MENSUAL_EUR = 840.0            # techo duro (cartera de Amazon). Solo Juan lo cambia.
-PCT_EXPERIMENTACION = 0.20          # 20 % global para lo que aún no está probado (168 €/mes)
+# ---------------------------------------------------------------- presupuesto (§2.5)
+# Juan, 30/09/2026: el presupuesto lo gestiona el agente entero (sin 80/20 ni fondo fijo de
+# experimentación). El techo de 840 €/mes se mantiene y es NO negociable: solo Juan lo cambia.
+TOPE_MENSUAL_EUR = 840.0            # techo duro (cartera de Amazon)
 PRESUPUESTO_MINIMO_AMAZON = 1.0     # mínimo técnico de Amazon por campaña y día
-PRESUPUESTO_MIN_CAMPANA_EXPERIMENTAL = 2.5  # §2.6: abrir campaña cuesta dinero "significativo";
-                                    # si al repartir el fondo le tocaría menos, no se abre
+PRESUPUESTO_MIN_CAMPANA_NUEVA = 2.5 # abrir o reactivar una campaña cuesta dinero "significativo": si
+                                    # al repartir le tocaría menos, no se abre (mejor lo que ya hay)
 CAMBIO_MINIMO_PRESUPUESTO_EUR = 0.5
 CAMBIO_MINIMO_PRESUPUESTO_PCT = 0.10
 DIAS_ENTRE_SUBIDAS_PRESUPUESTO = 3
-PROBADO_MIN_COMPRAS_HISTORICO = 10  # producto con ≥ 10 compras en el histórico = "probado"
-GRADUACION_MIN_COMPRAS = 3          # campaña experimental que ya vende: ≥ 3 compras maduras…
-GRADUACION_ACOS_MAX = ACOS_OBJETIVO_MAX  # …con ACOS ≤ 35 % pasa al 80 %
-VENTANA_PUNTUACION_DIAS = 30        # ACOS de campaña para repartir el 80 %: últimos 30 días maduros
+VENTANA_PUNTUACION_DIAS = 30        # ACOS de campaña para repartir: últimos 30 días maduros
+# Amazon Ads Academy: el dinero va a las campañas buenas que se quedan sin presupuesto, nunca de las
+# buenas a las malas; a una campaña que no gasta lo que tiene no le sirve más.
+UMBRAL_LIMITADA = 0.90              # gasta ≥ 90 % de su presupuesto de media (7 días) = limitada
+HOLGURA_PRESUPUESTO = 1.5           # si no está limitada, como mucho 1,5 × lo que gasta de media
+DIAS_GASTO_MEDIO = 7
 
 # ---------------------------------------------------------------- campañas nuevas (§2.6)
+# Juan, 30/09/2026: una sola candidata rentable basta para abrir (o reactivar) campaña.
 MAX_CAMPANAS_NUEVAS_POR_RONDA = 1
-MIN_KEYWORDS_CAMPANA_NUEVA = 3      # sin 3 candidatas que pasen el filtro no se abre nada
+MIN_KEYWORDS_CAMPANA_NUEVA = 1
 
 # ---------------------------------------------------------------- alertas (§2.9)
 EMAIL_DESTINO = os.environ.get("AGENTE_EMAIL_DESTINO", "yubunama62@gmail.com")

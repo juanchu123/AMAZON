@@ -29,7 +29,8 @@ import requests
 import config
 import pujas
 from modelo import (ACTIVO, ALZA_BAJA, AMAZON_BUSINESS, ARCHIVADO, AUTO, CATEGORIA, FINALIZADA, KEYWORD, PAGINA_PRODUCTO, PAUSADO,
-                    PRODUCTO, PUJA_FIJA, RESTO_BUSQUEDA, SOLO_BAJA, SUPERIOR, Anuncio, Campana, Cuenta, Elemento, Grupo)
+                    PRODUCTO, PUJA_FIJA, RESTO_BUSQUEDA, SOLO_BAJA, SUPERIOR, Anuncio, Campana, Cuenta, Elemento, Grupo,
+                    Metricas, Negativa, Termino)
 
 REGIONES = {
     "EU": ("https://advertising-api-eu.amazon.com", "https://api.amazon.co.uk/auth/o2/token"),
@@ -42,16 +43,19 @@ MEDIA = {
     "keywords": "application/vnd.spKeyword.v3+json",
     "targetingClauses": "application/vnd.spTargetingClause.v3+json",
     "productAds": "application/vnd.spProductAd.v3+json",
+    "negativeKeywords": "application/vnd.spNegativeKeyword.v3+json",
 }
 RUTA = {"campaigns": "/sp/campaigns", "adGroups": "/sp/adGroups", "keywords": "/sp/keywords",
-        "targetingClauses": "/sp/targets", "productAds": "/sp/productAds"}
+        "targetingClauses": "/sp/targets", "productAds": "/sp/productAds", "negativeKeywords": "/sp/negativeKeywords"}
 ID = {"campaigns": "campaignId", "adGroups": "adGroupId", "keywords": "keywordId",
-      "targetingClauses": "targetId", "productAds": "adId"}
+      "targetingClauses": "targetId", "productAds": "adId", "negativeKeywords": "keywordId"}
 
 ESTADO = {"ENABLED": ACTIVO, "PAUSED": PAUSADO, "ARCHIVED": ARCHIVADO}
 ESTADO_API = {v: k for k, v in ESTADO.items()}
 COINCIDENCIA = {"BROAD": "Amplia", "PHRASE": "Frase", "EXACT": "Exacta"}
 COINCIDENCIA_API = {v: k for k, v in COINCIDENCIA.items()}
+COINCIDENCIA_NEG = {"NEGATIVE_EXACT": "Exacta negativa", "NEGATIVE_PHRASE": "Frase negativa"}
+COINCIDENCIA_NEG_API = {v: k for k, v in COINCIDENCIA_NEG.items()}
 EMPLAZAMIENTO = {"PLACEMENT_TOP": SUPERIOR, "PLACEMENT_REST_OF_SEARCH": RESTO_BUSQUEDA,
                  "PLACEMENT_PRODUCT_PAGE": PAGINA_PRODUCTO, "SITE_AMAZON_BUSINESS": AMAZON_BUSINESS}
 EMPLAZAMIENTO_API = {v: k for k, v in EMPLAZAMIENTO.items()}
@@ -59,6 +63,9 @@ ESTRATEGIA_API = {SOLO_BAJA: config.ESTRATEGIA_PUJAS, ALZA_BAJA: "AUTO_FOR_SALES
 
 COLUMNAS_INFORME = ["date", "campaignId", "adGroupId", "keywordId", "impressions", "clicks", "cost",
                     "purchases7d", "sales7d"]
+COLUMNAS_TERMINOS = ["campaignId", "adGroupId", "keywordId", "keyword", "matchType", "targeting", "searchTerm",
+                     "impressions", "clicks", "cost", "purchases7d", "sales7d"]
+DIAS_TERMINOS = 60             # ventana del informe de términos de búsqueda (solo clics maduros)
 MAX_DIAS_INFORME = 31          # límite de Amazon por informe
 MAX_ANTIGUEDAD_INFORME = 95    # Amazon guarda ~95 días para estos informes
 
@@ -196,7 +203,37 @@ class AmazonAdsAPI:
                 clave=str(t["targetId"]), tipo=tipo, id_campana=str(t["campaignId"]), id_grupo=str(t["adGroupId"]),
                 texto=texto, coincidencia=coinc, estado=ESTADO.get(t.get("state"), PAUSADO),
                 puja=_puja(t.get("bid"), cuenta, t))
+        for n in self._listar("negativeKeywords", estados):
+            cuenta.negativas.append(Negativa(
+                clave=str(n["keywordId"]), id_campana=str(n["campaignId"]), id_grupo=str(n.get("adGroupId") or ""),
+                texto=n.get("keywordText", ""), coincidencia=COINCIDENCIA_NEG.get(n.get("matchType"), n.get("matchType", "")),
+                estado=ESTADO.get(n.get("state"), PAUSADO)))
         return cuenta
+
+    def terminos_busqueda(self, cuenta, hoy):
+        """Términos de búsqueda de los últimos 60 días, SOLO con clics de más de 7 días (maduros)."""
+        hasta = hoy - timedelta(days=config.DIAS_MADUREZ + 1)
+        desde = max(hasta - timedelta(days=DIAS_TERMINOS), date.today() - timedelta(days=MAX_ANTIGUEDAD_INFORME))
+        out, ini = {}, desde
+        while ini <= hasta:
+            fin = min(hasta, ini + timedelta(days=MAX_DIAS_INFORME - 1))
+            for f in self._informe(ini, fin, "spSearchTerm", ["searchTerm"], COLUMNAS_TERMINOS, "SUMMARY"):
+                if not f.get("searchTerm") or not f.get("adGroupId"):
+                    continue
+                clave_origen = str(f.get("keywordId") or "")
+                el = cuenta.elementos.get(clave_origen)
+                met = Metricas(float(f.get("clicks") or 0), float(f.get("cost") or 0), float(f.get("purchases7d") or 0),
+                               float(f.get("sales7d") or 0), float(f.get("impressions") or 0))
+                t = Termino(id_campana=str(f["campaignId"]), id_grupo=str(f["adGroupId"]), clave_origen=clave_origen,
+                            origen=f.get("keyword") or f.get("targeting") or (el.texto if el else ""),
+                            coincidencia=COINCIDENCIA.get(f.get("matchType"), el.coincidencia if el else "Automática"),
+                            termino=str(f["searchTerm"]), metricas=met)
+                if t.clave in out:
+                    out[t.clave].metricas = out[t.clave].metricas + met
+                else:
+                    out[t.clave] = t
+            ini = fin + timedelta(days=1)
+        return list(out.values())
 
     def metricas_diarias(self, desde, hasta):
         """Filas por día y elemento: [{"Fecha", "Clave", "ID campaña", "Clics", ...}]."""
@@ -205,16 +242,21 @@ class AmazonAdsAPI:
         filas, ini = [], desde
         while ini <= hasta:
             fin = min(hasta, ini + timedelta(days=MAX_DIAS_INFORME - 1))
-            filas += self._informe(ini, fin)
+            datos = self._informe(ini, fin, "spTargeting", ["targeting"], COLUMNAS_INFORME, "DAILY")
+            filas += [{"Fecha": f["date"], "Clave": str(f["keywordId"]), "ID campaña": str(f["campaignId"]),
+                       "Impresiones": f.get("impressions") or 0, "Clics": f.get("clicks") or 0,
+                       "Coste (€)": float(f.get("cost") or 0), "Compras": f.get("purchases7d") or 0,
+                       "Ventas (€)": float(f.get("sales7d") or 0)} for f in datos if f.get("keywordId")]
             ini = fin + timedelta(days=1)
         return filas
 
-    def _informe(self, desde, hasta):
+    def _informe(self, desde, hasta, tipo, agrupar, columnas, unidad):
+        """Pide un informe asíncrono de la Reporting API v3, espera y devuelve sus filas."""
         cuerpo = {
-            "name": f"agente {desde} {hasta}", "startDate": desde.isoformat(), "endDate": hasta.isoformat(),
-            "configuration": {"adProduct": "SPONSORED_PRODUCTS", "groupBy": ["targeting"],
-                              "columns": COLUMNAS_INFORME, "reportTypeId": "spTargeting",
-                              "timeUnit": "DAILY", "format": "GZIP_JSON"}}
+            "name": f"agente {tipo} {desde} {hasta}", "startDate": desde.isoformat(), "endDate": hasta.isoformat(),
+            "configuration": {"adProduct": "SPONSORED_PRODUCTS", "groupBy": agrupar,
+                              "columns": columnas, "reportTypeId": tipo,
+                              "timeUnit": unidad, "format": "GZIP_JSON"}}
         r = self._pedir("POST", "/reporting/reports", cuerpo, "application/vnd.createasyncreportrequest.v3+json")
         if r.status_code == 425:  # ya pedido antes: Amazon devuelve el id del informe existente
             detalle = (r.json() if r.text.startswith("{") else {}).get("detail", r.text)
@@ -234,11 +276,7 @@ class AmazonAdsAPI:
             esperado += self.espera_informe_seg
         crudo = self.http.get(d["url"], timeout=120)   # URL firmada: sin cabeceras de la API
         crudo.raise_for_status()
-        datos = json.loads(gzip.decompress(crudo.content))
-        return [{"Fecha": f["date"], "Clave": str(f["keywordId"]), "ID campaña": str(f["campaignId"]),
-                 "Impresiones": f.get("impressions") or 0, "Clics": f.get("clicks") or 0,
-                 "Coste (€)": float(f.get("cost") or 0), "Compras": f.get("purchases7d") or 0,
-                 "Ventas (€)": float(f.get("sales7d") or 0)} for f in datos if f.get("keywordId")]
+        return json.loads(gzip.decompress(crudo.content))
 
     # ------------------------------------------------------------ escritura + verificación
     def _releer(self, entidad, id_):
@@ -289,6 +327,34 @@ class AmazonAdsAPI:
         return self._actualizar("campaigns", campana.id,
                                 {"dynamicBidding": {"strategy": valor, "placementBidding": ajustes}},
                                 lambda f: (f.get("dynamicBidding") or {}).get("strategy") == valor)
+
+    def reactivar(self, el, puja):
+        entidad = "keywords" if el.tipo == KEYWORD else "targetingClauses"
+        return self._actualizar(entidad, el.clave, {"state": "ENABLED", "bid": round(puja, 2)},
+                                lambda f: f.get("state") == "ENABLED" and abs(float(f.get("bid") or 0) - round(puja, 2)) < 0.005)
+
+    def reactivar_campana(self, id_campana, presupuesto, grupos=(), anuncios=()):
+        """Campaña (con su presupuesto), sus grupos y sus anuncios en pausa -> activados."""
+        ok, det = self._actualizar("campaigns", id_campana,
+                                   {"state": "ENABLED", "budget": {"budget": round(presupuesto, 2), "budgetType": "DAILY"}},
+                                   lambda f: f.get("state") == "ENABLED")
+        if not ok:
+            return False, det
+        for id_g in grupos:
+            ok_g, det_g = self._actualizar("adGroups", id_g, {"state": "ENABLED"}, lambda f: f.get("state") == "ENABLED")
+            if not ok_g:
+                return False, f"campaña activada, pero el grupo {id_g} no: {det_g}"
+        for id_a in anuncios:
+            ok_a, det_a = self._actualizar("productAds", id_a, {"state": "ENABLED"}, lambda f: f.get("state") == "ENABLED")
+            if not ok_a:
+                return False, f"campaña activada, pero el anuncio {id_a} no: {det_a}"
+        return True, f"Campaña, {len(grupos)} grupos y {len(anuncios)} anuncios activados y releídos"
+
+    def crear_negativa(self, id_campana, id_grupo, texto, coincidencia):
+        id_, det = self._crear("negativeKeywords", {
+            "campaignId": id_campana, "adGroupId": id_grupo, "keywordText": texto, "state": "ENABLED",
+            "matchType": COINCIDENCIA_NEG_API[coincidencia]}, lambda f: f.get("state") == "ENABLED")
+        return id_ is not None and det.startswith("Creado y"), id_, det
 
     def _crear(self, entidad, fila, comprobar):
         """POST + relectura. Devuelve (id | None, detalle)."""

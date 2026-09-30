@@ -1,17 +1,23 @@
 """
-presupuesto.py — reparto del presupuesto diario entre campañas (AGENTE_AUTONOMO.md §2.5 y §3).
+presupuesto.py — reparto del presupuesto diario entre campañas (AGENTE_AUTONOMO.md §2.5; Juan, 30/09/2026).
 
-  Tope del día   = lo que permite llegar a fin de mes sin pasar de 840 € (safety.py).
-  20 % del tope  -> fondo de EXPERIMENTACIÓN (global): campañas de pruebas, productos sin
-                    historial probado y campañas abiertas por el agente. A partes iguales.
-  80 % del tope  -> campañas PROBADAS, según su puntuación:
-                      puntuación = clamp(35 % / ACOS de los últimos 30 días, 0,25 … 3)
-                                   × (0,5 + confianza aprendida al subirle el presupuesto)
-Reasignación libre (sin tope por movimiento). Mínimo 1 €/día por campaña (lo exige Amazon);
-nunca se pausa una campaña por presupuesto. Una campaña experimental que ya vende (≥ 3 compras
-maduras con ACOS ≤ 35 %) se "gradúa" y pasa al 80 %.
-Solo se cambia un presupuesto si la diferencia es de verdad (≥ 0,50 € y ≥ 10 %), y una subida
-no se repite hasta pasados 3 días de la anterior.
+El presupuesto lo gestiona el agente entero, sin fondo fijo de experimentación:
+
+  Tope del día = lo que permite llegar a fin de mes sin pasar de 840 € (safety.py).
+  Se reparte entre TODAS las campañas activas (y las que se abren o reactivan en la ronda) según su
+  puntuación:
+      puntuación = clamp(35 % / ACOS de los últimos 30 días, 0,25 … 3) × (0,5 + confianza aprendida)
+  Sin 30 días de datos se usa el ACOS histórico del producto; sin nada, puntúa 1 (ni premio ni castigo).
+
+Reglas de Amazon Ads Academy:
+  - Las campañas buenas que agotan su presupuesto ("limitadas": gastan ≥ 90 % de media en 7 días)
+    reciben más, y ese dinero sale de las flojas; nunca de las buenas a las malas (la puntuación).
+  - A una campaña que gasta mucho menos de lo que tiene no le sirve más: como mucho recibe 1,5 × lo
+    que gasta de media, y lo que sobra va a las demás. Si sobra de todas, se queda sin asignar
+    (nunca se fuerza el gasto).
+Mínimo 1 €/día por campaña (lo exige Amazon); nunca se pausa una campaña por presupuesto. Solo se
+cambia un presupuesto si la diferencia es de verdad (≥ 0,50 € y ≥ 10 %), y una subida no se repite
+hasta pasados 3 días de la anterior.
 """
 
 from datetime import timedelta
@@ -21,8 +27,6 @@ import learner
 import safety
 from documento import fecha
 from modelo import ACTIVO, CREAR_CAMPANA, PRESUPUESTO, Cambio
-
-PROBADO, EXPERIMENTACION = "probado", "experimentación"
 
 
 def _ventana(series, id_campana, desde, hasta):
@@ -38,20 +42,25 @@ def creadas_por_agente(doc):
     return {str((t.get("ID campaña") or "")) for t in doc.tickets(tipos=(CREAR_CAMPANA,))}
 
 
-def fondo(campana, cuenta, doc, series, catalogo, hoy):
-    """(fondo, motivo)."""
-    asin = cuenta.producto_de_campana(campana.id)
-    m = learner.acumulado_campana(series, campana.id, hoy - timedelta(days=config.DIAS_MADUREZ + 1))
-    if m.compras >= config.GRADUACION_MIN_COMPRAS and m.acos is not None and m.acos <= config.GRADUACION_ACOS_MAX:
-        return PROBADO, f"graduada: {m.compras:.0f} compras maduras con ACOS {m.acos:.0%}"
-    if "prueba" in campana.nombre.lower():
-        return EXPERIMENTACION, "campaña de pruebas"
-    if campana.id in creadas_por_agente(doc):
-        return EXPERIMENTACION, "abierta por el agente, aún sin graduar"
-    compras = catalogo.producto(asin).compras if asin else 0
-    if compras >= config.PROBADO_MIN_COMPRAS_HISTORICO:
-        return PROBADO, f"producto con {compras:.0f} compras en el histórico"
-    return EXPERIMENTACION, f"producto con solo {compras:.0f} compras en el histórico"
+def gasto_medio(series, id_campana, hoy):
+    """Gasto medio diario de los últimos 7 días, o None si no hay datos de antes (el gasto se
+    conoce al momento: no hace falta esperar a la madurez)."""
+    claves = series.claves_de_campana(id_campana)
+    inicio = hoy - timedelta(days=config.DIAS_GASTO_MEDIO + 1)
+    if not claves or not any(series.tiene_diario(k) and series.diario[k] and series.diario[k][0][0] <= inicio
+                             or any(d <= inicio for d, _ in series.fotos.get(k, [])) for k in claves):
+        return None
+    fin = hoy - timedelta(days=1)
+    return _ventana(series, id_campana, fin - timedelta(days=config.DIAS_GASTO_MEDIO), fin).coste / config.DIAS_GASTO_MEDIO
+
+
+def limite_util(campana, gasto):
+    """(tope útil o None, limitada). Sin datos de gasto: sin tope."""
+    if gasto is None:
+        return None, False
+    if gasto >= config.UMBRAL_LIMITADA * campana.presupuesto:
+        return None, True
+    return max(config.PRESUPUESTO_MINIMO_AMAZON, round(gasto * config.HOLGURA_PRESUPUESTO, 2)), False
 
 
 def puntuacion(campana, cuenta, doc, series, catalogo, hoy):
@@ -64,27 +73,34 @@ def puntuacion(campana, cuenta, doc, series, catalogo, hoy):
         asin = cuenta.producto_de_campana(campana.id)
         p = catalogo.producto(asin) if asin else None
         acos = p.coste / p.ventas if p and p.ventas else None
-        origen = "histórico del producto"
+        origen = "histórico del producto" if acos is not None else "sin datos: neutra"
     base = 1.0 if acos is None else min(3.0, max(0.25, config.ACOS_OBJETIVO_MAX / acos)) if acos > 0 else 3.0
     conf = learner.confianza_campana(doc, campana.id)
     return base * (0.5 + conf), acos, conf, origen
 
 
-def _repartir(total, pesos):
-    """Reparte 'total' según pesos con un mínimo de 1 € por campaña."""
-    minimo = config.PRESUPUESTO_MINIMO_AMAZON
+def _repartir(total, pesos, topes=None):
+    """Reparte 'total' según pesos, con un mínimo de 1 € por campaña y, si lo tiene, un tope útil;
+    lo que no cabe en una campaña con tope pasa a las demás."""
+    minimo, topes = config.PRESUPUESTO_MINIMO_AMAZON, topes or {}
     res, libres = {}, dict(pesos)
     while libres:
         resto = total - sum(res.values())
         suma = sum(libres.values()) or 1.0
-        bajos = {k for k, w in libres.items() if resto * w / suma < minimo}
-        if not bajos:
-            for k, w in libres.items():
-                res[k] = resto * w / suma
+        parte = {k: resto * w / suma for k, w in libres.items()}
+        bajos = {k for k, v in parte.items() if v < minimo}
+        altos = {k for k, v in parte.items() if topes.get(k) is not None and v > topes[k]}
+        if bajos:
+            for k in bajos:
+                res[k] = minimo
+                del libres[k]
+        elif altos:
+            for k in altos:
+                res[k] = topes[k]
+                del libres[k]
+        else:
+            res |= parte
             break
-        for k in bajos:
-            res[k] = minimo
-            del libres[k]
     return {k: int(v * 100) / 100 for k, v in res.items()}   # redondeo hacia abajo: nunca pasar del tope
 
 
@@ -95,23 +111,26 @@ def _estrategia(c):
 
 
 def planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas=()):
-    """nuevas: campañas que se van a crear en esta ronda [{"nombre"}], financiadas por el 20 %.
-    Devuelve (cambios, filas para la hoja Campañas, presupuesto por campaña nueva)."""
+    """nuevas: campañas que se abren o reactivan en esta ronda (Cambios). Devuelve (cambios, filas
+    para la hoja Campañas, presupuesto por campaña nueva, tope del día)."""
     total = safety.presupuesto_diario_total(hoy, gasto_mes)
     activas = [c for c in cuenta.campanas.values() if c.estado == ACTIVO]
-    info = {c.id: fondo(c, cuenta, doc, series, catalogo, hoy) for c in activas}
-    probadas = [c for c in activas if info[c.id][0] == PROBADO]
-    experimentales = [c for c in activas if info[c.id][0] == EXPERIMENTACION]
-
     puntos = {c.id: puntuacion(c, cuenta, doc, series, catalogo, hoy) for c in activas}
-    plan = _repartir(total * (1 - config.PCT_EXPERIMENTACION), {c.id: puntos[c.id][0] for c in probadas}) if probadas else {}
-    pesos_exp = {c.id: 1.0 for c in experimentales} | {f"nueva:{i}": 1.0 for i in range(len(nuevas))}
-    plan |= _repartir(total * config.PCT_EXPERIMENTACION, pesos_exp) if pesos_exp else {}
+    gastos = {c.id: gasto_medio(series, c.id, hoy) for c in activas}
+    limites = {c.id: limite_util(c, gastos[c.id]) for c in activas}
+    pesos = {c.id: puntos[c.id][0] for c in activas} | {f"nueva:{i}": 1.0 for i in range(len(nuevas))}
+    plan = _repartir(total, pesos, {k: v[0] for k, v in limites.items()}) if pesos else {}
 
     cambios, filas = [], []
     for c in activas:
         nuevo = plan[c.id]
         dif = nuevo - c.presupuesto
+        pts, acos, conf, origen = puntos[c.id]
+        tope_util, limitada = limites[c.id]
+        acos_txt = "sin datos" if acos is None else ("sin ventas" if acos == float("inf") else f"{acos:.0%}")
+        gasto_txt = ("gasto medio desconocido" if gastos[c.id] is None else
+                     f"gasta {gastos[c.id]:.2f} €/día de media" + (" (limitada por presupuesto)" if limitada else
+                                                                     f"; más de {tope_util:.2f} € no le sirve"))
         nota = ""
         if abs(dif) >= max(config.CAMBIO_MINIMO_PRESUPUESTO_EUR, config.CAMBIO_MINIMO_PRESUPUESTO_PCT * c.presupuesto):
             ult = doc.tickets(clave=f"camp:{c.id}", tipos=(PRESUPUESTO,))
@@ -121,18 +140,17 @@ def planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas=()):
             else:
                 fin = hoy - timedelta(days=config.DIAS_MADUREZ + 1)
                 antes = _ventana(series, c.id, fin - timedelta(days=14), fin)
-                pts, acos, conf, origen = puntos[c.id]
-                acos_txt = "sin datos" if acos is None else ("sin ventas" if acos == float("inf") else f"{acos:.0%}")
                 cambios.append(Cambio(
                     tipo=PRESUPUESTO, clave=f"camp:{c.id}", producto=cuenta.producto_de_campana(c.id), id_campana=c.id,
                     id_grupo=None, campana=c.nombre, texto="(presupuesto diario)", coincidencia="", antes=c.presupuesto,
                     despues=nuevo, base=learner.acumulado_campana(series, c.id, hoy),
-                    motivo=(f"Fondo {info[c.id][0]} ({info[c.id][1]}). Tope del día {total:.2f} € "
-                            f"(840 €/mes). ACOS {acos_txt} ({origen}), confianza {conf:.2f}, puntuación {pts:.2f}"),
-                    extra={"fondo": info[c.id][0], "ventas_dia_antes": round(antes.ventas / 14, 2)}))
-        pts, acos, conf, origen = puntos[c.id]
+                    motivo=(f"Tope del día {total:.2f} € (840 €/mes) repartido por puntuación entre todas las campañas. "
+                            f"ACOS {acos_txt} ({origen}), confianza {conf:.2f}, puntuación {pts:.2f}; {gasto_txt}"),
+                    extra={"ventas_dia_antes": round(antes.ventas / 14, 2), "limitada": limitada}))
         filas.append({"ID campaña": c.id, "Campaña": c.nombre, "Estado": c.estado,
-                      "Producto (ASIN)": cuenta.producto_de_campana(c.id), "Fondo": info[c.id][0],
+                      "Producto (ASIN)": cuenta.producto_de_campana(c.id),
+                      "Gasto medio 7 días (€)": None if gastos[c.id] is None else round(gastos[c.id], 2),
+                      "Limitada por presupuesto": "Sí" if limitada else "",
                       "Presupuesto diario (€)": c.presupuesto, "Presupuesto objetivo (€)": nuevo,
                       "ACOS 30 días": None if acos in (None, float("inf")) else round(acos, 3),
                       "Puntuación": round(pts, 2), "Confianza (aprendizaje)": round(conf, 2),
@@ -142,16 +160,14 @@ def planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas=()):
     for c in cuenta.campanas.values():
         if c.estado != ACTIVO:
             filas.append({"ID campaña": c.id, "Campaña": c.nombre, "Estado": c.estado,
-                          "Producto (ASIN)": cuenta.producto_de_campana(c.id), "Fondo": "",
+                          "Producto (ASIN)": cuenta.producto_de_campana(c.id),
                           "Presupuesto diario (€)": c.presupuesto, "Presupuesto objetivo (€)": None, **_estrategia(c),
                           "Actualizado": hoy.isoformat() + f" ({c.estado}: no se le asigna presupuesto)"})
     por_nueva = [plan[f"nueva:{i}"] for i in range(len(nuevas))]
     return cambios, filas, por_nueva, total
 
 
-def hueco_experimental(cuenta, doc, series, catalogo, hoy, gasto_mes):
-    """Lo que le tocaría a una campaña experimental más si se abriera ahora (coste de oportunidad, §2.6)."""
-    total = safety.presupuesto_diario_total(hoy, gasto_mes)
-    n = sum(1 for c in cuenta.campanas.values() if c.estado == ACTIVO
-            and fondo(c, cuenta, doc, series, catalogo, hoy)[0] == EXPERIMENTACION)
-    return total * config.PCT_EXPERIMENTACION / (n + 1)
+def presupuesto_para_nueva(cuenta, doc, series, catalogo, hoy, gasto_mes):
+    """Lo que le tocaría a una campaña más si se abriera (o reactivara) ahora (coste de oportunidad, §2.6)."""
+    _, _, por_nueva, _ = planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas=[None])
+    return por_nueva[0]
