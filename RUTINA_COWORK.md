@@ -1,6 +1,6 @@
 # Rutina diaria de Cowork (para pegar en la tarea programada)
 
-Rutina DIARIA de los agentes de Amazon de FreshFinder (Juan): marketing (anuncios), finanzas y página de producto. Todo en español. Hoy = fecha de Madrid (AAAA-MM-DD). La carpeta del agente está en el ordenador de Juan: "C:\Documentos\AMAZON PROJECT\agente_amazon_ads_v3" (usa las herramientas mcp__remote-devices__*). Lee primero su CLAUDE.md y entradas/README.md.
+Rutina DIARIA de los agentes de Amazon de FreshFinder (Juan): marketing (anuncios), finanzas y página de producto. Todo en español. Hoy = fecha de Madrid (AAAA-MM-DD). La carpeta del agente está en el ordenador de Juan: "C:\Documentos\AMAZON PROJECT\agente_amazon_ads_v3" (usa las herramientas mcp__remote-devices__*). Lee primero su CLAUDE.md, CONOCIMIENTO_AMAZON_ADS.md y entradas/README.md.
 
 REGLAS FIJAS: nunca escribas contraseñas ni credenciales; nunca crees, actives, guardes ni cambies nada en la cuenta de Amazon (solo lectura y "Descargar/Exportar"); nada irreversible; no borres archivos; NO modifiques el código (los .py, plantillas/, tests/): si ves un fallo, descríbelo en el informe. Keywords: solo español, sin marcas, nada de lo que el producto no es (pinza B0DCZS1NR6 no es imán/ventosa/rejilla; rejilla B0DHYBY6MS no es imán/ventosa/salpicadero/pinza), nunca "homologado"/"DGT".
 

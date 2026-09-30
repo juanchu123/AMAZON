@@ -4,7 +4,7 @@
 
 Un agente que se conecta a la cuenta de Amazon Ads de **FreshFinder** (artículos de coche y juguetes en Amazon.es), lee el rendimiento real de campañas, keywords y ASIN, y **actúa por sí solo**: ajusta pujas, pausa lo que pierde dinero, añade keywords nuevas, reparte el presupuesto entre campañas y abre campañas nuevas cuando los datos lo justifican. Cada cambio se verifica releyendo Amazon, queda registrado en un documento único y se avisa a Juan por correo.
 
-La especificación completa (decidida con Juan el 26-27/09/2026) está en **`AGENTE_AUTONOMO.md`**. Este archivo resume lo que cualquier sesión de Claude Code tiene que saber antes de tocar nada.
+La especificación completa (decidida con Juan el 26-27/09/2026) está en **`AGENTE_AUTONOMO.md`**. Este archivo resume lo que cualquier sesión de Claude Code tiene que saber antes de tocar nada. **`CONOCIMIENTO_AMAZON_ADS.md`** recoge cómo funciona Amazon Ads (estrategias de puja, emplazamientos, presupuesto, atribución, negativas, hoja masiva, cómo evaluar cambios), con fuentes: léelo antes de cambiar cualquier regla.
 
 ## Objetivo de negocio
 
