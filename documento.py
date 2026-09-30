@@ -65,6 +65,8 @@ COLUMNAS = {
                 "Detalle", "Requiere revisión", "Base: clics", "Base: coste", "Base: compras", "Base: ventas",
                 "Veredicto", "Fecha veredicto", "Después: clics", "Después: coste", "Después: compras",
                 "Después: ventas", "ACOS después", "Datos extra"],
+    "Aprendizaje": ["Producto (ASIN)", "Producto", "Tipo de frase", "Coincidencia", "Clics maduros", "Compras",
+                    "Compras que esperaba el modelo", "Factor"],
     "Competencia": ["Producto (ASIN)", "ASIN competidor", "Motivo", "Confirmado por Juan", "Añadido"],
     "Investigación": ["Fecha", "Producto (ASIN)", "Rank", "Palabra clave", "Motivo", "Fuente", "Volumen"],
     "Alertas": ["Fecha", "Hora", "Tipo", "Clave", "Mensaje", "Correo"],
@@ -90,6 +92,8 @@ LEYENDA = [
     ("Diario", "Datos por día de la API. Permite saber qué clics tienen más de 7 días (maduros)."),
     ("Términos", "Lo que escribieron los clientes: cosecha (lo que vende pasa a Exacta) y negativas (gasto > CPA sin ventas)."),
     ("Tickets", "Cada cambio: antes -> después, motivo, si se CONFIRMÓ releyendo Amazon, y el veredicto."),
+    ("Aprendizaje", "Qué tipo de frases funcionan (específica/genérica × coincidencia): compras reales frente a las que "
+                    "esperaba el modelo. Factor < 1 = venden menos de lo previsto, y el agente las prueba menos."),
     ("Competencia", "ASIN de la competencia. Pon 'Sí' en 'Confirmado por Juan' para que el agente pueda usarlos."),
     ("Investigación", "Frases candidatas del módulo de investigación (LLM). Solo son datos: las reglas deciden."),
     ("Alertas", "Avisos enviados (o pendientes de enviar si no hay correo configurado)."),
@@ -101,6 +105,7 @@ LEYENDA = [
     ("", "Máx. 12 keywords por grupo. Keyword nueva solo con ACOS predicho ≤ 30 %; una candidata rentable basta."),
     ("", "Reactiva lo que está en pausa si sus datos lo justifican (nunca lo que pausó 2 veces: revisión de Juan)."),
     ("", "Términos de búsqueda: con ventas y ACOS ≤ 35 % -> Exacta; sin ventas y gasto maduro ≥ CPA -> negativa."),
+    ("", "Pruebas: frases con potencial (percentil 80) ≤ 30 %, tantas como quepan en lo que queda del tope a 8 € cada una."),
     ("", "Tope 840 €/mes. El presupuesto lo reparte el agente entero según la puntuación de cada campaña."),
 ]
 

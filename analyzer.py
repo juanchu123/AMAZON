@@ -20,7 +20,9 @@ Y por cada grupo:
      (menor ACOS predicho, ≤ 30 %) entre: keywords en pausa del grupo que los datos justifican
      reactivar (Juan, 30/09/2026; nunca las que requieren revisión de Juan), keywords que funcionaban
      en campañas terminadas (una campaña caducada no se reactiva: se copia lo bueno) y candidatas
-     nuevas (histórico, investigación, modelo).
+     nuevas (histórico, investigación, modelo), corregidas por lo aprendido de cada tipo de frase.
+     Si aún quedan huecos y hay cupo (pruebas.py), PRUEBAS: frases que no pasan de media pero sí con
+     su potencial; su pérdida la limita el stop-loss.
 
 No ejecuta nada: devuelve Cambios que pasan por safety.py y después por la fuente.
 """
@@ -70,9 +72,11 @@ class Decision:
         self.cambios, self.notas, self.alertas, self.revision = [], {}, [], set()
 
 
-def decidir(cuenta, doc, series, catalogo, hoy, cosecha=None):
-    """cosecha: {asin: [candidata]} de terminos.decidir (términos de búsqueda que ya venden)."""
+def decidir(cuenta, doc, series, catalogo, hoy, cosecha=None, cupo_pruebas=0, aprendizaje=None):
+    """cosecha: {asin: [candidata]} de terminos.decidir (términos de búsqueda que ya venden).
+    cupo_pruebas: pruebas nuevas que caben en esta ronda; aprendizaje: pruebas.Aprendizaje."""
     d = Decision()
+    d.cupo_pruebas, d.aprendizaje = cupo_pruebas, aprendizaje
     grupos_no_elegibles = {}
     for g in cuenta.grupos.values():
         if cuenta.grupo_activo(g.id):
@@ -269,7 +273,9 @@ def _rellenar_huecos(cuenta, doc, series, catalogo, hoy, d, pausadas_ahora, no_e
             if asin not in investig:
                 investig[asin] = doc.investigacion(asin)[1]
                 copias[asin] = terminadas(cuenta, series, catalogo, hoy, asin, ticket)
-            nuevas = [c for c in copias[asin] if kml.firma(c["texto"]) not in ya] + catalogo.candidatas(asin, ya, investig[asin])
+            ajuste = (lambda t, m, a=asin: d.aprendizaje.factor(a, t, m)) if d.aprendizaje else None
+            nuevas = ([c for c in copias[asin] if kml.firma(c["texto"]) not in ya]
+                      + catalogo.candidatas(asin, ya, investig[asin], ajuste=ajuste))
             primero = cosecha.get(asin, [])
         resto = sorted(reactivar + nuevas, key=lambda c: c["acos_pred"])
         elegidas = []
@@ -284,6 +290,13 @@ def _rellenar_huecos(cuenta, doc, series, catalogo, hoy, d, pausadas_ahora, no_e
                                    for x in elegidas if x.get("fuente") != "términos de búsqueda"):
                     continue
             elegidas.append(c)
+        if not de_asin and len(elegidas) < huecos and d.cupo_pruebas > 0:
+            vistas = ya | {kml.firma(x["texto"]) for x in elegidas}
+            for c in catalogo.candidatas(asin, vistas, investig[asin], ajuste=ajuste, pruebas=True):
+                if len(elegidas) >= huecos or d.cupo_pruebas <= 0:
+                    break
+                elegidas.append(c)
+                d.cupo_pruebas -= 1
         for c in elegidas:
             if c.get("fuente") != "términos de búsqueda":
                 ya.add(c["texto"].upper() if de_asin else kml.firma(c["texto"]))
@@ -294,7 +307,10 @@ def _rellenar_huecos(cuenta, doc, series, catalogo, hoy, d, pausadas_ahora, no_e
             else:
                 puja = pujas.limitar(camp, c["puja"], tope) if tope > 0 else c["puja"]
             extra = {"fuente": c["fuente"], "acos_pred": round(c["acos_pred"], 3), "p": round(c["p"], 5),
+                     "p_modelo": round(c.get("p_modelo") or catalogo.p_modelo(asin, c["texto"], c["coincidencia"]), 5),
                      "tope_rentable": round(tope, 4), "multiplicador": round(pujas.multiplicador(camp), 3)}
+            if c.get("prueba"):
+                extra |= {"prueba": True, "acos_media": round(c["acos_media"], 3)}
             n = len(activos) + 1
             if c.get("fuente") == "reactivar":
                 d.notas[c["clave"]] = f"REACTIVAR con puja {puja:.2f} €"
@@ -308,7 +324,10 @@ def _rellenar_huecos(cuenta, doc, series, catalogo, hoy, d, pausadas_ahora, no_e
                     tipo=NUEVO_ASIN if de_asin else NUEVA_KEYWORD, clave=f"nuevo:{g.id}:{c['texto']}", producto=asin,
                     id_campana=g.id_campana, id_grupo=g.id, campana=camp.nombre, texto=c["texto"],
                     coincidencia=c["coincidencia"], antes=None, despues=puja,
-                    motivo=(f"Hueco {n}/{config.MAX_KEYWORDS_POR_GRUPO}: ACOS "
+                    motivo=(f"PRUEBA (hueco {n}/{config.MAX_KEYWORDS_POR_GRUPO}): de media ACOS {c['acos_media']:.0%}, "
+                            f"pero con su potencial (conversión {c['p']:.1%}, percentil 80) {c['acos_pred']:.0%}. Pérdida "
+                            f"limitada por el stop-loss. Fuente {c['fuente']}. {c['motivo']}") if c.get("prueba") else
+                           (f"Hueco {n}/{config.MAX_KEYWORDS_POR_GRUPO}: ACOS "
                             f"{'real' if c['fuente'] == 'términos de búsqueda' else 'predicho'} {c['acos_pred']:.0%} "
                             f"(≤ {config.ACOS_MAX_KEYWORD_NUEVA if c['fuente'] != 'términos de búsqueda' else config.ACOS_OBJETIVO_MAX:.0%}), "
                             f"P(compra|clic) {c['p']:.1%}, fuente {c['fuente']}. {c['motivo']}"),

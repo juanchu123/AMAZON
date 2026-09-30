@@ -102,6 +102,15 @@ DIAS_GASTO_MEDIO = 7
 MAX_CAMPANAS_NUEVAS_POR_RONDA = 1
 MIN_KEYWORDS_CAMPANA_NUEVA = 1
 
+# ---------------------------------------------------------------- pruebas autónomas (Juan, 30/09/2026)
+PERDIDA_MAX_PRUEBA_EUR = 8.0        # stop-loss de 4 € maduros + lo que se gasta en los 7 días de retraso
+MAX_PRUEBAS_NUEVAS_POR_RONDA = 3
+# Periodos sin pruebas nuevas (MM-DD, MM-DD, nombre). En el futuro los rellenará un agente de calendario.
+PERIODOS_SIN_PRUEBAS = [
+    ("11-20", "12-02", "Black Friday y Cyber Monday"),
+    ("12-15", "01-07", "Navidad y Reyes"),
+]
+
 # ---------------------------------------------------------------- alertas (§2.9)
 EMAIL_DESTINO = os.environ.get("AGENTE_EMAIL_DESTINO", "yubunama62@gmail.com")
 

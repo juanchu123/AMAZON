@@ -51,6 +51,7 @@ import investigacion
 import keyword_ml as kml
 import learner
 import presupuesto
+import pruebas
 import pujas
 import safety
 import terminos
@@ -354,7 +355,12 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
     terminos.anotar(doc, hoy, res_t)
     resumen += [("Términos: negativas propuestas", len(res_t.negativas)),
                 ("Términos: cosecha (pasan a Exacta)", sum(len(v) for v in res_t.cosecha.values()))]
-    decision = analyzer.decidir(cuenta, doc, series, catalogo, hoy, cosecha=res_t.cosecha)
+    aprendizaje = pruebas.Aprendizaje(doc, series, catalogo, hoy)
+    doc.hojas["Aprendizaje"] = aprendizaje.filas()
+    cupo, nota_cupo = pruebas.cupo(doc, cuenta, series, hoy, gasto_mes)
+    resumen.append(("Pruebas autónomas", f"hasta {cupo} nuevas: {nota_cupo}"))
+    decision = analyzer.decidir(cuenta, doc, series, catalogo, hoy, cosecha=res_t.cosecha, cupo_pruebas=cupo,
+                                aprendizaje=aprendizaje)
     decision.alertas += pujas.avisos(cuenta) + finanzas.avisos(doc)
     nuevas, nota_camp = campanas.proponer(cuenta, doc, series, catalogo, hoy, gasto_mes, decision.cambios,
                                           cosecha=res_t.cosecha)

@@ -1,5 +1,6 @@
 numpy>=1.24
 scikit-learn>=1.3
+scipy>=1.10         # pruebas autónomas (potencial de cada frase)
 openpyxl>=3.1
 requests>=2.31
 anthropic>=1.0      # solo para la investigación de mercado (ANTHROPIC_API_KEY)

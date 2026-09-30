@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 
 import config
 import keyword_ml as kml
+import pruebas as pruebas_
 import validacion
 from documento import num
 
@@ -228,19 +229,10 @@ class Catalogo:
                       "motivo": "entra si hay hueco en un grupo del producto" if pasa else
                                 f"ACOS predicho {acos_pred:.0%} > {config.ACOS_MAX_KEYWORD_NUEVA:.0%}"}
 
-    def candidatas(self, asin, ya_usadas, investigacion=()):
-        """Keywords candidatas para el producto que pasan el filtro de ACOS predicho ≤ 30 %,
-        ordenadas de mejor a peor. ya_usadas: firmas (keyword_ml.firma) que el producto ya tiene
-        en cualquier campaña o estado (nunca se duplica ni se reactiva una pausada).
-        Devuelve [{texto, coincidencia, p, acos_pred, puja, fuente, motivo}]."""
+    def _brutas(self, asin, investigacion):
+        """Frases de donde salen las candidatas: (texto, coincidencia, p, fuente, motivo, puja sugerida)."""
         p = self.producto(asin)
-        ticket = p.ticket
-        if not ticket:
-            return []
-        if p.perfil:
-            kml.usar_perfil(p.perfil)
-        vistas, brutas = set(ya_usadas), []
-
+        brutas = []
         # 1) keywords del histórico del producto que ya vendieron (nunca Amplia genérica)
         for f in sorted(p.filas, key=lambda f: -f["compras"]):
             if f["compras"] < 1:
@@ -253,7 +245,7 @@ class Catalogo:
             pc = (f["compras"] + k * self.p_modelo(asin, f["keyword"], f["coincidencia"])) / (f["clics"] + k)
             brutas.append((f["keyword"], f["coincidencia"], pc, "histórico",
                            f"Histórico: {int(f['clics'])} clics, {int(f['compras'])} compras", f.get("puja_rec_baja")))
-        # 2) investigación de mercado (LLM) — solo propone, el filtro decide
+        # 2) investigación de mercado (Cowork) — solo propone, el filtro decide
         for fila in investigacion:
             texto = str(fila.get("Palabra clave") or "").strip().lower()
             if texto:
@@ -270,18 +262,43 @@ class Catalogo:
                                    r["motivo"] or "Frase nueva del modelo", None))
             except Exception:
                 pass
+        return brutas
 
-        out = []
-        for texto, coinc, pc, fuente, motivo, rec in brutas:
+    def candidatas(self, asin, ya_usadas, investigacion=(), ajuste=None, pruebas=False):
+        """Keywords candidatas para el producto que pasan el filtro de ACOS predicho ≤ 30 %,
+        ordenadas de mejor a peor. ya_usadas: firmas (keyword_ml.firma) que el producto ya tiene.
+        ajuste(texto, coincidencia) -> factor aprendido del tipo de frase (pruebas.Aprendizaje).
+        pruebas=True: en vez de las que pasan de media, las que NO pasan de media pero sí con su
+        potencial (pruebas.p_potencial): candidatas a prueba autónoma.
+        Devuelve [{texto, coincidencia, p, p_modelo, acos_pred, puja, fuente, motivo}]."""
+        p = self.producto(asin)
+        ticket = p.ticket
+        if not ticket:
+            return []
+        if p.perfil:
+            kml.usar_perfil(p.perfil)
+        vistas, out = set(ya_usadas), []
+        for texto, coinc, pc, fuente, motivo, rec in self._brutas(asin, investigacion):
             fi = kml.firma(texto)
             if not fi or fi in vistas:
                 continue
+            pc = pc * (ajuste(texto, coinc) if ajuste else 1.0)
             ev = self.evaluar(asin, texto, coinc, pc, rec)
             if ev["acos_pred"] is not None:
                 vistas.add(fi)
-            if ev["pasa"]:
-                out.append({"texto": texto, "coincidencia": coinc, "p": pc, "acos_pred": ev["acos_pred"],
-                            "puja": ev["puja"], "fuente": fuente, "motivo": motivo})
+            base = {"texto": texto, "coincidencia": coinc, "p_modelo": self.p_modelo(asin, texto, coinc), "fuente": fuente,
+                    "motivo": motivo}
+            if not pruebas and ev["pasa"]:
+                out.append(base | {"p": pc, "acos_pred": ev["acos_pred"], "puja": ev["puja"]})
+            elif pruebas and ev["acos_pred"] is not None and not ev["pasa"]:
+                pp = pruebas_.p_potencial(pc)
+                acos_pot = ev["cpc"] / (pp * ticket) if pp else None
+                if acos_pot is not None and acos_pot <= config.ACOS_MAX_KEYWORD_NUEVA:
+                    puja = pp * ticket * config.ACOS_MAX_KEYWORD_NUEVA
+                    if not p.modelo_fiable:
+                        puja = min(puja, config.PUJA_MAX_SIN_MODELO)
+                    out.append(base | {"p": pp, "p_media": pc, "acos_pred": acos_pot, "acos_media": ev["acos_pred"],
+                                       "puja": max(config.PUJA_MINIMA_AMAZON, round(puja, 2)), "prueba": True})
         out.sort(key=lambda c: c["acos_pred"])
         return out
 
