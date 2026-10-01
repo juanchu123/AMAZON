@@ -434,7 +434,7 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
         nuevos_avisos = [a for a in decision.alertas if not doc.alerta_ya_enviada(a[0], a[1], hoy)]
         hechos = [c for c in todos if c.estado in ("confirmado", "enviado_bulk", "fallido", "simulado")]
         if hechos or nuevos_avisos:
-            asunto = (f"Amazon Ads: {sum(c.estado in ('confirmado', 'enviado_bulk') for c in hechos)} cambios"
+            asunto = (f"Amazon Ads: {sum(c.estado in ('confirmado', 'enviado_bulk', 'simulado') for c in hechos)} cambios"
                       + (f", {sum(c.estado == 'fallido' for c in hechos)} fallidos" if any(c.estado == 'fallido' for c in hechos) else "")
                       + (" (simulación)" if simular else "") + f" — {hoy:%d/%m/%Y}")
             if archivo_bulk:

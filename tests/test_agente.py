@@ -31,13 +31,6 @@ def catalogo():
     return Catalogo()
 
 
-@pytest.fixture(autouse=True)
-def sin_correo_real(tmp_path, monkeypatch):
-    for v in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "ANTHROPIC_API_KEY"):
-        monkeypatch.delenv(v, raising=False)
-    monkeypatch.setattr(config, "CORREOS_PENDIENTES", tmp_path / "correos")
-
-
 class APIFalsa:
     """Imita ads_api.AmazonAdsAPI: guarda el estado en memoria y 'relee' de ahí."""
 
