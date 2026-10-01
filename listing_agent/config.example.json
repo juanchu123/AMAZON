@@ -1,0 +1,55 @@
+{
+  "marketplace_id": "A1RKKUPIHCS9HS",
+  "endpoint": "https://sellingpartnerapi-eu.amazon.com",
+  "idioma": "es_ES",
+  "marca_propia": "FreshFinder",
+
+  "asins": [
+    {
+      "asin": "B0DHYBY6MS",
+      "sku": "5E-I8NY-S191",
+      "keyword_principal": "soporte movil coche",
+      "keywords_semilla": [
+        "soporte movil coche",
+        "soporte movil coche rejilla",
+        "soporte movil coche pinza",
+        "sujeta movil coche",
+        "porta movil coche"
+      ],
+      "tiene_campanas_activas": true
+    }
+  ],
+
+  "marcas_competidoras": ["Lamicall", "UGREEN", "Baseus", "iOttie", "Belkin", "ESR", "Andobil", "TOPK", "Syncwire", "Mpow"],
+  "marcas_de_dispositivos": ["iPhone", "Apple", "Samsung", "Galaxy", "Xiaomi", "Redmi", "Huawei", "Oppo", "Google Pixel", "Motorola"],
+  "claims_confirmados_por_legal": [],
+
+  "reglas": {
+    "dias_espera_sin_evaluacion": 14,
+    "dias_minimos_con_evaluacion": 7,
+    "dias_minimos_entre_cambios_titulo": 42,
+    "margen_bytes_backend": 5,
+    "ventana_metricas_dias": 14
+  },
+
+  "indexacion": {
+    "max_keywords_por_ejecucion": 15,
+    "paginas_por_busqueda": 2
+  },
+
+  "fuentes_keywords": {
+    "csv_ads": ["../Sponsored_Products_Target_*.csv", "datos/*.csv"],
+    "historico_json": "../logs/historical_keywords.json"
+  },
+
+  "rutas": {
+    "logs": "logs",
+    "informes": "informes",
+    "trabajo": "trabajo"
+  },
+
+  "redaccion": {
+    "modo": "auto",
+    "modelo": "claude-opus-5-5"
+  }
+}

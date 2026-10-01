@@ -1,0 +1,6 @@
+.env
+config.json
+logs/
+informes/
+trabajo/
+__pycache__/

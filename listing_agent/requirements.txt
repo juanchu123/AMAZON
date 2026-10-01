@@ -1,0 +1,3 @@
+requests>=2.31
+# Opcional, solo si hay ANTHROPIC_API_KEY (redacción automática en vez de Cowork):
+# anthropic
