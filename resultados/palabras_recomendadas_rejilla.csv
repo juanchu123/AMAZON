@@ -1,0 +1,9 @@
+﻿rank,palabra_clave,coincidencia_recomendada,compra_clic_amplia,compra_clic_frase,compra_clic_exacta,amplia_para_descubrir,prob_compra_por_clic,clics_por_venta,puja_max_rentable_eur,acos_si_pujas_cpc_medio_pct,palabras_sin_datos,motivo
+1,soporte teléfono de rejilla ventilación,Frase,0.0769,0.1172,0.0928,"Sí, puja 0.27€",0.1172,8.5,0.58,58.1,0,"venden más: telefono, ventilacion | venden menos: soporte"
+2,soporte teléfono rejilla coche con gancho,Frase,0.0535,0.0826,0.0649,"Sí, puja 0.19€",0.0826,12.1,0.41,82.4,0,"venden más: telefono | venden menos: coche, gancho, soporte"
+3,rejilla móvil coche,Frase,0.0524,0.081,0.0636,"Sí, puja 0.18€",0.081,12.3,0.4,84.0,0,venden más: movil | venden menos: coche
+4,soporte rejilla móvil,Frase,0.0433,0.0673,0.0526,"Sí, puja 0.15€",0.0673,14.9,0.34,101.2,0,venden más: movil | venden menos: soporte
+5,porta móvil de rejilla ventilación,Frase,0.0407,0.0634,0.0495,"Sí, puja 0.14€",0.0634,15.8,0.32,107.4,0,"venden más: movil, ventilacion | venden menos: porta"
+6,sujeta móvil de rejilla,Frase,0.0315,0.0492,0.0384,"Sí, puja 0.11€",0.0492,20.3,0.25,138.3,0,venden más: movil | venden menos: sujeta
+7,porta móvil de rejilla ajustable 360,Frase,0.035,0.0546,0.0426,"Sí, puja 0.12€",0.0546,18.3,0.27,124.7,2,"venden más: movil | venden menos: porta | sin datos (se prueba a ciegas): ajustable, 360"
+8,soporte móvil rejilla coche ajustable 360,Frase,0.0271,0.0425,0.0331,"Sí, puja 0.09€",0.0425,23.5,0.21,160.2,2,"venden más: movil | venden menos: coche, soporte | sin datos (se prueba a ciegas): ajustable, 360"
