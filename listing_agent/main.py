@@ -153,7 +153,14 @@ def audit_asin(cfg: Config, client, mem: Memory, asin: str, metrics: dict, hoy: 
                                    f"El título ha cambiado sin registro: «{b}»", campo)
 
     # 3) Keywords e indexación
-    rows = research(state, cfg.csv_ads, cfg.historico_json, acfg.keywords_semilla)
+    csvs = acfg.csv_ads
+    if not csvs and cfg.csv_ads:
+        if len(cfg.asins) == 1:
+            csvs = cfg.csv_ads
+        else:
+            avisos.append(f"{asin}: hay varios productos y 'fuentes_keywords.csv_ads' es común; se ignora para no "
+                          "mezclar keywords entre productos. Pon los CSV de cada producto en su 'csv_ads'.")
+    rows = research(state, csvs, cfg.historico_json, acfg.keywords_semilla)
     idx_rows = []
     if comprobar_indexacion:
         objetivo = []

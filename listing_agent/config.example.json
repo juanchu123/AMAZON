@@ -3,7 +3,6 @@
   "endpoint": "https://sellingpartnerapi-eu.amazon.com",
   "idioma": "es_ES",
   "marca_propia": "FreshFinder",
-
   "asins": [
     {
       "asin": "B0DHYBY6MS",
@@ -12,18 +11,59 @@
       "keywords_semilla": [
         "soporte movil coche",
         "soporte movil coche rejilla",
-        "soporte movil coche pinza",
+        "soporte movil rejilla ventilacion",
         "sujeta movil coche",
         "porta movil coche"
       ],
-      "tiene_campanas_activas": true
+      "tiene_campanas_activas": true,
+      "csv_ads": [
+        "datos/Sponsored_Products_Target_Sep_25_2026 (3).csv",
+        "datos/Sponsored_Products_Target_Sep_25_2026 (4).csv",
+        "datos/Sponsored_Products_Target_Sep_25_2026 (6).csv"
+      ]
+    },
+    {
+      "asin": "B0DCZS1NR6",
+      "sku": "O8-5W7J-DSK1",
+      "keyword_principal": "soporte movil coche pinza",
+      "keywords_semilla": [
+        "soporte movil coche pinza",
+        "soporte movil coche salpicadero",
+        "soporte movil parasol coche",
+        "soporte movil espejo retrovisor"
+      ],
+      "tiene_campanas_activas": true,
+      "csv_ads": [
+        "datos/Sponsored_Products_Target_Sep_25_2026 (5).csv",
+        "datos/Sponsored_Products_Target_Sep_25_2026 (7).csv"
+      ]
     }
   ],
-
-  "marcas_competidoras": ["Lamicall", "UGREEN", "Baseus", "iOttie", "Belkin", "ESR", "Andobil", "TOPK", "Syncwire", "Mpow"],
-  "marcas_de_dispositivos": ["iPhone", "Apple", "Samsung", "Galaxy", "Xiaomi", "Redmi", "Huawei", "Oppo", "Google Pixel", "Motorola"],
+  "marcas_competidoras": [
+    "Lamicall",
+    "UGREEN",
+    "Baseus",
+    "iOttie",
+    "Belkin",
+    "ESR",
+    "Andobil",
+    "TOPK",
+    "Syncwire",
+    "Mpow"
+  ],
+  "marcas_de_dispositivos": [
+    "iPhone",
+    "Apple",
+    "Samsung",
+    "Galaxy",
+    "Xiaomi",
+    "Redmi",
+    "Huawei",
+    "Oppo",
+    "Google Pixel",
+    "Motorola"
+  ],
   "claims_confirmados_por_legal": [],
-
   "reglas": {
     "dias_espera_sin_evaluacion": 14,
     "dias_minimos_con_evaluacion": 7,
@@ -31,23 +71,18 @@
     "margen_bytes_backend": 5,
     "ventana_metricas_dias": 14
   },
-
   "indexacion": {
     "max_keywords_por_ejecucion": 15,
     "paginas_por_busqueda": 2
   },
-
   "fuentes_keywords": {
-    "csv_ads": ["../Sponsored_Products_Target_*.csv", "datos/*.csv"],
-    "historico_json": "../logs/historical_keywords.json"
+    "csv_ads": []
   },
-
   "rutas": {
     "logs": "logs",
     "informes": "informes",
     "trabajo": "trabajo"
   },
-
   "redaccion": {
     "modo": "auto",
     "modelo": "claude-opus-5-5"

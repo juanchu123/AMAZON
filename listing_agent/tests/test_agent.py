@@ -97,7 +97,9 @@ class AgentFlowTest(unittest.TestCase):
             "soporte magnetico coche,6,1,400\n"
             "funda movil,3,0,100\n", encoding="utf-8")
         cfg = json.loads((Path(__file__).resolve().parent.parent / "config.example.json").read_text())
-        cfg["fuentes_keywords"] = {"csv_ads": [str(csv)]}
+        cfg["asins"] = cfg["asins"][:1]
+        cfg["asins"][0]["csv_ads"] = [str(csv)]
+        cfg["fuentes_keywords"] = {}
         (self.tmp / "config.json").write_text(json.dumps(cfg), encoding="utf-8")
         self.cfg = load_config(self.tmp / "config.json")
         self.client = FakeClient()
@@ -167,6 +169,21 @@ class AgentFlowTest(unittest.TestCase):
         report = main.cmd_auditar(self.cfg, self.client, None, False, False, hoy + timedelta(days=7)).read_text()
         self.assertIn("no ha hecho este agente", report)
         self.assertIn("titulo_cambiado_fuera_del_agente", self.mem.ads_events_file.read_text())
+
+
+class MultiProductTest(unittest.TestCase):
+    def test_global_csv_not_mixed_between_products(self):
+        tmp = Path(tempfile.mkdtemp())
+        csv = tmp / "ads.csv"
+        csv.write_text("Palabra clave,Clics,Compras\nsoporte movil coche pinza,30,25\n", encoding="utf-8")
+        cfg = json.loads((Path(__file__).resolve().parent.parent / "config.example.json").read_text())
+        for a in cfg["asins"]:
+            a["csv_ads"] = []
+        cfg["fuentes_keywords"] = {"csv_ads": [str(csv)]}
+        (tmp / "config.json").write_text(json.dumps(cfg), encoding="utf-8")
+        report = main.cmd_auditar(load_config(tmp / "config.json"), FakeClient(), ["B0DHYBY6MS"], False, False,
+                                  date(2026, 10, 1)).read_text()
+        self.assertIn("no mezclar keywords entre productos", report)
 
 
 class SafetyTest(unittest.TestCase):

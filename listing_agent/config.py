@@ -41,6 +41,10 @@ class AsinConfig:
     keywords_semilla: list[str] = field(default_factory=list)
     keyword_principal: str | None = None
     tiene_campanas_activas: bool = True
+    # Exportes de Ads de los grupos de anuncios de ESTE producto. Nunca se
+    # mezclan entre productos: una keyword que vende para uno puede no
+    # tener nada que ver con el otro (mismo principio que el agente de Ads).
+    csv_ads: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -109,7 +113,8 @@ def load_config(path: str | Path | None = None) -> Config:
         endpoint=raw.get("endpoint", "https://sellingpartnerapi-eu.amazon.com"),
         idioma=raw.get("idioma", "es_ES"),
         marca_propia=raw.get("marca_propia", ""),
-        asins=[AsinConfig(**a) for a in raw.get("asins", [])],
+        asins=[AsinConfig(**{**a, "csv_ads": [str(_p(g)) for g in a.get("csv_ads", [])]})
+               for a in raw.get("asins", [])],
         marcas_competidoras=raw.get("marcas_competidoras", []),
         marcas_de_dispositivos=raw.get("marcas_de_dispositivos", []),
         claims_confirmados_por_legal=raw.get("claims_confirmados_por_legal", []),
