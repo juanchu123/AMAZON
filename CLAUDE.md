@@ -10,7 +10,7 @@ La especificación completa (decidida con Juan el 26-27/09/2026) está en **`AGE
 
 - **ACOS objetivo: 30-35 %** (gasto en ads / ventas atribuidas a ads). Keyword nueva: solo con ACOS predicho ≤ 30 %.
 - **Tope duro: 840 €/mes** (cartera de Amazon; 100 € → 630 € → 840 €, cambiado por Juan el 26/09/2026). Solo Juan lo cambia (`config.TOPE_MENSUAL_EUR`, `crear_memoria.CARTERA_MENSUAL`, este archivo y `marketingV2.md`).
-- **20 % del tope (168 €/mes) para experimentación**, global; **80 %** para lo que ya funciona, según puntuación por campaña.
+- **El presupuesto lo reparte el agente entero** (Juan, 30/09/2026): sin 80/20 ni fondo fijo de experimentación, por puntuación de campaña y dentro del tope.
 
 ## Antes de empezar: pregunta primero
 
@@ -22,16 +22,16 @@ Cualquier sesión que abra este proyecto pregunta a Juan lo que necesite **antes
 - **La primera vez, `python agente.py --simular`**: decide y lo cuenta sin tocar Amazon ni crear tickets. Solo después, ejecuciones reales.
 - Cualquier cosa ambigua o contradictoria: preguntar en un mensaje corto antes que adivinar.
 
-## Decisiones de Juan del 30/09/2026 (pendientes de implementar; mandan sobre lo que diga más abajo)
+## Decisiones de Juan del 30/09/2026 y del 01/10/2026 (implementadas)
 
-Juan pidió no tocar el código hasta estudiar el material de Amazon Ads Academy que va a pasar. Al implementarlas se actualizan las reglas de abajo:
-
-1. **Una candidata rentable entra**, sin esperar a tener 3 (también si necesita campaña nueva).
-2. **El presupuesto lo gestiona el agente entero:** fuera el reparto 80/20 y el fondo fijo de experimentación. Techo: **840 €/mes (se mantiene)**.
-3. **El agente puede cambiar lo que necesite en Amazon** a partir de los datos.
-4. **Puede reactivar** keywords y campañas pausadas si los datos lo justifican.
+Tras estudiar Amazon Ads Academy (Sponsored Products D1, resumen en `CONOCIMIENTO_AMAZON_ADS.md` §18):
+1. **Una candidata rentable entra**, sin esperar a tener 3 (también para abrir campaña).
+2. **El presupuesto lo gestiona el agente entero** (techo 840 €/mes).
+3. **El agente puede cambiar lo que necesite** en Amazon: pujas, estrategia, **ajustes de emplazamiento**, **negativas**, reactivar.
+4. **Puede reactivar** keywords y campañas en pausa si sus datos lo justifican (nunca lo pausado 2 veces por el agente: revisión de Juan; una campaña terminada por fecha no se reactiva: se copia lo bueno).
 5. **Se mantiene** la parada con aviso si todo está en pausa o hay un problema de cuenta/pago.
-6. **Que pruebe de forma autónoma** (el histórico es malo y hay que aprender): elegir qué probar por el potencial de cada frase (no solo la media), pérdida limitada por prueba (stop-loss), nº de pruebas según lo que quede del tope, y aprender de cada resultado qué tipo de frases funcionan.
+6. **Pruebas autónomas** (`pruebas.py`) por potencial, con stop-loss, cupo según lo que queda del tope, sin pruebas en Black Friday ni Navidad, y aprendiendo qué tipo de frase vende.
+7. Sin erratas como keywords. Sin comprobación de "listo para retail" (pinza y rejilla se anuncian igual). La ficha la decide Juan. **Sin Registro de Marca**: nada de A+, Brand Store ni Sponsored Brands.
 
 ## Tres agentes, un solo comando (`python agente.py`)
 
@@ -50,12 +50,16 @@ agente.py  (orquestador: una ejecución = una ronda; se puede lanzar cuantas vec
  ├─ carpetas.py       entradas/<día>/ (hoja masiva + investigación) y salidas/<día>/ (memoria + cambios)
  ├─ documento.py      documento único (salidas/<día>/memoria_agente.xlsx), escritura atómica
  ├─ learner.py        veredicto de cada cambio (con clics maduros) y agresividad / confianza aprendidas
- ├─ analyzer.py       por keyword/ASIN: elegibilidad, ronda, stop-loss, puja, huecos hasta 12
+ ├─ terminos.py       términos de búsqueda: cosecha (lo que vende pasa a Exacta) y negativas (gasto > CPA sin ventas)
+ ├─ analyzer.py       por keyword/ASIN: elegibilidad, ronda, stop-loss, puja, reactivar, huecos hasta 12
+ ├─ pruebas.py        pruebas autónomas: potencial, cupo según el tope, aprendizaje por tipo de frase
  ├─ pujas.py          sistema de pujas: puja objetivo, tope rentable, multiplicador de Amazon y estrategia de cada campaña
- ├─ prediccion.py     por producto: ticket, conversión, modelo de keyword_ml.py, candidatas (ACOS predicho)
- ├─ presupuesto.py    reparto 80/20 del tope del día entre campañas
- ├─ campanas.py       ¿abrir campaña nueva? (solo si el 20 % da para pagarla de verdad)
- ├─ safety.py         última barrera: suelo de puja, tope mensual, cuenta parada. Nunca se salta
+ ├─ emplazamientos.py ajustes de puja por emplazamiento según la conversión de cada uno
+ ├─ prediccion.py     por producto: ticket, conversión escalonada por coincidencia, modelo, candidatas (ACOS predicho)
+ ├─ presupuesto.py    reparto del tope del día entre todas las campañas (más a las limitadas que rinden)
+ ├─ campanas.py       ¿abrir o reactivar campaña? (con una candidata rentable y ≥ 2,50 €/día para ella)
+ ├─ validacion.py     lo que Amazon acepta (keywords ≤ 80 caracteres/10 palabras, coincidencias, estrategias)
+ ├─ safety.py         última barrera: suelo de puja, tope mensual, cuenta parada, validación. Nunca se salta
  ├─ finanzas.py       agente de finanzas: hoja Economía (costes) -> margen y ACOS de equilibrio; hoja Finanzas
  ├─ ficha.py          agente de página de producto: datos para mejorar la ficha (la propuesta la escribe Cowork)
  ├─ alertas.py        un correo por ronda + avisos inmediatos (SMTP; si no hay, .eml pendiente)
@@ -70,30 +74,34 @@ Las reglas no saben de dónde vienen los datos: la API y la hoja masiva producen
 
 **Sobre las fechas:** los listados de la API no traen métricas. Las métricas salen del informe diario `spTargeting` (Reporting API v3), una fila por día y elemento, que se guarda en la hoja "Diario". Con ellas el agente sabe exactamente qué clics tienen más de 7 días. Con la hoja masiva (sin fechas por fila) se usan fotos diarias en "Seguimiento" y se resta entre fotos.
 
-## Reglas de decisión (AGENTE_AUTONOMO.md §2)
+## Reglas de decisión (AGENTE_AUTONOMO.md §2, actualizadas el 30/09-01/10/2026)
 
 1. **Elegibilidad (§2.7):** si el anuncio del grupo no se puede mostrar (sin Oferta Destacada, sin stock, ficha rechazada…) no se toca nada del grupo y se avisa.
-2. **Ronda (§2.1):** un elemento solo se decide con **≥ 3 días** desde su último cambio **y ≥ 10 clics nuevos**. Clic **maduro** = más de 7 días (atribución de Amazon).
-3. **Stop-loss (§2.4):** **20 clics maduros o 4 € maduros sin ninguna venta → pausar** (nunca borrar). Una venta lo libra. Pausada 2 veces → "Requiere revisión de Juan"; el agente **nunca reactiva nada**.
-4. **Puja (§2.2, `pujas.py`):** `P(compra|clic) × ticket medio × ACOS objetivo`, con el ACOS entre 30 % y 35 % según la agresividad aprendida. P(compra|clic) = modelo de `keyword_ml.py` mezclado con los clics maduros propios. **Suelo 0,02 €, sin techo artificial**, pero la puja escrita nunca pasa de `tope rentable / multiplicador` (tope = P × ticket × ACOS de equilibrio; multiplicador = lo que Amazon puede subirla por estrategia y emplazamiento), así que el clic más caro posible no pasa del equilibrio.
-   **Estrategia de pujas (la elige el agente por campaña):** "al alza y a la baja" solo si la campaña tiene ≥ 10 compras maduras en 30 días con ACOS ≤ equilibrio y el margen deja que Amazon suba la puja sin pasar del equilibrio; si no, "solo a la baja". El cambio va en la misma ronda que las pujas. Campañas con la fecha de finalización pasada = terminadas: no se tocan.
-5. **Huecos (§2.3):** máximo **12 keywords/ASIN activos por grupo**, cada producto por su cuenta; los huecos se rellenan con candidatas (histórico, modelo, investigación) con **ACOS predicho ≤ 30 %**. ASIN de competencia: solo los de la hoja "Competencia" con "Sí" de Juan.
-6. **Presupuesto (§2.5):** tope del día = lo que permite no pasar de 840 €/mes; 20 % a experimentación a partes iguales, 80 % a campañas probadas por puntuación (ACOS de 30 días × confianza aprendida). Mínimo 1 €/día por campaña; nunca se pausa una campaña por presupuesto.
-7. **Campañas nuevas (§2.6):** por defecto se añade a la campaña existente. Se abre una nueva (máx. 1 por ronda) solo si el producto no tiene ninguna, o todas están 12/12 y hay una candidata claramente buena (≤ 25 %), y además a cada campaña experimental le seguirían tocando ≥ 2,50 €/día.
-8. **Verificación (§2.8):** cada cambio se aplica, se relee en Amazon y solo entonces queda "confirmado"; si no coincide, un reintento y "fallido". Cada cambio es independiente.
+2. **Ronda (§2.1):** un elemento solo se decide con **≥ 3 días** desde su último cambio **y ≥ 10 clics nuevos**. Clic **maduro** = más de 7 días (atribución de Amazon). Lo que el agente crea o reactiva no se juzga (puja) hasta los **14 días**; el stop-loss vigila desde el primer día.
+3. **Stop-loss (§2.4):** **20 clics maduros o 4 € maduros sin ninguna venta → pausar** (nunca borrar), contados desde que el agente la creó o reactivó. Una venta lo libra. Pausada 2 veces → "Requiere revisión de Juan" y el agente ya no la reactiva.
+4. **Puja (§2.2, `pujas.py`):** `P(compra|clic) × ticket medio × ACOS objetivo`, con el ACOS entre 30 % y 35 % según la agresividad aprendida. P(compra|clic) = modelo de `keyword_ml.py` **escalonado amplia ≤ frase ≤ exacta** (regresión isotónica), mezclado con los clics maduros propios. Se calcula para el emplazamiento que peor convierte. **Suelo 0,02 €, sin techo artificial**, pero lo que Amazon pueda cobrar por un clic (con la estrategia y el ajuste del emplazamiento) nunca pasa del equilibrio en ningún emplazamiento.
+   **Estrategia (por campaña):** "al alza y a la baja" solo con ≥ 10 compras maduras en 30 días, ACOS ≤ equilibrio y margen para que Amazon suba la puja; si no, "solo a la baja".
+   **Emplazamientos (`emplazamientos.py`):** con ≥ 5 compras y ≥ 100 clics en la campaña, ajuste = conversión del emplazamiento / la del peor − 1 (prudente, máx. +900 %, cambios ≥ 10 puntos).
+5. **Términos de búsqueda (`terminos.py`):** CPA objetivo = ticket × ACOS objetivo. Con ventas y ACOS ≤ 35 % → keyword en **Exacta** (cosecha, antes que cualquier otra candidata). Sin ventas y gasto **maduro** ≥ CPA → **Exacta negativa** en el grupo que lo cazó. Si ya es Exacta en otro grupo → negativa en el de origen. Nunca negativa a la propia keyword ni a un ASIN.
+6. **Huecos (§2.3):** máximo **12 keywords/ASIN activos por grupo**. Se rellenan con: cosecha; después, por ACOS predicho (≤ 30 %), keywords en pausa que sus datos justifican **reactivar**, lo bueno de campañas **terminadas** (se copia) y candidatas nuevas (histórico, modelo, investigación), corregidas por lo aprendido de cada tipo de frase; y, si queda hueco y cupo, **pruebas** (`pruebas.py`: frases que solo pasan con su potencial, percentil 80).
+7. **Presupuesto (§2.5):** tope del día = lo que permite no pasar de 840 €/mes, repartido entre **todas** las campañas por puntuación (ACOS de 30 días × confianza). Las limitadas por presupuesto que rinden reciben más; a una que gasta poco, como mucho 1,5 × lo que gasta. Mínimo 1 €/día; nunca se pausa una campaña por presupuesto.
+8. **Campañas (§2.6):** por defecto se añade a la existente. Si el producto no tiene campaña activa: se **reactiva** la que esté en pausa con keywords que compensan; si no, se abre una nueva. También si todas están 12/12 y sobra una candidata rentable. Basta **una** candidata, máx. 1 por ronda y solo si le tocarían ≥ 2,50 €/día.
+9. **Validación (`validacion.py`):** nada sale con una keyword, coincidencia o estrategia que Amazon rechace (errores 1018, 1021 y 1025).
+10. **Verificación (§2.8):** cada cambio se aplica, se relee en Amazon y solo entonces queda "confirmado"; si no coincide, un reintento y "fallido". Cada cambio es independiente.
 
 ## Reglas de seguridad (no negociables)
 
-1. **Tope mensual 840 €.** Si el gasto proyectado del mes ya llega al tope: solo bajadas y pausas.
-2. **Cuenta parada (§2.9-bis):** si todas las campañas están en pausa sin que las pausara el agente, o Amazon marca un problema de cuenta o de pago → correo inmediato y **parar sin tocar nada**. Nunca se reactiva nada por iniciativa propia.
-3. Nada fuera de estas reglas (negativas automáticas, Sponsored Brands/Display, ajustes de emplazamiento, cambiar la cartera…) sin que Juan lo pida. La **estrategia de pujas** sí la gestiona el agente (autorizado por Juan, 28/09/2026). Los ajustes de emplazamiento se leen y cuentan en la puja, pero no se tocan (si hay alguno > 0 se avisa).
+1. **Tope mensual 840 €.** Si el gasto proyectado del mes ya llega al tope: solo bajadas, pausas y negativas.
+2. **Cuenta parada (§2.9-bis):** si todas las campañas están en pausa sin que las pausara el agente, o Amazon marca un problema de cuenta o de pago → correo inmediato y **parar sin tocar nada** (y sin reactivar nada).
+3. Fuera de Sponsored Products (Sponsored Brands/Display, cambiar la cartera, la ficha) nada sin que Juan lo pida.
 4. Cualquier cambio de estas reglas lo pide Juan explícitamente; no se relajan porque "los datos lo justifiquen".
 
 ## Aprendizaje (learner.py)
 
 - Cada cambio guarda la "base" (acumulado en ese momento). Cuando hay ≥ 10 clics **maduros** después del cambio (y antes del siguiente), se escribe el veredicto "mejora"/"empeora" en el ticket. Sin evaluar = neutro.
 - **Nivel keyword** (producto + keyword + coincidencia, nunca por campaña): `agresividad = 0,2 + 0,8 × tasa de acierto de las subidas` (0,5 sin historial).
-- **Nivel campaña:** lo mismo con las subidas de presupuesto (¿más ventas al día con ACOS en objetivo?). Es la "confianza" que usa el reparto del 80 %.
+- **Nivel campaña:** lo mismo con las subidas de presupuesto (¿más ventas al día con ACOS en objetivo?). Es la "confianza" que usa el reparto del presupuesto.
+- **Tipo de frase** (`pruebas.Aprendizaje`, hoja "Aprendizaje"): por producto, específica/genérica × coincidencia, compras reales frente a las que esperaba el modelo; ese factor (0,25-2) corrige la conversión de las frases nuevas de ese tipo.
 - Un LLM no aprende entre llamadas: la memoria es el documento único.
 
 ## Carpetas: `entradas/` y `salidas/`, una por día (`AAAA-MM-DD`)
@@ -106,7 +114,7 @@ Las reglas no saben de dónde vienen los datos: la API y la hoja masiva producen
 
 ## Documento único — `salidas/<día>/memoria_agente.xlsx`
 
-Hojas: Leyenda, Resumen, Economía (**la rellena Juan**), Finanzas, Campañas, Segmentación, Seguimiento (fotos), Diario (API), Tickets, Competencia (**la edita Juan**), Investigación, Alertas, Histórico. Las hojas que añadan Juan o Cowork (p. ej. "Productos") se conservan tal cual. Se escribe a un temporal y se sustituye al final (atómico), con copia `.bak`. Hay que commitearlo: es la memoria del agente. `resultados/memoria.xlsx` y `memoria_pou.xlsx` son la memoria de la etapa manual: no se pisan.
+Hojas: Leyenda, Resumen, Economía (**la rellena Juan**), Finanzas, Campañas, Segmentación, Seguimiento (fotos), Diario (API), Términos (fotos de términos de búsqueda), Tickets, Aprendizaje, Competencia (**la edita Juan**), Investigación, Alertas, Histórico. Las hojas que añadan Juan o Cowork (p. ej. "Productos") se conservan tal cual. Se escribe a un temporal y se sustituye al final (atómico), con copia `.bak`. Hay que commitearlo: es la memoria del agente. `resultados/memoria.xlsx` y `memoria_pou.xlsx` son la memoria de la etapa manual: no se pisan.
 
 ## Cómo se ejecuta
 
@@ -127,11 +135,13 @@ Programado con cron / Programador de tareas (o Cowork) en el ordenador de Juan: 
 ## Estado actual / pendiente
 
 - [ ] Juan: credenciales de la Amazon Ads API → primera ejecución `--simular` con la API real.
-- [ ] Confirmar con un informe de Amazon el valor "Actualizar" de la columna Operación de la hoja masiva (modo sin API).
+- [x] Operación de la hoja masiva: Crear / Actualizar / Archivar (confirmado en Amazon Ads Academy). Estado y Producto se escriben copiando la descarga ("activada", "en pausa").
+- [ ] Al descargar la hoja masiva, marcar el informe de términos de búsqueda (sin él no hay cosecha ni negativas).
+- [ ] Negativas de ASIN (páginas de producto) en campañas automáticas: pendiente.
 - [ ] Correo SMTP configurado (si no, los avisos quedan en `salidas/<día>/correos_pendientes/`).
 - [ ] La conversión de los ASIN de competencia usa la media del producto (se refinará con datos reales de cada ASIN).
 - [ ] Coste del producto y comisiones de Amazon para calcular el ACOS de equilibrio real.
-- [ ] (Futuro) Negativas automáticas — aplazado por Juan.
+- [x] Negativas automáticas por CPA (Juan, 01/10/2026).
 - [ ] Juan: rellenar la hoja "Economía" (comisión de Amazon, tarifa FBA, coste de cada producto). Hasta entonces el ACOS de equilibrio es el 35 % (`config.ACOS_EQUILIBRIO_DEFECTO`).
 - [ ] Resto de la especificación de mejoras (28/09/2026): P0-A completo, P0-B §1-3 y §5, P1, P2. Hecho: P0-B §4 (sistema de pujas), P1-B.2 (CPC calibrado con lo pagado de verdad: `Producto.factor_cpc`, nunca < 1) y P0-B §2 (hoja Economía y ACOS de equilibrio por producto; el ACOS objetivo sigue siendo 30-35 % hasta que Juan decida).
 

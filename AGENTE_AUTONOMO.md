@@ -1,5 +1,7 @@
 # Agente autónomo de Amazon Ads — especificación completa para implementar
 
+> **Actualización 30/09-01/10/2026:** Juan cambió varias reglas (sin reparto 80/20, una candidata basta, reactivar, negativas, emplazamientos, pruebas autónomas). Donde este documento diga otra cosa, manda `CLAUDE.md` (sección "Decisiones de Juan" y "Reglas de decisión").
+
 Este documento recoge **todo lo decidido** en la conversación de diseño (26-27/09/2026, Juan + Claude Sonnet 5) para convertir el proyecto en un sistema autónomo: gestiona pujas, keywords, presupuesto y creación de campañas por sí solo, con reglas fijas (no un LLM decidiendo el dinero) y una capa de investigación de mercado aparte.
 
 **Regla de oro de esta sesión de diseño: aquí no se ha escrito ni una línea de Python.** Todo lo de abajo es especificación para que **Claude Opus** lo implemente en una sesión aparte. Sigue habiendo puntos abiertos marcados con ⚠️ — no son bloqueantes para empezar, pero hay que resolverlos antes de dar el sistema por terminado.

@@ -125,15 +125,32 @@ ACOS = CPC / (conversión × ticket). Con el histórico de la cuenta:
 4. **Se pagó más de lo que se pujaba:** mediana del CPC pagado / puja escrita = 1,42 en la rejilla y 1,33 en la pinza. Casi todas las campañas antiguas tenían "al alza y a la baja". Confirma con datos reales el multiplicador de `pujas.py`.
 5. **La puja sugerida de Amazon se queda corta:** mediana del CPC pagado / "puja rec. baja" = 2,35 en la rejilla (19 keywords con ≥ 5 clics) y 1,38 en la pinza (11). Implementado como `Producto.factor_cpc` (mejoras P1-B.2): el ACOS predicho de una frase nueva usa el CPC sugerido × ese factor, que nunca baja de 1.
 
-**Consecuencia:** con el CPC calibrado, en el histórico solo queda **una frase nueva por producto** con ACOS predicho ≤ 30 % (rejilla: "soporte coche para teléfono móvil"; pinza: "soporte móvil para coche de pinza para salpicadero"). El agente casi deja de añadir keywords nuevas y no abre campañas nuevas (necesita 3 candidatas). Es lo que dicen los datos: con la conversión actual, casi ninguna frase nueva es rentable al CPC real. Salir de ahí depende de subir la conversión (§15) o de que Juan decida probar con más riesgo (por ejemplo, un umbral de ACOS predicho más alto solo en el fondo de experimentación). Es decisión de Juan.
+**Consecuencia:** con el CPC calibrado, en el histórico solo queda **una frase nueva por producto** con ACOS predicho ≤ 30 % (rejilla: "soporte coche para teléfono móvil"; pinza: "soporte móvil para coche de pinza para salpicadero"). Es lo que dicen los datos: con la conversión actual, casi ninguna frase nueva es rentable al CPC real. Juan decidió (30/09/2026) que una candidata rentable basta y que el agente pruebe por su cuenta con pérdida limitada (§18, `pruebas.py`).
 
 ## 17. Lo que falta por comprobar en la documentación oficial
 
 La red de esta sesión no deja abrir advertising.amazon.com (solo el buscador). Pendiente:
-- El valor en español de "Update" en la hoja masiva.
 - La puja mínima de Sponsored Products en Amazon.es (el agente usa 0,02 €).
 - Si la atribución de 7 días se mantiene igual para la cuenta de FreshFinder.
 - La categoría (y por tanto la comisión) de cada ASIN y su tarifa FBA exacta: calculadora de ingresos de Seller Central.
 - El límite duro de caracteres de los bullets en la categoría de los soportes.
 
 Para comprobarlo: permitir `advertising.amazon.com` en la configuración de red del entorno, o que Juan pegue el texto de la página.
+
+## 18. Amazon Ads Academy — Sponsored Products D1 (estudiado el 30/09/2026) y lo que se hizo con ello
+
+Fuente: `sponsored_products_D1_1.pdf` (resumen de ~21 cursos de Amazon Ads Academy que pasó Juan). Lo que el agente ya usa:
+
+- **Estrategias y emplazamientos:** "al alza y a la baja" sube hasta +100 % arriba de la búsqueda y +50 % en el resto; el ajuste por emplazamiento va de 0 a +900 % y se suma a la estrategia (1 $ con +300 % arriba = 4 $, y hasta 8 $ con al alza y a la baja). El curso dice que el "resto de la búsqueda" no se ajusta, pero la hoja masiva de Amazon.es ya trae la fila "Emplazamiento del resto de la búsqueda": el curso está desactualizado. → `pujas.py`, `emplazamientos.py`.
+- **Informe de emplazamiento:** comparar ACOS y conversión de cada emplazamiento y subir la puja donde convierte mejor. → `emplazamientos.py`.
+- **Términos de búsqueda:** conversiones por encima del ROAS objetivo → keyword en manual; sin conversión y gasto > CPA objetivo → negativa; sin conversión y gasto < CPA → vigilar. Pauta automática → cosecha → manual exacta, con negativa en la automática. → `terminos.py`.
+- **Coincidencias:** la exacta admite plurales, paráfrasis y otro orden, y se ignoran palabras vacías; las faltas de ortografía NO se contemplan (Juan decidió no usar erratas). Escalonar la puja amplia < frase < exacta. → `prediccion.p_modelo` (isotónica).
+- **Presupuesto:** SP solo tiene presupuesto diario medio (un día puede gastar hasta el doble; el mes no pasa de la media × días). Las campañas buenas que agotan el presupuesto reciben más, sacándolo de las flojas, nunca al revés; si una gasta menos de lo que tiene, no sirve darle más. → `presupuesto.py`.
+- **Cadencia:** dejar ~14 días antes de evaluar algo nuevo; después revisar cada 48 h y esperar unos días tras cada cambio. → `config.DIAS_PRIMERA_EVALUACION`, ronda de 3 días.
+- **Campañas caducadas:** una campaña con la fecha de fin pasada no se reactiva; se copia. → `analyzer.terminadas`, `campanas.py`.
+- **Hoja masiva:** Operación Crear / Actualizar / Archivar (vacía = se ignora). Errores frecuentes: 1025 (estrategia mal escrita), 1018 (coincidencia mal escrita), 1021 (keyword > 80 caracteres o con / % \ ^ , o dos puntos). Solo trae campañas con impresiones en los últimos 60 días. → `validacion.py`, `fuente_bulk.py`.
+- **Pruebas:** A/B en periodos estables (no en eventos de temporada), 2-14 días, mirar CTR y luego ACOS. → `pruebas.py` (sin pruebas en Black Friday ni Navidad).
+- **Ficha:** bullets de 10 a 255 caracteres, sin exclamaciones ni "el mejor"; ofertas flash (4-12 h) y de 7 días; el descuento porcentual o el cupón no afectan a la Oferta Destacada, el precio rebajado sí. Sin Registro de Marca no hay A+, Brand Store ni Sponsored Brands. → `ficha.py`, `RUTINA_COWORK.md`.
+- **Listo para retail** (≥ 15 reseñas, ≥ 3,5 estrellas, ≥ 4 imágenes, stock, Oferta Destacada): Juan decidió que pinza y rejilla se anuncian igual; el agente solo para un grupo si Amazon marca el anuncio como no elegible.
+
+Lo que el curso no cubre y falta: negativas de ASIN en campañas automáticas, datos de emplazamiento reales de la cuenta (todo estaba en pausa) y los cursos avanzados de SP.
