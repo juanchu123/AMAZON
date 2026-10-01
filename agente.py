@@ -33,6 +33,7 @@ Variables de entorno: ver README.md (Amazon Ads API, SMTP para el correo, ANTHRO
 """
 
 import argparse
+import json
 import os
 import sys
 import traceback
@@ -44,6 +45,7 @@ import alertas
 import analyzer
 import campanas
 import carpetas
+import emplazamientos
 import ficha
 import finanzas
 import config
@@ -56,7 +58,7 @@ import pujas
 import safety
 import terminos
 from documento import Documento, fecha, num
-from modelo import (ACTIVO, CREAR_CAMPANA, ESTRATEGIA, NEGATIVA, NUEVA_KEYWORD, NUEVO_ASIN, PAUSADO, PAUSAR, PRESUPUESTO,
+from modelo import (ACTIVO, CREAR_CAMPANA, EMPLAZAMIENTO, ESTRATEGIA, NEGATIVA, NUEVA_KEYWORD, NUEVO_ASIN, PAUSADO, PAUSAR, PRESUPUESTO,
                     PUJA, REACTIVAR, REACTIVAR_CAMPANA, Cambio, Metricas)
 from prediccion import Catalogo
 
@@ -76,11 +78,19 @@ class FuenteAPI:
         desde = (max(fechas) - timedelta(days=config.DIAS_REFRESCO_INFORME)) if fechas \
             else hoy - timedelta(days=config.DIAS_INICIALES_INFORME)
         self.doc.guardar_diario(self.api.metricas_diarias(desde, hoy - timedelta(days=1)))
+        if hasattr(self.api, "metricas_emplazamiento"):
+            try:
+                for id_c, lugar, m in self.api.metricas_emplazamiento(hoy):
+                    if id_c in cuenta.campanas:
+                        cuenta.campanas[id_c].metricas_emplazamiento[lugar] = m
+            except Exception as e:
+                cuenta.avisos_fuente = [f"No se pudo leer el informe de emplazamiento: {e}"[:300]]
         if hasattr(self.api, "terminos_busqueda"):
             try:
                 cuenta.terminos, cuenta.terminos_maduros = self.api.terminos_busqueda(cuenta, hoy), True
             except Exception as e:      # sin términos no hay cosecha ni negativas, pero la ronda sigue
-                cuenta.avisos_fuente = [f"No se pudo leer el informe de términos de búsqueda: {e}"[:300]]
+                cuenta.avisos_fuente = getattr(cuenta, "avisos_fuente", []) + [
+                    f"No se pudo leer el informe de términos de búsqueda: {e}"[:300]]
         return cuenta
 
     def acumulados(self, cuenta, series, hoy):
@@ -97,6 +107,8 @@ class FuenteAPI:
                 ok, det = self.api.cambiar_presupuesto(c.id_campana, c.despues)
             elif c.tipo == ESTRATEGIA:
                 ok, det = self.api.cambiar_estrategia(cuenta.campanas[c.id_campana], c.despues)
+            elif c.tipo == EMPLAZAMIENTO:
+                ok, det = self.api.cambiar_emplazamientos(cuenta.campanas[c.id_campana], c.despues)
             elif c.tipo == REACTIVAR:
                 ok, det = self.api.reactivar(el, c.despues)
             elif c.tipo == REACTIVAR_CAMPANA:
@@ -180,6 +192,14 @@ def verificar_enviados(doc, cuenta, hoy):
         elif tipo == ESTRATEGIA:
             c = cuenta.campanas.get(str(t["ID campaña"]))
             ok = c is not None and c.estrategia_pujas == pujas.normalizar_estrategia(t["Después"])
+        elif tipo == EMPLAZAMIENTO:
+            c = cuenta.campanas.get(str(t["ID campaña"]))
+            try:
+                objetivo = t["Después"] if isinstance(t["Después"], dict) else json.loads(t["Después"])
+            except (TypeError, ValueError):
+                objetivo = {}
+            ok = c is not None and objetivo and all(abs(float(c.ajustes_emplazamiento.get(e) or 0) - float(v)) < 0.5
+                                                    for e, v in objetivo.items())
         elif tipo == REACTIVAR and el is not None:
             ok = el.estado == ACTIVO and el.puja is not None and abs(el.puja - num(t["Después"])) < 0.005
         elif tipo == REACTIVAR_CAMPANA:
@@ -212,6 +232,8 @@ def orden_de_aplicacion(c):
     """La estrategia primero (las pujas se calculan para ella); después lo que reduce gasto; al final
     lo que lo aumenta."""
     if c.tipo == ESTRATEGIA:
+        return -2
+    if c.tipo == EMPLAZAMIENTO:
         return -1
     if c.tipo in (PAUSAR, NEGATIVA):
         return 0
@@ -349,7 +371,8 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
                 doc.registrar_alerta(ahora, "investigacion", asin, f"La investigación falló: {e}"[:500], "no (solo registro)")
                 log(f"Investigación de {asin} falló: {e}")
 
-    # --- decidir: primero la estrategia de pujas de cada campaña (las pujas se calculan para ella)
+    # --- decidir: primero emplazamientos y estrategia de cada campaña (las pujas se calculan para ellos)
+    cambios_empl = emplazamientos.decidir(cuenta)
     pujas.decidir_estrategias(cuenta, lambda id_c: presupuesto.metricas_30d(series, id_c, hoy))
     res_t = terminos.decidir(cuenta, doc, catalogo, hoy)
     terminos.anotar(doc, hoy, res_t)
@@ -369,7 +392,7 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
         c.extra["presupuesto"] = eur
         if c.tipo == CREAR_CAMPANA:
             c.despues = eur
-    cambios = pujas.proponer_estrategias(cuenta) + res_t.negativas + decision.cambios + nuevas + cambios_pres
+    cambios = pujas.proponer_estrategias(cuenta) + cambios_empl + res_t.negativas + decision.cambios + nuevas + cambios_pres
     aprobados, descartados = safety.filtrar(cambios, cuenta, hoy, gasto_mes,
                                             lambda a: catalogo.producto(a).ticket if a else None)
     resumen.append(("Campañas nuevas", nota_camp))

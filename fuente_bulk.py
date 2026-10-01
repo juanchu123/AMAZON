@@ -30,7 +30,7 @@ from openpyxl import load_workbook
 import config
 import keyword_ml as kml
 import pujas
-from modelo import (ACTIVO, ARCHIVADO, AUTO, CATEGORIA, EMPLAZAMIENTO, ESTRATEGIA, FINALIZADA, KEYWORD, NEGATIVA,
+from modelo import (ACTIVO, ARCHIVADO, AUTO, CATEGORIA, EMPLAZAMIENTO, ESTRATEGIA, PAGINA_PRODUCTO, RESTO_BUSQUEDA, SUPERIOR, FINALIZADA, KEYWORD, NEGATIVA,
                     NUEVA_KEYWORD, NUEVO_ASIN, PAUSADO, PAUSAR, PRESUPUESTO, PRODUCTO, PUJA, REACTIVAR, REACTIVAR_CAMPANA,
                     SOLO_BAJA, CREAR_CAMPANA, Anuncio, Campana, Cuenta, Elemento, Grupo, Metricas, Negativa, Termino)
 
@@ -39,6 +39,8 @@ HOJA_TERMINOS = "Inf. de Térm. de Búsq. de SP"
 PLANTILLA = config.RAIZ / "plantillas" / "AdvertisingBulksheetTemplate-seller.xlsx"
 OP_ACTUALIZAR = "Actualizar"   # confirmado: Crear / Actualizar / Archivar (Amazon Ads Academy)
 ACTIVADO, EN_PAUSA = "activada", "en pausa"    # como vienen en la descarga de Amazon.es
+NOMBRE_EMPLAZAMIENTO = {SUPERIOR: "Emplazamiento superior", RESTO_BUSQUEDA: "Emplazamiento del resto de la búsqueda",
+                        PAGINA_PRODUCTO: "Emplazamiento de la página del producto"}
 
 
 def _estado(v):
@@ -245,6 +247,14 @@ class FuenteBulk:
             elif c.tipo == PRESUPUESTO:
                 fila(Entidad="Campaña", Operación=OP_ACTUALIZAR, **{"ID de la campaña": c.id_campana,
                                                                      "Presupuesto diario": c.despues})
+            elif c.tipo == EMPLAZAMIENTO:
+                camp = cuenta.campanas.get(c.id_campana)
+                for lugar, pct in c.despues.items():
+                    if abs(pct - (c.antes or {}).get(lugar, 0)) < 0.5:
+                        continue
+                    fila(Entidad="Ajuste de puja", Operación=OP_ACTUALIZAR, **{
+                        "ID de la campaña": c.id_campana, "Emplazamiento": NOMBRE_EMPLAZAMIENTO[lugar], "Porcentaje": pct,
+                        "Estrategia de pujas": pujas.estrategia_gestionada(camp) if camp else None})
             elif c.tipo == ESTRATEGIA:
                 fila(Entidad="Campaña", Operación=OP_ACTUALIZAR, **{"ID de la campaña": c.id_campana,
                                                                      "Estrategia de pujas": c.despues})

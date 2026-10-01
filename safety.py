@@ -22,7 +22,7 @@ import calendar
 import config
 import pujas
 import validacion
-from modelo import (ACTIVO, ARCHIVADO, CREAR_CAMPANA, ESTRATEGIA, FINALIZADA, NEGATIVA, NUEVA_KEYWORD, NUEVO_ASIN,
+from modelo import (ACTIVO, ARCHIVADO, CREAR_CAMPANA, EMPLAZAMIENTO, ESTRATEGIA, FINALIZADA, NEGATIVA, NUEVA_KEYWORD, NUEVO_ASIN,
                     PAUSADO, PAUSAR, PRESUPUESTO, PUJA, REACTIVAR, REACTIVAR_CAMPANA)
 from pujas import puja_valida
 
@@ -148,6 +148,13 @@ def filtrar(cambios, cuenta, hoy, gasto_mes, ticket_de):
                 motivo = f"Amazon no aceptaría la negativa: {validacion.keyword(c.texto)[1]}"
             elif not validacion.coincidencia(c.coincidencia, negativa=True):
                 motivo = f"tipo de coincidencia negativa no válido: {c.coincidencia}"
+        elif c.tipo == EMPLAZAMIENTO:
+            if camp is None or camp.estado != ACTIVO:
+                motivo = "la campaña no está activa"
+            elif any(not 0 <= v <= 900 for v in c.despues.values()):
+                motivo = "ajuste de emplazamiento fuera de 0-900 %"
+            elif not subidas_ok and any(v > (c.antes or {}).get(e, 0) for e, v in c.despues.items()):
+                motivo = "el gasto del mes proyectado ya llega al tope: no se sube ningún emplazamiento"
         elif c.tipo == ESTRATEGIA:
             if camp is None or camp.estado != ACTIVO:
                 motivo = "la campaña no está activa"

@@ -73,6 +73,11 @@ ACOS_EQUILIBRIO_POR_ASIN = {}       # lo rellena finanzas.aplicar() en cada rond
 def acos_equilibrio(asin=None):
     return ACOS_EQUILIBRIO_POR_ASIN.get(asin, ACOS_EQUILIBRIO_DEFECTO)
 
+# Ajustes de emplazamiento (emplazamientos.py; gestionados por el agente, Juan 30/09/2026)
+EMPLAZAMIENTO_MIN_COMPRAS = 5       # sin ≥ 5 compras y ≥ 100 clics en la campaña no se tocan
+EMPLAZAMIENTO_MIN_CLICS = 100
+EMPLAZAMIENTO_CAMBIO_MIN = 10       # puntos porcentuales
+
 # ---------------------------------------------------------------- keywords (§2.3, §2.4)
 MAX_KEYWORDS_POR_GRUPO = 12         # por campaña / grupo de anuncios, cada producto por su cuenta
 COINCIDENCIA_NUEVAS = "Frase"

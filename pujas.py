@@ -6,12 +6,15 @@ Todo lo que decide cuánto se puja vive aquí; analyzer.py y safety.py solo llam
   Puja objetivo     = P(compra|clic) × ticket medio × ACOS objetivo (30-35 % según la agresividad).
   Tope rentable     = P(compra|clic) × ticket medio × ACOS de equilibrio: si un clic cuesta más,
                       cada venta pierde dinero.
-  Multiplicador     = cuánto puede subir Amazon por su cuenta la puja escrita, en el peor emplazamiento:
-                      (1 + ajuste del emplazamiento) × (1 + subida dinámica). Con "al alza y a la baja"
-                      Amazon sube hasta +100 % arriba de la búsqueda y +50 % en el resto; con "solo a la
-                      baja" y "puja fija" no sube nada.
+  Emplazamientos    = cada uno convierte r veces la media de la campaña (emplazamientos.py; 1 sin datos)
+                      y tiene su ajuste de puja. El objetivo se calcula para el emplazamiento que peor
+                      sale: objetivo × min(r / (1 + ajuste)).
+  Multiplicador     = cuánto puede subir Amazon por su cuenta la puja escrita frente a lo que vale el clic,
+                      en el peor caso: max((1 + ajuste) × (1 + subida dinámica) / r). Con "al alza y a la
+                      baja" Amazon sube hasta +100 % arriba de la búsqueda y +50 % en el resto; con "solo
+                      a la baja" y "puja fija" no sube nada.
   Puja que se escribe = min(objetivo, tope rentable / multiplicador): lo máximo que Amazon puede llegar
-                      a cobrar por un clic nunca pasa del equilibrio.
+                      a cobrar por un clic en cualquier emplazamiento nunca pasa del equilibrio.
 
 Estrategia (la elige el agente, autorizado por Juan):
   "al alza y a la baja" solo si la campaña está probada (≥ 10 compras maduras en 30 días con ACOS ≤
@@ -41,15 +44,17 @@ def normalizar_estrategia(texto):
 
 
 def normalizar_emplazamiento(texto):
+    """Nombre de la hoja masiva ("Emplazamiento superior"…), de la API (PLACEMENT_TOP…) o del informe
+    de emplazamiento ("Top of Search on-Amazon", "Detail Page on-Amazon", "Other on-Amazon")."""
     s = str(texto or "").lower()
-    if "superior" in s or "top" in s:
-        return SUPERIOR
-    if "resto" in s or "rest_of_search" in s:
-        return RESTO_BUSQUEDA
-    if "producto" in s or "product_page" in s:
-        return PAGINA_PRODUCTO
     if "business" in s:
         return AMAZON_BUSINESS
+    if "superior" in s or "top" in s:
+        return SUPERIOR
+    if "resto" in s or "rest" in s or "other" in s:
+        return RESTO_BUSQUEDA
+    if "producto" in s or "product" in s or "detail" in s:
+        return PAGINA_PRODUCTO
     return None
 
 
@@ -85,17 +90,29 @@ def decidir_estrategias(cuenta, metricas_30d_de):
                 c, metricas_30d_de(c.id), cuenta.producto_de_campana(c.id))
 
 
+def ajustes_gestionados(campana):
+    """Los ajustes de emplazamiento con los que corre la campaña después de esta ronda."""
+    return campana.ajustes_objetivo or campana.ajustes_emplazamiento or {}
+
+
+def factor_base(campana):
+    """La puja se calcula para el emplazamiento que peor sale: min(r / (1 + ajuste))."""
+    ajustes, r = ajustes_gestionados(campana), campana.ratios_emplazamiento or {}
+    return min(r.get(e, 1.0) / (1 + (ajustes.get(e) or 0) / 100) for e in (SUPERIOR, RESTO_BUSQUEDA, PAGINA_PRODUCTO))
+
+
 def estrategia_gestionada(campana):
     """La estrategia con la que corre la campaña después de esta ronda."""
     return campana.estrategia_objetivo or campana.estrategia_pujas
 
 
 def multiplicador(campana, estrategia=None):
-    """Lo máximo que Amazon puede multiplicar la puja escrita en esta campaña (peor emplazamiento)."""
+    """Lo máximo que Amazon puede multiplicar la puja escrita frente a lo que vale el clic (peor emplazamiento)."""
     estrategia = estrategia_gestionada(campana) if estrategia is None else estrategia
-    ajustes = campana.ajustes_emplazamiento or {}
+    ajustes, r = ajustes_gestionados(campana), campana.ratios_emplazamiento or {}
     lugares = set(ajustes) | {SUPERIOR, RESTO_BUSQUEDA}
-    return max((1 + (ajustes.get(e) or 0) / 100) * (1 + _subida_dinamica(estrategia, e)) for e in lugares)
+    return max((1 + (ajustes.get(e) or 0) / 100) * (1 + _subida_dinamica(estrategia, e)) / r.get(e, 1.0)
+               for e in lugares)
 
 
 def puja_efectiva_max(campana, puja, estrategia=None):
@@ -130,7 +147,7 @@ class Calculo:
 
 def calcular(campana, p, ticket, agresividad, asin=None):
     acos = config.ACOS_OBJETIVO_MIN + (config.ACOS_OBJETIVO_MAX - config.ACOS_OBJETIVO_MIN) * agresividad
-    objetivo = p * ticket * acos
+    objetivo = p * ticket * acos * factor_base(campana)
     tope = p * ticket * config.acos_equilibrio(asin)
     return Calculo(limitar(campana, objetivo, tope), objetivo, tope, multiplicador(campana), acos)
 
@@ -164,13 +181,14 @@ def proponer_estrategias(cuenta):
 
 
 def avisos(cuenta):
-    """Ajustes de emplazamiento > 0 en campañas activas: el agente no los toca, pero cuentan en la puja."""
+    """Ajustes de emplazamiento > 0 en campañas activas sin datos para que el agente los gestione:
+    se dejan como están, pero cuentan en la puja."""
     out = []
     for c in cuenta.campanas.values():
         subidos = {e: v for e, v in (c.ajustes_emplazamiento or {}).items() if v}
-        if c.estado == ACTIVO and subidos:
+        if c.estado == ACTIVO and subidos and not c.ratios_emplazamiento:
             txt = ", ".join(f"{e} +{v:.0f} %" for e, v in sorted(subidos.items()))
-            out.append(("emplazamiento", c.id, f"La campaña '{c.nombre}' tiene ajustes de emplazamiento ({txt}). "
-                        "El agente no los cambia, pero divide las pujas para que el clic más caro posible siga "
-                        "siendo rentable. Si no los quieres, ponlos a 0 % en Amazon."))
+            out.append(("emplazamiento", c.id, f"La campaña '{c.nombre}' tiene ajustes de emplazamiento ({txt}) y aún "
+                        f"no hay datos para gestionarlos (≥ {config.EMPLAZAMIENTO_MIN_COMPRAS} compras): se dejan, y las "
+                        "pujas se calculan para que el clic más caro posible siga siendo rentable."))
     return out

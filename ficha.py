@@ -123,7 +123,10 @@ def escribir(doc, catalogo, ruta, hoy):
             "Frases 'no destacarla': han gastado ≥ 10 clics sin ninguna venta.",
             f"Investigadas: frases nuevas que pasan el filtro del agente (ACOS predicho ≤ {config.ACOS_MAX_KEYWORD_NUEVA:.0%}),"
             " buenas para los términos de búsqueda ocultos.",
-            "Competencia: responde en la ficha a lo que critican de los competidores."):
+            "Competencia: responde en la ficha a lo que critican de los competidores.",
+            "Reglas de Amazon: bullets de 10 a 255 caracteres (mejor ≤ 200), sin exclamaciones ni 'el mejor'/'número 1'.",
+            "Sin Registro de Marca: nada de contenido A+, Brand Store ni Sponsored Brands.",
+            "Ofertas: un cupón o un descuento porcentual no afectan a la Oferta Destacada; el precio rebajado sí. Decide Juan."):
         guia.append([linea])
     guia["A1"].font = Font(bold=True, size=13)
     guia.column_dimensions["A"].width = 120
@@ -161,7 +164,7 @@ def escribir(doc, catalogo, ruta, hoy):
         c.font, c.fill = negrita, azul
     for asin in productos(doc, catalogo):
         for elemento in ("Título", "Bullet 1", "Bullet 2", "Bullet 3", "Bullet 4", "Bullet 5",
-                         "Términos de búsqueda ocultos", "Imágenes"):
+                         "Términos de búsqueda ocultos", "Imágenes", "Oferta / cupón"):
             prop.append([asin, elemento])
     for col, ancho in zip("ABCDE", (16, 28, 60, 60, 60)):
         prop.column_dimensions[col].width = ancho

@@ -64,6 +64,8 @@ class Campana:
     estrategia_objetivo: str = ""       # la que elige el agente en esta ronda (pujas.decidir_estrategias)
     motivo_estrategia: str = ""
     metricas_emplazamiento: dict = field(default_factory=dict)  # emplazamiento -> Metricas (acumulado)
+    ratios_emplazamiento: dict = field(default_factory=dict)    # emplazamiento -> conversión / media (emplazamientos.py)
+    ajustes_objetivo: dict = field(default_factory=dict)        # los ajustes que fija el agente en esta ronda
 
 
 @dataclass

@@ -319,11 +319,45 @@ class AmazonAdsAPI:
         return self._actualizar("campaigns", id_campana, {"budget": {"budget": round(euros, 2), "budgetType": "DAILY"}},
                                 lambda f: abs(float((f.get("budget") or {}).get("budget") or 0) - round(euros, 2)) < 0.005)
 
+    def cambiar_emplazamientos(self, campana, ajustes):
+        """Ajustes de puja por emplazamiento (con la estrategia que ya tiene la campaña)."""
+        todos = dict(campana.ajustes_emplazamiento or {}) | dict(ajustes)
+        lista = [{"placement": EMPLAZAMIENTO_API[e], "percentage": int(round(v))}
+                 for e, v in todos.items() if e in EMPLAZAMIENTO_API]
+        valor = ESTRATEGIA_API.get(pujas.estrategia_gestionada(campana), config.ESTRATEGIA_PUJAS)
+
+        def comprobar(f):
+            leidos = {EMPLAZAMIENTO.get(x.get("placement")): float(x.get("percentage") or 0)
+                      for x in (f.get("dynamicBidding") or {}).get("placementBidding") or []}
+            return all(abs(leidos.get(e, 0) - float(v)) < 0.5 for e, v in ajustes.items())
+        return self._actualizar("campaigns", campana.id, {"dynamicBidding": {"strategy": valor, "placementBidding": lista}},
+                                comprobar)
+
+    def metricas_emplazamiento(self, hoy):
+        """[(id de campaña, emplazamiento, Metricas)] de los últimos 60 días con clics maduros."""
+        hasta = hoy - timedelta(days=config.DIAS_MADUREZ + 1)
+        desde = max(hasta - timedelta(days=DIAS_TERMINOS), date.today() - timedelta(days=MAX_ANTIGUEDAD_INFORME))
+        acum, ini = {}, desde
+        while ini <= hasta:
+            fin = min(hasta, ini + timedelta(days=MAX_DIAS_INFORME - 1))
+            for f in self._informe(ini, fin, "spCampaigns", ["campaign", "campaignPlacement"],
+                                   ["campaignId", "placementClassification", "impressions", "clicks", "cost",
+                                    "purchases7d", "sales7d"], "SUMMARY"):
+                lugar = pujas.normalizar_emplazamiento(f.get("placementClassification"))
+                if not lugar:
+                    continue
+                k = (str(f["campaignId"]), lugar)
+                acum[k] = acum.get(k, Metricas()) + Metricas(
+                    float(f.get("clicks") or 0), float(f.get("cost") or 0), float(f.get("purchases7d") or 0),
+                    float(f.get("sales7d") or 0), float(f.get("impressions") or 0))
+            ini = fin + timedelta(days=1)
+        return [(c, l, m) for (c, l), m in acum.items()]
+
     def cambiar_estrategia(self, campana, estrategia):
-        """Cambia la estrategia de pujas conservando los ajustes de emplazamiento que tenga."""
+        """Cambia la estrategia de pujas conservando los ajustes de emplazamiento (los que fije el agente)."""
         valor = ESTRATEGIA_API[estrategia]
         ajustes = [{"placement": EMPLAZAMIENTO_API[e], "percentage": int(round(v))}
-                   for e, v in (campana.ajustes_emplazamiento or {}).items() if e in EMPLAZAMIENTO_API]
+                   for e, v in pujas.ajustes_gestionados(campana).items() if e in EMPLAZAMIENTO_API]
         return self._actualizar("campaigns", campana.id,
                                 {"dynamicBidding": {"strategy": valor, "placementBidding": ajustes}},
                                 lambda f: (f.get("dynamicBidding") or {}).get("strategy") == valor)
