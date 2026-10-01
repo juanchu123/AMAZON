@@ -228,10 +228,21 @@ class FuenteBulk:
         cols = [c.value for c in ws[1]]
 
         activada, en_pausa = self.activada, self.en_pausa
+        filas, por_entidad = [], {}
+        identifican = ("ID de la campaña", "ID del grupo de anuncios", "ID del anuncio", "ID de palabra clave",
+               "ID de segmentación por productos", "Emplazamiento")
 
         def fila(**kv):
+            """Amazon rechaza la subida entera si una misma entidad aparece en dos filas ("ID duplicada"):
+            los cambios de una misma campaña, grupo, keyword o emplazamiento van juntos en una sola fila."""
             base = {"Producto": self.producto_txt} | kv
-            ws.append([base.get(c) for c in cols])
+            if base.get("Operación") == OP_ACTUALIZAR:
+                clave = (base.get("Entidad"),) + tuple(str(base.get(i) or "") for i in identifican)
+                if clave in por_entidad:
+                    por_entidad[clave].update({k: v for k, v in base.items() if v is not None})
+                    return
+                por_entidad[clave] = base
+            filas.append(base)
 
         for c, cuenta in self.pendientes:
             ids = {"ID de la campaña": c.id_campana, "ID del grupo de anuncios": c.id_grupo}
@@ -294,6 +305,8 @@ class FuenteBulk:
                     fila(Entidad="Palabra clave", Operación="Crear", **ref, **{
                         "Estado": activada, "Puja": kw["puja"], "Texto de palabra clave": kw["texto"],
                         "Tipo de coincidencia": kw["coincidencia"]})
+        for base in filas:
+            ws.append([base.get(c) for c in cols])
         self.salida_dir.mkdir(parents=True, exist_ok=True)
         salida = self.salida_dir / f"bulk_cambios_{hoy:%Y-%m-%d}.xlsx"
         n = 1

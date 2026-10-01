@@ -227,3 +227,22 @@ def test_hoja_masiva_escribe_negativa_y_reactivacion(tmp_path):
     assert neg["Producto"] == "Sponsored\xa0Products"
     rea = next(r for r in filas if r["Entidad"] == "Palabra clave")
     assert rea["Operación"] == "Actualizar" and rea["Estado"] == "activada" and rea["Puja"] == 0.45
+
+
+def test_hoja_masiva_una_fila_por_campana(tmp_path):
+    """Amazon rechazó una subida real (01/10/2026, 'ID duplicada'): estrategia y presupuesto de la misma
+    campaña iban en dos filas. Deben ir en una."""
+    from openpyxl import load_workbook
+    import fuente_bulk
+    from modelo import ESTRATEGIA, PRESUPUESTO, SOLO_BAJA, Cambio
+    cuenta = cuenta_pinza()
+    f = fuente_bulk.FuenteBulk(tmp_path / "x.xlsx", tmp_path)
+    comun = dict(producto=PINZA, id_campana="C1", id_grupo=None, campana="Pinza", motivo="m", coincidencia="")
+    f.aplicar(Cambio(tipo=ESTRATEGIA, clave="camp:C1", texto="", antes="x", despues=SOLO_BAJA, **comun), cuenta)
+    f.aplicar(Cambio(tipo=PRESUPUESTO, clave="camp:C1", texto="", antes=7.0, despues=4.46, **comun), cuenta)
+    ws = load_workbook(f.cerrar(HOY))[fuente_bulk.HOJA]
+    cab = [c.value for c in ws[1]]
+    filas = [dict(zip(cab, r)) for r in ws.iter_rows(min_row=2, values_only=True)]
+    camp = [r for r in filas if r["Entidad"] == "Campaña"]
+    assert len(camp) == 1
+    assert camp[0]["Estrategia de pujas"] == SOLO_BAJA and camp[0]["Presupuesto diario"] == 4.46
