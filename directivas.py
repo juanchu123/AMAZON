@@ -7,6 +7,9 @@ directivas.py — lo que Juan le ha dicho al Agente ADS (agente_ads/directivas.j
   campanas_terminadas  ids de campañas que siguen "activadas" pero ya no sirven (fecha de fin pasada):
                        SellerMate no da la fecha de fin, así que se apuntan aquí
   no_reactivar         ids de campañas que Juan ha pausado a propósito
+  palabras_ajenas_extra  {asin: [palabras]}: más vocabulario de cosas que el producto no es
+  vetos                [{"tipo", "texto" o "clave", "hasta" (AAAA-MM-DD), "motivo"}]: cambios que el Agente
+                       ADS (o Juan) no quiere aunque las reglas los propongan; "tipo" "*" vale para todos
 El agente edita este archivo cuando Juan le escribe (y lo apunta en "notas"); Python solo lo lee.
 """
 
@@ -42,4 +45,26 @@ def aplicar(d):
     elif modo == "recortar":
         config.MAX_PRUEBAS_NUEVAS_POR_RONDA = 0
     config.NO_REACTIVAR = {str(x) for x in d.get("no_reactivar") or []}
+    import keyword_ml as kml
+    for asin, palabras in (d.get("palabras_ajenas_extra") or {}).items():
+        config.PALABRAS_AJENAS[asin] = set(config.PALABRAS_AJENAS.get(asin, set())) | {kml.normalizar(w) for w in palabras}
+    config.VETOS = list(d.get("vetos") or [])
     return f"tope {tope:.0f} €/mes, modo {modo}, {len(config.NO_REACTIVAR)} campañas que no se reactivan"
+
+
+def vetado(cambio, hoy):
+    """Motivo si un veto vigente cubre este cambio, o None."""
+    import keyword_ml as kml
+    for v in config.VETOS:
+        if v.get("hasta") and str(v["hasta"]) < hoy.isoformat():
+            continue
+        if v.get("tipo") not in (None, "*", cambio.tipo):
+            continue
+        if v.get("clave") and str(v["clave"]) != str(cambio.clave):
+            continue
+        if v.get("texto") and kml.normalizar(str(v["texto"])) != kml.normalizar(str(cambio.texto)):
+            continue
+        if v.get("campana") and str(v["campana"]).lower() not in str(cambio.campana).lower():
+            continue
+        return f"vetado: {v.get('motivo') or 'sin motivo'}"
+    return None

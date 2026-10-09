@@ -260,3 +260,15 @@ def test_vocabulario_ajeno_negativa_de_frase(tmp_path, catalogo):
     res, api, _ = _correr(tmp_path, cuenta, [], catalogo)
     negs = [l for l in api.llamadas if l[0] == "negativa"]
     assert negs == [("negativa", "G1", "magnetico", "Frase negativa")]
+
+
+def test_veto_del_agente_quita_un_cambio(tmp_path, catalogo, monkeypatch):
+    import directivas
+    monkeypatch.setattr(config, "VETOS", [{"tipo": NEGATIVA, "texto": "funda movil barata", "hasta": "2099-01-01",
+                                           "motivo": "la vende un cliente de fundas"}])
+    cuenta = cuenta_pinza()
+    cuenta.terminos_maduros = True
+    cuenta.terminos = [_termino("funda movil barata", 6, 10.0)]
+    res, api, _ = _correr(tmp_path, cuenta, [], catalogo)
+    assert not [l for l in api.llamadas if l[0] == "negativa"]
+    assert any(m.startswith("vetado") for _, m in res["descartados"])

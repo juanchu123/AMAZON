@@ -121,6 +121,7 @@ PERIODOS_SIN_PRUEBAS = [
 ]
 
 NO_REACTIVAR = set()                # ids de campañas que Juan pausó a propósito (directivas.py)
+VETOS = []                          # cambios vetados por el Agente ADS o Juan (directivas.py)
 
 # Vocabulario ajeno: palabras de búsquedas de cosas que el producto NO es. Un término de búsqueda que las
 # lleva pasa a negativa de frase con esa palabra en el grupo que lo cazó, sin esperar al CPA (Juan, 09/10).

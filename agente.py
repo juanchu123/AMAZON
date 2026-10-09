@@ -402,8 +402,11 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
         if c.tipo == CREAR_CAMPANA:
             c.despues = eur
     cambios = pujas.proponer_estrategias(cuenta) + cambios_empl + res_t.negativas + decision.cambios + nuevas + cambios_pres
+    vetados = [(c, directivas.vetado(c, hoy)) for c in cambios]
+    cambios = [c for c, v in vetados if not v]
     aprobados, descartados = safety.filtrar(cambios, cuenta, hoy, gasto_mes,
                                             lambda a: catalogo.producto(a).ticket if a else None)
+    descartados += [(c, v) for c, v in vetados if v]
     resumen.append(("Campañas nuevas", nota_camp))
 
     # --- aplicar (uno a uno, independientes) y registrar
