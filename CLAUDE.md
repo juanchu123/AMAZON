@@ -33,6 +33,17 @@ Tras estudiar Amazon Ads Academy (Sponsored Products D1, resumen en `CONOCIMIENT
 6. **Pruebas autónomas** (`pruebas.py`) por potencial, con stop-loss, cupo según lo que queda del tope, sin pruebas en Black Friday ni Navidad, y aprendiendo qué tipo de frase vende.
 7. Sin erratas como keywords. Sin comprobación de "listo para retail" (pinza y rejilla se anuncian igual). La ficha la decide Juan. **Sin Registro de Marca**: nada de A+, Brand Store ni Sponsored Brands.
 
+## Agente ADS (desde el 09/10/2026): el gestor experto que habla con Juan por Gmail
+
+Claude en la nube, con dos rutinas (ronda diaria y correo; `agente_ads/RUTINAS.md`). Lee la cuenta con el
+conector **SellerMate (solo lectura)**, guarda los datos en `entradas/<día>/sellermate/` (`fuente_sellermate.py`),
+pasa el motor (`python agente.py --fuente sellermate`), revisa lo que propone con criterio (vetos en
+`agente_ads/directivas.json`) y manda a Juan el parte con dos Excel: `bulk_cambios` (lo pequeño) y `propuestas`
+(subir presupuesto, crear o reactivar campañas). **Juan sube los Excel: nada se cambia en Amazon sin él.**
+Su manual: `agente_ads/AGENTE_ADS.md`; su conocimiento: `PRODUCTOS.md`, `CALENDARIO.md`, `LECCIONES.md`,
+`ESTRATEGIA.md`; lo que dice Juan: `directivas.json` (tope, modo crecer/normal/recortar, campañas terminadas,
+no reactivar, vetos, palabras ajenas extra).
+
 ## Tres agentes, un solo comando (`python agente.py`)
 
 - **Marketing** (`agente.py` y sus módulos): anuncios — pujas, presupuesto, keywords, campañas. Reglas fijas.
