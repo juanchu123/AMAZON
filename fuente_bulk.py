@@ -221,7 +221,10 @@ class FuenteBulk:
         return cambio
 
     def cerrar(self, hoy):
-        if not self.pendientes:
+        return self._escribir(self.pendientes, "bulk_cambios", hoy)
+
+    def _escribir(self, pendientes, nombre, hoy):
+        if not pendientes:
             return None
         wb = load_workbook(PLANTILLA)
         ws = wb[HOJA]
@@ -244,7 +247,7 @@ class FuenteBulk:
                 por_entidad[clave] = base
             filas.append(base)
 
-        for c, cuenta in self.pendientes:
+        for c, cuenta in pendientes:
             ids = {"ID de la campaña": c.id_campana, "ID del grupo de anuncios": c.id_grupo}
             el = cuenta.elementos.get(c.clave)
             if c.tipo in (PUJA, PAUSAR, REACTIVAR) and el is not None:
@@ -308,11 +311,11 @@ class FuenteBulk:
         for base in filas:
             ws.append([base.get(c) for c in cols])
         self.salida_dir.mkdir(parents=True, exist_ok=True)
-        salida = self.salida_dir / f"bulk_cambios_{hoy:%Y-%m-%d}.xlsx"
+        salida = self.salida_dir / f"{nombre}_{hoy:%Y-%m-%d}.xlsx"
         n = 1
         while salida.exists():
             n += 1
-            salida = self.salida_dir / f"bulk_cambios_{hoy:%Y-%m-%d}_{n}.xlsx"
+            salida = self.salida_dir / f"{nombre}_{hoy:%Y-%m-%d}_{n}.xlsx"
         wb.save(salida)
         return salida
 

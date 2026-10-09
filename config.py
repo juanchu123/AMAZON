@@ -24,6 +24,7 @@ NOMBRE_MEMORIA = "memoria_agente.xlsx"
 PREFIJO_INVESTIGACION = "documento_investigacion"   # Documento_investigacion_keywords.xlsx (Cowork)
 NOMBRES_CORTOS = {"B0DCZS1NR6": "Pinza", "B0DHYBY6MS": "Rejilla", "B0DSV986XY": "Ventosa",
                   "B0F746MFPQ": "3 en 1", "B0CPHXXHRQ": "Pou"}   # para hojas, informes y nombres de campaña
+SKUS = {"B0DCZS1NR6": "O8-5W7J-DSK1", "B0DHYBY6MS": "5E-I8NY-S191"}   # para crear anuncios en la hoja masiva
 HISTORICO_XLSX = Path(os.environ.get("AGENTE_HISTORICO", RAIZ / "FreshFinder_Amazon_Ads_historico.xlsx"))
 CORREOS_PENDIENTES = SALIDAS / "correos_pendientes"   # agente.py la pone dentro de la carpeta del día
 
@@ -102,6 +103,9 @@ UMBRAL_LIMITADA = 0.90              # gasta ≥ 90 % de su presupuesto de media 
 HOLGURA_PRESUPUESTO = 1.5           # si no está limitada, como mucho 1,5 × lo que gasta de media
 DIAS_GASTO_MEDIO = 7
 
+COSECHA_MAX_X_CPC = 1.5             # una keyword cosechada puja como mucho 1,5 × lo que costó su clic
+PRESUPUESTO_MAX_CAMPANA_NUEVA = 5.0 # una campaña nueva o reactivada empieza con ≤ 5 €/día (es una prueba)
+
 # ---------------------------------------------------------------- campañas nuevas (§2.6)
 # Juan, 30/09/2026: una sola candidata rentable basta para abrir (o reactivar) campaña.
 MAX_CAMPANAS_NUEVAS_POR_RONDA = 1
@@ -115,6 +119,20 @@ PERIODOS_SIN_PRUEBAS = [
     ("11-20", "12-02", "Black Friday y Cyber Monday"),
     ("12-15", "01-07", "Navidad y Reyes"),
 ]
+
+NO_REACTIVAR = set()                # ids de campañas que Juan pausó a propósito (directivas.py)
+
+# Vocabulario ajeno: palabras de búsquedas de cosas que el producto NO es. Un término de búsqueda que las
+# lleva pasa a negativa de frase con esa palabra en el grupo que lo cazó, sin esperar al CPA (Juan, 09/10).
+# Comparación sin acentos ni mayúsculas.
+_AJENAS_SOPORTE = {"magnetico", "magnetica", "iman", "imanes", "magsafe", "ventosa", "camion", "moto", "bici",
+                   "bicicleta", "patinete", "bandeja", "ram", "inalambrico", "inalambrica", "cargador", "holder",
+                   "phone", "carro", "fio", "tablet", "tableta", "cd", "ranura", "atornillado",
+                   "atornillar", "pantalla", "matricula", "scania", "pomo"}
+PALABRAS_AJENAS = {
+    "B0DHYBY6MS": _AJENAS_SOPORTE | {"pinza", "pinzas", "salpicadero", "parabrisas", "cristal"},   # rejilla
+    "B0DCZS1NR6": _AJENAS_SOPORTE | {"rejilla", "rejillas", "ventilacion"},                        # pinza
+}
 
 # ---------------------------------------------------------------- alertas (§2.9)
 EMAIL_DESTINO = os.environ.get("AGENTE_EMAIL_DESTINO", "yubunama62@gmail.com")

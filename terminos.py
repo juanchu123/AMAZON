@@ -11,6 +11,9 @@ se puede pagar en anuncios por una venta sin salirse del objetivo; nunca más qu
   - Término sin ninguna venta con gasto MADURO ≥ CPA objetivo -> NEGATIVA (Exacta negativa) en el grupo
     que lo cazó. Una venta lo libra.
   - Término sin ventas con gasto por debajo del CPA -> seguir vigilando.
+  - Término sin ventas con una palabra de algo que el producto NO es (config.PALABRAS_AJENAS: "magnético",
+    "ventosa", "camión"…) -> negativa de FRASE con esa palabra en el grupo, sin esperar al CPA: corta de
+    golpe todas las búsquedas de esa familia (Juan, 09/10/2026: que pruebe negativas).
   - Cuando el término ya es keyword en Exacta en otro grupo -> Exacta negativa en el grupo de origen
     (automática, amplia o frase), para que el tráfico vaya a la exacta (pauta automática -> manual).
 
@@ -32,6 +35,7 @@ from documento import num
 from modelo import ACTIVO, ARCHIVADO, KEYWORD, NEGATIVA, Cambio, Metricas
 
 COINCIDENCIA_NEGATIVA = "Exacta negativa"
+FRASE_NEGATIVA = "Frase negativa"
 DIAS_FOTOS = 35          # fotos de términos que se guardan (hace falta una de hace 7-35 días)
 
 
@@ -71,7 +75,11 @@ class Resultado:
 
 def decidir(cuenta, doc, catalogo, hoy):
     r = Resultado()
-    existentes = {(n.id_grupo, n.texto.strip().lower()) for n in cuenta.negativas if n.estado != ARCHIVADO}
+    existentes = {(n.id_grupo, kml.normalizar(n.texto)) for n in cuenta.negativas if n.estado != ARCHIVADO}
+    con_ventas = {}   # grupo -> palabras de los términos que han vendido (nunca se niegan)
+    for t in cuenta.terminos:
+        if t.metricas.compras > 0:
+            con_ventas.setdefault(t.id_grupo, set()).update(kml.tokens_contenido(t.termino))
     exactas = {}      # (asin, firma) -> [Elemento en Exacta]
     for e in cuenta.elementos.values():
         if e.tipo == KEYWORD and e.coincidencia == "Exacta" and e.estado != ARCHIVADO:
@@ -96,7 +104,20 @@ def decidir(cuenta, doc, catalogo, hoy):
         base = dict(producto=asin, id_campana=t.id_campana, id_grupo=t.id_grupo, campana=camp.nombre, texto=texto,
                     coincidencia=COINCIDENCIA_NEGATIVA, antes=None, despues=COINCIDENCIA_NEGATIVA, base=t.metricas,
                     clave=f"neg:{t.id_grupo}:{texto}")
-        ya_negativa = (t.id_grupo, texto) in existentes
+        ya_negativa = (t.id_grupo, kml.normalizar(texto)) in existentes
+        ajenas = sorted((set(kml.tokens_contenido(texto)) & config.PALABRAS_AJENAS.get(asin, set()))
+                        - con_ventas.get(t.id_grupo, set()))
+        if ajenas and t.metricas.compras == 0:
+            nuevas = [w for w in ajenas if (t.id_grupo, w) not in existentes]
+            for w in nuevas:
+                r.negativas.append(Cambio(tipo=NEGATIVA, **(base | {
+                    "texto": w, "coincidencia": FRASE_NEGATIVA, "despues": FRASE_NEGATIVA, "clave": f"neg:{t.id_grupo}:{w}"}),
+                    motivo=(f"Vocabulario ajeno: el producto no es '{w}' y la búsqueda '{texto}' ({t.metricas.clics:.0f} "
+                            f"clics, {t.metricas.coste:.2f} €, 0 ventas) lo pedía. Negativa de frase: corta todas las "
+                            f"búsquedas con '{w}' en este grupo")))
+                existentes.add((t.id_grupo, w))
+            r.notas[t.clave] = "Negativa de frase por vocabulario ajeno: " + ", ".join(ajenas)
+            continue
         es_la_keyword = fi == kml.firma(t.origen)
         m = t.metricas
 
@@ -107,7 +128,7 @@ def decidir(cuenta, doc, catalogo, hoy):
             r.negativas.append(Cambio(tipo=NEGATIVA, motivo=(
                 f"El término ya es keyword en Exacta en '{cuenta.campanas[destino[0].id_campana].nombre}': negativa aquí "
                 f"para que su tráfico vaya a la exacta (pauta automática/amplia -> manual exacta)"), **base))
-            existentes.add((t.id_grupo, texto))
+            existentes.add((t.id_grupo, kml.normalizar(texto)))
             r.notas[t.clave] = "Negativa de traslado a la exacta"
             continue
 
@@ -122,6 +143,7 @@ def decidir(cuenta, doc, catalogo, hoy):
                 continue
             r.cosecha.setdefault(asin, []).append({
                 "texto": texto, "coincidencia": "Exacta", "p": p, "acos_pred": m.acos, "fuente": "términos de búsqueda",
+                "cpc_real": m.coste / m.clics if m.clics else None,
                 "motivo": (f"Término de búsqueda que vende: {m.clics:.0f} clics, {m.compras:.0f} compras, ACOS {m.acos:.0%} "
                            f"(≤ {config.ACOS_OBJETIVO_MAX:.0%}), cazado por '{t.origen}' ({t.coincidencia})"),
                 "grupo_origen": t.id_grupo})
@@ -144,7 +166,7 @@ def decidir(cuenta, doc, catalogo, hoy):
                 f"Término sin ninguna venta con {mad.coste:.2f} € maduros gastados ({mad.clics:.0f} clics), más que el CPA "
                 f"objetivo {cpa:.2f} € (ticket {prod.ticket:.2f} € × ACOS {cpa / prod.ticket:.0%}); cazado por "
                 f"'{t.origen}' ({t.coincidencia})"), **base))
-            existentes.add((t.id_grupo, texto))
+            existentes.add((t.id_grupo, kml.normalizar(texto)))
             r.notas[t.clave] = "Negativa (gasto > CPA sin ventas)"
         else:
             r.notas[t.clave] = f"Vigilar: {mad.coste:.2f} € maduros sin ventas (CPA objetivo {cpa:.2f} €)"

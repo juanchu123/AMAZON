@@ -14,7 +14,8 @@ Reglas de Amazon Ads Academy:
     reciben más, y ese dinero sale de las flojas; nunca de las buenas a las malas (la puntuación).
   - A una campaña que gasta mucho menos de lo que tiene no le sirve más: como mucho recibe 1,5 × lo
     que gasta de media, y lo que sobra va a las demás. Si sobra de todas, se queda sin asignar
-    (nunca se fuerza el gasto).
+    (nunca se fuerza el gasto). Pero no se le recorta si ese dinero no le hace falta a nadie.
+  - Una campaña nueva o reactivada empieza con ≤ 5 €/día (config.PRESUPUESTO_MAX_CAMPANA_NUEVA).
 Mínimo 1 €/día por campaña (lo exige Amazon); nunca se pausa una campaña por presupuesto. Solo se
 cambia un presupuesto si la diferencia es de verdad (≥ 0,50 € y ≥ 10 %), y una subida no se repite
 hasta pasados 3 días de la anterior.
@@ -120,6 +121,17 @@ def planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas=()):
     limites = {c.id: limite_util(c, gastos[c.id]) for c in activas}
     pesos = {c.id: puntos[c.id][0] for c in activas} | {f"nueva:{i}": 1.0 for i in range(len(nuevas))}
     plan = _repartir(total, pesos, {k: v[0] for k, v in limites.items()}) if pesos else {}
+    for i in range(len(nuevas)):
+        if f"nueva:{i}" in plan:
+            plan[f"nueva:{i}"] = min(plan[f"nueva:{i}"], config.PRESUPUESTO_MAX_CAMPANA_NUEVA)
+    # A una campaña que no gasta su presupuesto no se le recorta si ese dinero no le hace falta a nadie
+    # (lo libre del tope ya cubre lo que piden las demás): bajarlo solo ahogaría lo que se le añada.
+    holgadas = [c for c in activas if limites[c.id][0] is not None and plan[c.id] < c.presupuesto]
+    if holgadas:
+        resto = {k: v for k, v in plan.items() if k not in {c.id for c in holgadas}}
+        if sum(resto.values()) + sum(c.presupuesto for c in holgadas) <= total + 0.01:
+            for c in holgadas:
+                plan[c.id] = c.presupuesto
 
     cambios, filas = [], []
     for c in activas:

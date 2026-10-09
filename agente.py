@@ -45,6 +45,7 @@ import alertas
 import analyzer
 import campanas
 import carpetas
+import directivas
 import emplazamientos
 import ficha
 import finanzas
@@ -165,6 +166,11 @@ def elegir_fuente(args, doc, entrada, salida):
     if args.fuente == "api" or (args.fuente == "auto" and hay_api):
         from ads_api import AmazonAdsAPI
         return FuenteAPI(AmazonAdsAPI.desde_entorno(), doc)
+    import fuente_sellermate
+    if args.fuente == "sellermate" or (args.fuente == "auto" and entrada and fuente_sellermate.hay_datos(entrada)):
+        if not entrada or not fuente_sellermate.hay_datos(entrada):
+            raise SystemExit(f"No hay datos de SellerMate en {entrada}/sellermate/ (ver agente_ads/AGENTE_ADS.md)")
+        return fuente_sellermate.FuenteSellerMate(entrada, salida, doc, directivas.cargar())
     import fuente_bulk
     ruta = args.bulk or (fuente_bulk.buscar_descarga(entrada) if entrada else None)
     if not ruta:
@@ -224,7 +230,10 @@ def verificar_enviados(doc, cuenta, hoy):
             t["Estado"], t["Detalle"] = "confirmado", f"Confirmado en la descarga del {hoy:%d/%m/%Y}"
             n += 1
         elif (hoy - fecha(t["Fecha"])).days >= 14:
-            t["Estado"], t["Detalle"] = "fallido", "14 días después la descarga sigue sin reflejarlo (¿no se subió la hoja?)"
+            if "aprobacion" in str(t.get("Datos extra") or ""):
+                t["Estado"], t["Detalle"] = "no aprobado", "Propuesta: 14 días después Amazon no lo refleja (Juan no la subió)"
+            else:
+                t["Estado"], t["Detalle"] = "fallido", "14 días después la descarga sigue sin reflejarlo (¿no se subió la hoja?)"
     return n
 
 
@@ -404,7 +413,8 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
             c.estado, c.detalle = "simulado", "Simulación: no se ha enviado a Amazon"
             continue
         fuente.aplicar(c, cuenta)
-        doc.registrar(c, hoy)
+        if c.estado != "omitido":
+            doc.registrar(c, hoy)
     for sub in getattr(fuente, "subcambios", []):
         doc.registrar(sub, hoy)
     todos = aprobados + list(getattr(fuente, "subcambios", []))
@@ -429,6 +439,8 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
         resumen += [("Descartados por seguridad", len(descartados))]
         if archivo_bulk:
             resumen.append(("Hoja masiva para subir a Amazon", str(archivo_bulk)))
+        if getattr(fuente, "archivo_propuestas", None):
+            resumen.append(("Propuestas que esperan tu OK (súbelas solo si estás de acuerdo)", str(fuente.archivo_propuestas)))
 
         # --- correo: uno por ronda con los cambios + avisos nuevos
         nuevos_avisos = [a for a in decision.alertas if not doc.alerta_ya_enviada(a[0], a[1], hoy)]
@@ -462,7 +474,7 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Agente autónomo de Amazon Ads (FreshFinder)")
-    ap.add_argument("--fuente", choices=("auto", "api", "bulk"), default="auto")
+    ap.add_argument("--fuente", choices=("auto", "api", "sellermate", "bulk"), default="auto")
     ap.add_argument("--entrada", help="carpeta de entrada (por defecto, la más reciente de entradas/)")
     ap.add_argument("--bulk", help="hoja masiva concreta (por defecto, la de la carpeta de entrada)")
     ap.add_argument("--documento", help="memoria donde guardar (por defecto salidas/<hoy>/memoria_agente.xlsx, "
@@ -479,6 +491,7 @@ def main(argv=None):
     config.CORREOS_PENDIENTES = salida / "correos_pendientes"
     entrada = Path(args.entrada) if args.entrada else carpetas.entrada(hoy)
     doc = Documento(args.documento or salida / config.NOMBRE_MEMORIA, origen=carpetas.memoria_anterior(hoy))
+    print("Directivas de Juan:", directivas.aplicar(directivas.cargar()))
     try:
         fuente = elegir_fuente(args, doc, entrada, salida)
         res = ejecutar(fuente, doc, Catalogo(), hoy, ahora, simular=args.simular, entrada=entrada, salida=salida,

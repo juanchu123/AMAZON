@@ -1,0 +1,13 @@
+{
+  "tope_mensual_eur": 840,
+  "modo": "normal",
+  "campanas_terminadas": ["319935329473301", "562775822100105"],
+  "no_reactivar": ["43223318737411"],
+  "notas": [
+    "2026-10-09 Juan: nivel intermedio. Lo pequeño (pujas, negativas, pausas, keywords y pruebas dentro de campañas) va en la hoja masiva del día; crear o reactivar campañas y subir presupuestos, como propuesta aparte.",
+    "2026-10-09 Juan: todo se lo manda el agente en Excel (hoja masiva) y lo sube él: nada se cambia en Amazon sin su aprobación.",
+    "2026-10-09 Juan: la pausa de 'Pinza - Principal V2' (43223318737411) es intencionada: no reactivarla.",
+    "2026-10-09 'Todo' (319935329473301) y 'Soporte móvil AC' (562775822100105) terminaron por fecha: no cuentan como activas."
+  ],
+  "actualizado": "2026-10-09"
+}

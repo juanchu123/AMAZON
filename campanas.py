@@ -55,7 +55,7 @@ def proponer(cuenta, doc, series, catalogo, hoy, gasto_mes, cambios_previos, cos
                       and cuenta.campanas.get(e.id_campana) and cuenta.campanas[e.id_campana].estado == PAUSADO}
             copias = analyzer.terminadas(cuenta, series, catalogo, hoy, asin, prod.ticket)
             cands = _unicas(cosecha.get(asin, []) + copias + catalogo.candidatas(asin, usadas, investig), asin, prod.ticket)
-            pausadas = [c for c in campanas if c.estado == PAUSADO]
+            pausadas = [c for c in campanas if c.estado == PAUSADO and c.id not in config.NO_REACTIVAR]
             mejor = _mejor_pausada(cuenta, series, catalogo, hoy, asin, prod.ticket, pausadas) if pausadas else None
             if mejor and mejor[1]:
                 propuestas.append(("R", asin, prod, sku, mejor, (

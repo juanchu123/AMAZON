@@ -141,7 +141,12 @@ def _decidir_elemento(el, cuenta, doc, series, catalogo, hoy, d):
                               + (f". Es su pausa nº {previas + 1}: requiere revisión de Juan, no se reactiva sola" if revision else "")),
                       **comun)
 
-    # --- puja (lo recién creado o reactivado por el agente no se juzga hasta los 14 días)
+    # --- puja (lo recién creado o reactivado por el agente, o con menos de 14 días de datos, no se juzga)
+    primera = _primera_fecha(series, el.clave)
+    if not creado and primera and (hoy - primera).days < config.DIAS_PRIMERA_EVALUACION:
+        d.notas[el.clave] = (f"Esperar: {(hoy - primera).days} días de datos (la puja se juzga a los "
+                             f"{config.DIAS_PRIMERA_EVALUACION}; el stop-loss sí vigila)")
+        return None
     if creado and (hoy - learner.fecha(creado["Fecha"])).days < config.DIAS_PRIMERA_EVALUACION:
         d.notas[el.clave] = (f"Esperar: {(hoy - learner.fecha(creado['Fecha'])).days} días desde que el agente la "
                              f"{'reactivó' if creado['Tipo'] == REACTIVAR else 'creó'} (la puja se juzga a los "
@@ -178,6 +183,8 @@ def _reactivables(cuenta, doc, series, catalogo, hoy, g, asin, ticket):
     con lo que ya se sabe de ellos). Nunca los que el agente ha pausado 2 veces (revisión de Juan)."""
     out = []
     camp = cuenta.campanas[g.id_campana]
+    if camp.id in config.NO_REACTIVAR:
+        return out
     for e in cuenta.elementos_de_grupo(g.id):
         if e.estado != PAUSADO or e.tipo not in (KEYWORD, PRODUCTO):
             continue
@@ -304,6 +311,8 @@ def _rellenar_huecos(cuenta, doc, series, catalogo, hoy, d, pausadas_ahora, no_e
             if c.get("fuente") in ("reactivar", "términos de búsqueda", "campaña terminada") or "puja" not in c:
                 aggr = learner.agresividad(doc, asin, c["texto"], c["coincidencia"])
                 puja = pujas.calcular(camp, c["p"], ticket, aggr, asin).puja
+                if c.get("cpc_real"):     # cosecha con pocos clics: no pagar mucho más de lo que costó
+                    puja = max(config.PUJA_MINIMA_AMAZON, min(puja, round(config.COSECHA_MAX_X_CPC * c["cpc_real"], 2)))
             else:
                 puja = pujas.limitar(camp, c["puja"], tope) if tope > 0 else c["puja"]
             extra = {"fuente": c["fuente"], "acos_pred": round(c["acos_pred"], 3), "p": round(c["p"], 5),

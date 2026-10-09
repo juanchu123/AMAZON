@@ -91,7 +91,7 @@ def test_negativa_por_cpa_y_cosecha_a_exacta(tmp_path, catalogo):
     cpa = catalogo.producto(PINZA).ticket * config.ACOS_OBJETIVO_MAX            # ≈ 3,93 €
     cuenta.terminos = [
         _termino("funda movil barata", 6, cpa + 0.5),                           # gasta > CPA sin vender -> negativa
-        _termino("soporte pinza rejilla movil", 3, 1.0),                        # por debajo del CPA -> vigilar
+        _termino("soporte pinza movil negro", 3, 1.0),                        # por debajo del CPA -> vigilar
         _termino("pinza movil salpicadero coche", 20, 3.0, compras=2, ventas=22.48),  # vende con ACOS 13 % -> Exacta
         _termino("soporte movil coche pinza", 30, 9.0),                         # es la propia keyword: stop-loss
     ]
@@ -107,7 +107,7 @@ def test_negativa_por_cpa_y_cosecha_a_exacta(tmp_path, catalogo):
     t = next(t for t in doc.hojas["Tickets"] if t["Tipo"] == NEGATIVA)
     assert t["Estado"] == "confirmado"
     decisiones = {f["Término de búsqueda"]: f["Decisión"] for f in doc.hojas["Términos"]}
-    assert decisiones["soporte pinza rejilla movil"].startswith("Vigilar")
+    assert decisiones["soporte pinza movil negro"].startswith("Vigilar")
     assert decisiones["soporte movil coche pinza"].startswith("Es la propia keyword")
 
 
@@ -246,3 +246,17 @@ def test_hoja_masiva_una_fila_por_campana(tmp_path):
     camp = [r for r in filas if r["Entidad"] == "Campaña"]
     assert len(camp) == 1
     assert camp[0]["Estrategia de pujas"] == SOLO_BAJA and camp[0]["Presupuesto diario"] == 4.46
+
+
+def test_vocabulario_ajeno_negativa_de_frase(tmp_path, catalogo):
+    """Juan (09/10): que pruebe negativas. Una búsqueda de algo que el producto no es se corta de golpe."""
+    cuenta = cuenta_pinza()
+    cuenta.terminos_maduros = True
+    cuenta.terminos = [_termino("soporte movil coche magnetico iman", 1, 0.45),     # gasto muy por debajo del CPA
+                       _termino("soporte movil coche magnetico", 1, 0.40),
+                       _termino("soporte movil camion", 1, 0.40),
+                       _termino("pinza camion fuerte", 1, 0.40, compras=1, ventas=11.24)]   # vende: 'camion' no se niega
+    cuenta.negativas.append(Negativa("N0", "C1", "G1", "imán", "Frase negativa", ACTIVO))  # ya existe (con acento)
+    res, api, _ = _correr(tmp_path, cuenta, [], catalogo)
+    negs = [l for l in api.llamadas if l[0] == "negativa"]
+    assert negs == [("negativa", "G1", "magnetico", "Frase negativa")]

@@ -135,7 +135,9 @@ def filtrar(cambios, cuenta, hoy, gasto_mes, ticket_de):
             elif not validas:
                 motivo = "ninguna keyword que Amazon acepte"
         elif c.tipo == REACTIVAR_CAMPANA:
-            if camp is None or camp.estado != PAUSADO:
+            if camp is not None and camp.id in config.NO_REACTIVAR:
+                motivo = "Juan pausó esta campaña a propósito (directivas): no se reactiva"
+            elif camp is None or camp.estado != PAUSADO:
                 motivo = ("la campaña terminó por fecha: Amazon no deja reactivarla (se copia)"
                           if camp is not None and camp.estado == FINALIZADA else "la campaña no está en pausa")
             elif not subidas_ok:
