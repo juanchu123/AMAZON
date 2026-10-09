@@ -74,6 +74,21 @@ ACOS_EQUILIBRIO_POR_ASIN = {}       # lo rellena finanzas.aplicar() en cada rond
 def acos_equilibrio(asin=None):
     return ACOS_EQUILIBRIO_POR_ASIN.get(asin, ACOS_EQUILIBRIO_DEFECTO)
 
+
+def acos_max_nueva(asin=None):
+    """ACOS predicho máximo para que una keyword nueva entre: 30 %, o el equilibrio si es menor."""
+    return min(ACOS_MAX_KEYWORD_NUEVA, acos_equilibrio(asin))
+
+
+def acos_max_cosecha(asin=None):
+    """ACOS real máximo para cosechar un término: 35 %, o el equilibrio si es menor."""
+    return min(ACOS_OBJETIVO_MAX, acos_equilibrio(asin))
+
+
+MARGEN_UNITARIO = {}                # {asin: € de margen por unidad antes de publicidad} dado por Juan (directivas)
+LIMITES = []                        # límites de gasto sin ganancia por producto (directivas)
+REACTIVAR_ORDEN = {}                # {id campaña: presupuesto €/día} que Juan ha pedido reactivar (directivas)
+
 # Ajustes de emplazamiento (emplazamientos.py; gestionados por el agente, Juan 30/09/2026)
 EMPLAZAMIENTO_MIN_COMPRAS = 5       # sin ≥ 5 compras y ≥ 100 clics en la campaña no se tocan
 EMPLAZAMIENTO_MIN_CLICS = 100

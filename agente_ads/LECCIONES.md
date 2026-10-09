@@ -21,3 +21,9 @@ números" es el aprendizaje de Python (hojas Tickets y Aprendizaje de la memoria
   "gravity phone holder ne5241". Páginas de producto ACOS 22 %; resto de la búsqueda ACOS 165 %.
   → 09/10: prueba de segmentación por ASIN B0F3J3QHD7 a 0,30 € y fuera el +30 % del resto de la búsqueda.
 - Pinza - Principal V2: 14 clics y 0 ventas antes de que Juan la pausara (a propósito).
+- 09/10: con los márgenes de Juan (pinza 3,67 €, rejilla 3,03 €) la rejilla perdió dinero del 01 al 08/10:
+  ~29 € de anuncios por 2 ventas (6,06 € de margen). La automática pagaba 0,40 € por clic en substitutes con
+  una conversión del 6,5 % (31 clics, 2 ventas): el clic rentable era ~0,18 €. → Todas las pujas al equilibrio.
+- 09/10: la regla "nunca pagar más del equilibrio" no puede esperar a la ronda (≥ 3 días y ≥ 10 clics): con
+  poco tráfico una puja ruinosa duraría semanas. Ahora se aplica en cada ronda (solo baja, nunca sube) y
+  cuenta las ventas ya vistas aunque los clics no hayan madurado (si no, ahogaría lo único que vende).

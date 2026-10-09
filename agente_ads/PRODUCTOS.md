@@ -20,6 +20,8 @@ Super Estable y Seguro | Sujeta Movil Coche Compatible con Smartphones: iPhone, 
   ranura de CD, atornillado, de pantalla, cargador o inalámbrico, para moto/bici/camión, bandeja.
 - **Palabras propias:** rejilla, ventilación, aire, gancho, clip, (universal, 360, ajustable, estable).
 - **Precio/ticket medio:** ~14,27 € con IVA (histórico).
+- **Margen (Juan, 09/10):** 3,03 € por unidad antes de publicidad → ACOS de equilibrio 21,2 %: con su
+  conversión, el clic rentable ronda 0,15-0,30 €.
 - **Histórico (antes del agente):** 53 compras, conversión 4,7 %, CPC ~0,95 €, ACOS 141 %. Las genéricas en
   amplia se comieron el 88 % del gasto; las específicas convirtieron 7,0 % frente a 4,8 %.
 - **Octubre 2026:** la automática (Campaign - 26/9/2026) le trajo 2 ventas, las dos desde la **ficha de otros
@@ -40,7 +42,9 @@ Retrovisor, Antideslizante y Estable | Compatible con iPhone, Samsung, Xiaomi y 
 - **Precio/ticket medio:** ~11,24 € con IVA.
 - **Histórico:** 37 compras, conversión 7,9 %, ACOS 69 %. El grupo "Pinza" de la campaña "Soporte móvil pinza"
   trajo 34 de las 37 compras (conversión 11,1 %, ACOS 41 %): lo específico funciona.
-- **Octubre 2026:** "Pinza - Principal V2" está **en pausa por decisión de Juan** (no reactivarla). "Pinza -
+- **Margen (Juan, 09/10):** 3,67 € por unidad antes de publicidad → ACOS de equilibrio 32,7 %.
+- **Octubre 2026:** Juan pausó "Pinza - Principal V2" y el 09/10 pidió que vuelva "cuanto antes, sin gastar
+  mucho": vuelve a 3 €/día con las pujas al equilibrio y un límite de 5 € sin ganancia (ESTRATEGIA.md). "Pinza -
   Pruebas" segmenta ASIN de competencia (B08N4KR6PK, B09P3SZB6P, B07H996QMD, B0BS1TQJH2): pocas impresiones.
 
 ## Pou — B0CPHXXHRQ

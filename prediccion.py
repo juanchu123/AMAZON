@@ -221,13 +221,13 @@ class Catalogo:
         if not p.ticket or not cpc or pc <= 0:
             return res | {"motivo": "sin datos del producto para predecir"}
         acos_pred = cpc / (pc * p.ticket)
-        puja = pc * p.ticket * config.ACOS_MAX_KEYWORD_NUEVA
+        puja = pc * p.ticket * config.acos_max_nueva(asin)
         if not p.modelo_fiable:
             puja = min(puja, config.PUJA_MAX_SIN_MODELO)
-        pasa = acos_pred <= config.ACOS_MAX_KEYWORD_NUEVA
+        pasa = acos_pred <= config.acos_max_nueva(asin)
         return res | {"acos_pred": acos_pred, "puja": max(config.PUJA_MINIMA_AMAZON, round(puja, 2)), "pasa": pasa,
                       "motivo": "entra si hay hueco en un grupo del producto" if pasa else
-                                f"ACOS predicho {acos_pred:.0%} > {config.ACOS_MAX_KEYWORD_NUEVA:.0%}"}
+                                f"ACOS predicho {acos_pred:.0%} > {config.acos_max_nueva(asin):.0%}"}
 
     def _brutas(self, asin, investigacion):
         """Frases de donde salen las candidatas: (texto, coincidencia, p, fuente, motivo, puja sugerida)."""
@@ -255,7 +255,7 @@ class Catalogo:
         # 3) frases nuevas que genera el modelo de keyword_ml
         if p.modelo_fiable:
             try:
-                recs, _ = kml.recomendar(p.filas, p.nombre, set(), top=40, acos_objetivo=100 * config.ACOS_MAX_KEYWORD_NUEVA,
+                recs, _ = kml.recomendar(p.filas, p.nombre, set(), top=40, acos_objetivo=100 * config.acos_max_nueva(asin),
                                          coincidencia=config.COINCIDENCIA_NUEVAS)
                 for r in recs:
                     brutas.append((r["palabra_clave"], config.COINCIDENCIA_NUEVAS, r["prob_compra_por_clic"], "modelo",
@@ -293,8 +293,8 @@ class Catalogo:
             elif pruebas and ev["acos_pred"] is not None and not ev["pasa"]:
                 pp = pruebas_.p_potencial(pc)
                 acos_pot = ev["cpc"] / (pp * ticket) if pp else None
-                if acos_pot is not None and acos_pot <= config.ACOS_MAX_KEYWORD_NUEVA:
-                    puja = pp * ticket * config.ACOS_MAX_KEYWORD_NUEVA
+                if acos_pot is not None and acos_pot <= config.acos_max_nueva(asin):
+                    puja = pp * ticket * config.acos_max_nueva(asin)
                     if not p.modelo_fiable:
                         puja = min(puja, config.PUJA_MAX_SIN_MODELO)
                     out.append(base | {"p": pp, "p_media": pc, "acos_pred": acos_pot, "acos_media": ev["acos_pred"],
@@ -309,9 +309,9 @@ class Catalogo:
         if not p.ticket or not p.cpc_competir or not p.conversion:
             return []
         acos_pred = p.cpc_competir / (p.conversion * p.ticket)
-        if acos_pred > config.ACOS_MAX_KEYWORD_NUEVA:
+        if acos_pred > config.acos_max_nueva(asin):
             return []
-        puja = round(max(config.PUJA_MINIMA_AMAZON, p.conversion * p.ticket * config.ACOS_MAX_KEYWORD_NUEVA), 2)
+        puja = round(max(config.PUJA_MINIMA_AMAZON, p.conversion * p.ticket * config.acos_max_nueva(asin)), 2)
         return [{"texto": str(c["ASIN competidor"]).strip().upper(), "coincidencia": "ASIN", "p": p.conversion,
                  "acos_pred": acos_pred, "puja": puja, "fuente": "competencia", "motivo": str(c.get("Motivo") or "")}
                 for c in competidores if str(c["ASIN competidor"]).strip().upper() not in ya_usados]

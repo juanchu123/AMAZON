@@ -29,6 +29,21 @@ from modelo import (ACTIVO, ARCHIVADO, CREAR_CAMPANA, KEYWORD, NUEVA_KEYWORD, PA
 
 def proponer(cuenta, doc, series, catalogo, hoy, gasto_mes, cambios_previos, cosecha=None):
     """Devuelve ([Cambio CREAR_CAMPANA o REACTIVAR_CAMPANA], nota)."""
+    ordenadas = []
+    for id_c, eur in config.REACTIVAR_ORDEN.items():
+        camp = cuenta.campanas.get(id_c)
+        if camp is None or camp.estado != PAUSADO:
+            continue
+        asin = cuenta.producto_de_campana(id_c)
+        ordenadas.append(Cambio(
+            tipo=REACTIVAR_CAMPANA, clave=f"camp:{id_c}", producto=asin, id_campana=id_c, id_grupo=None,
+            campana=camp.nombre, texto="(reactivar campaña)", coincidencia="", antes="pausado", despues="activo",
+            base=Metricas(), motivo=f"Juan pidió reactivarla (directivas.json) con {eur:.2f} €/día",
+            extra={"grupos": [g.id for g in cuenta.grupos.values() if g.id_campana == id_c and g.estado == PAUSADO],
+                   "anuncios": [a.id for a in cuenta.anuncios if a.id_campana == id_c and a.estado == PAUSADO],
+                   "presupuesto_fijo": eur, "ordenada": True}))
+    if ordenadas:
+        return ordenadas, "Reactivación pedida por Juan: " + ", ".join(c.campana for c in ordenadas)
     hueco = presupuesto.presupuesto_para_nueva(cuenta, doc, series, catalogo, hoy, gasto_mes)
     if hueco < config.PRESUPUESTO_MIN_CAMPANA_NUEVA:
         return [], (f"No se abre ninguna campaña: con una más le tocarían {hueco:.2f} €/día "

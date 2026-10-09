@@ -393,12 +393,12 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
     resumen.append(("Pruebas autónomas", f"hasta {cupo} nuevas: {nota_cupo}"))
     decision = analyzer.decidir(cuenta, doc, series, catalogo, hoy, cosecha=res_t.cosecha, cupo_pruebas=cupo,
                                 aprendizaje=aprendizaje)
-    decision.alertas += pujas.avisos(cuenta) + finanzas.avisos(doc)
+    decision.alertas += pujas.avisos(cuenta) + finanzas.avisos(doc) + directivas.comprobar_limites(cuenta, series, hoy)
     nuevas, nota_camp = campanas.proponer(cuenta, doc, series, catalogo, hoy, gasto_mes, decision.cambios,
                                           cosecha=res_t.cosecha)
     cambios_pres, filas_camp, por_nueva, tope = presupuesto.planificar(cuenta, doc, series, catalogo, hoy, gasto_mes, nuevas)
     for c, eur in zip(nuevas, por_nueva):
-        c.extra["presupuesto"] = eur
+        c.extra["presupuesto"] = c.extra.get("presupuesto_fijo") or eur
         if c.tipo == CREAR_CAMPANA:
             c.despues = eur
     cambios = pujas.proponer_estrategias(cuenta) + cambios_empl + res_t.negativas + decision.cambios + nuevas + cambios_pres

@@ -89,7 +89,9 @@ def filtrar(cambios, cuenta, hoy, gasto_mes, ticket_de):
         tope = c.extra.get("tope_rentable")
         if c.tipo == PUJA:
             el = cuenta.elementos.get(c.clave)
-            if el is None or el.estado != ACTIVO or not cuenta.grupo_activo(el.id_grupo):
+            g = cuenta.grupos.get(el.id_grupo) if el else None
+            se_reactiva = g is not None and g.id_campana in config.REACTIVAR_ORDEN
+            if el is None or el.estado != ACTIVO or not (cuenta.grupo_activo(el.id_grupo) or se_reactiva):
                 motivo = "el elemento ya no está activo"
             else:
                 p = puja_valida(c.despues, ticket_de(c.producto), mult, c.producto)
@@ -135,7 +137,9 @@ def filtrar(cambios, cuenta, hoy, gasto_mes, ticket_de):
             elif not validas:
                 motivo = "ninguna keyword que Amazon acepte"
         elif c.tipo == REACTIVAR_CAMPANA:
-            if camp is not None and camp.id in config.NO_REACTIVAR:
+            if c.extra.get("ordenada") and camp is not None and camp.estado == PAUSADO:
+                pass                     # Juan lo pidió: no depende del tope de subidas
+            elif camp is not None and camp.id in config.NO_REACTIVAR:
                 motivo = "Juan pausó esta campaña a propósito (directivas): no se reactiva"
             elif camp is None or camp.estado != PAUSADO:
                 motivo = ("la campaña terminó por fecha: Amazon no deja reactivarla (se copia)"

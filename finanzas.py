@@ -62,7 +62,14 @@ def aplicar(doc):
         comision = _pct(f.get("Comisión Amazon"))
         fba = num(f.get("Tarifa FBA (€/ud)"), None)
         coste = num(f.get("Coste del producto (€/ud)"), None)
+        asin = str(f["Producto (ASIN)"])
         if None in (ticket, iva, comision, fba, coste) or not ticket:
+            if ticket and asin in config.MARGEN_UNITARIO:          # Juan dio el margen por correo
+                margen = float(config.MARGEN_UNITARIO[asin])
+                f["Margen por unidad (€)"], f["ACOS de equilibrio"] = round(margen, 2), round(max(0.0, margen / ticket), 3)
+                f["Notas"] = "Margen por unidad que dio Juan (directivas.json); sin desglose de costes"
+                equilibrios[asin] = max(0.0, margen / ticket)
+                continue
             f["Margen por unidad (€)"], f["ACOS de equilibrio"] = None, None
             f["Notas"] = f.get("Notas") or FALTAN
             continue

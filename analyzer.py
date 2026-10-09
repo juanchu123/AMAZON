@@ -89,7 +89,9 @@ def decidir(cuenta, doc, series, catalogo, hoy, cosecha=None, cupo_pruebas=0, ap
 
     pausadas_ahora = set()
     for el in sorted(cuenta.elementos.values(), key=lambda e: e.clave):
-        if el.estado != ACTIVO or not cuenta.grupo_activo(el.id_grupo):
+        g = cuenta.grupos.get(el.id_grupo)
+        se_reactiva = g is not None and g.estado == ACTIVO and g.id_campana in config.REACTIVAR_ORDEN
+        if el.estado != ACTIVO or not (cuenta.grupo_activo(el.id_grupo) or se_reactiva):
             continue
         if el.id_grupo in grupos_no_elegibles:
             d.notas[el.clave] = "No elegible: no se toca"
@@ -112,17 +114,17 @@ def _decidir_elemento(el, cuenta, doc, series, catalogo, hoy, d):
         base = series.base_en(el.clave, f_cambio, learner._base(ult))
     else:
         f_cambio, base = _primera_fecha(series, el.clave), Metricas()
+    ahora = series.acumulado(el.clave, hoy)
+    comun = dict(clave=el.clave, producto=asin, id_campana=el.id_campana, id_grupo=el.id_grupo, campana=campana,
+                 texto=el.texto, coincidencia=el.coincidencia, base=ahora)
+    # pujar por encima del equilibrio pierde dinero en cada venta: eso se baja sin esperar a la ronda
     if f_cambio is None:
         d.notas[el.clave] = "Esperar: aún sin datos"
-        return None
-    ahora = series.acumulado(el.clave, hoy)
+        return _tope_equilibrio(el, cuenta, series, catalogo, hoy, asin, comun, d)
     dias, nuevos = (hoy - f_cambio).days, ahora.clics - base.clics
     if dias < config.DIAS_ENTRE_CAMBIOS or nuevos < config.MIN_CLICS_NUEVOS:
         d.notas[el.clave] = f"Esperar: {dias} días y {nuevos:.0f} clics nuevos desde el último cambio (hace falta ≥3 y ≥10)"
-        return None
-
-    comun = dict(clave=el.clave, producto=asin, id_campana=el.id_campana, id_grupo=el.id_grupo, campana=campana,
-                 texto=el.texto, coincidencia=el.coincidencia, base=ahora)
+        return _tope_equilibrio(el, cuenta, series, catalogo, hoy, asin, comun, d)
 
     # --- stop-loss: desde que el elemento existe (o el agente lo creó o reactivó), sin ninguna venta
     creado = _ultimo(doc, el.clave, CREA)
@@ -146,7 +148,7 @@ def _decidir_elemento(el, cuenta, doc, series, catalogo, hoy, d):
     if not creado and primera and (hoy - primera).days < config.DIAS_PRIMERA_EVALUACION:
         d.notas[el.clave] = (f"Esperar: {(hoy - primera).days} días de datos (la puja se juzga a los "
                              f"{config.DIAS_PRIMERA_EVALUACION}; el stop-loss sí vigila)")
-        return None
+        return _tope_equilibrio(el, cuenta, series, catalogo, hoy, asin, comun, d)
     if creado and (hoy - learner.fecha(creado["Fecha"])).days < config.DIAS_PRIMERA_EVALUACION:
         d.notas[el.clave] = (f"Esperar: {(hoy - learner.fecha(creado['Fecha'])).days} días desde que el agente la "
                              f"{'reactivó' if creado['Tipo'] == REACTIVAR else 'creó'} (la puja se juzga a los "
@@ -216,7 +218,7 @@ def _evaluar_propia(e, asin, ticket, series, catalogo, hoy):
     if not cpc or p <= 0 or not ticket:
         return None
     acos_pred = cpc / (p * ticket)
-    if acos_pred > config.ACOS_MAX_KEYWORD_NUEVA:
+    if acos_pred > config.acos_max_nueva(asin):
         return None
     return {"texto": e.texto, "coincidencia": e.coincidencia, "p": p, "acos_pred": acos_pred,
             "datos": f"{mad.clics:.0f} clics maduros, {mad.compras:.0f} compras"}
@@ -237,6 +239,30 @@ def terminadas(cuenta, series, catalogo, hoy, asin, ticket):
                      "motivo": f"Funcionaba en '{c.nombre}' (terminada: se copia): {cand['datos']}"}
             out.append(cand)
     return sorted(out, key=lambda c: c["acos_pred"])
+
+
+def _tope_equilibrio(el, cuenta, series, catalogo, hoy, asin, comun, d):
+    """Mientras toca esperar para juzgar la puja, el único cambio permitido es BAJARLA si está por encima de lo
+    rentable: puja × lo que Amazon puede subirla > P(compra|clic) × ticket × ACOS de equilibrio. Nunca sube."""
+    prod = catalogo.producto(asin) if asin else None
+    if el.puja is None or not prod or not prod.ticket:
+        return None
+    # las ventas que ya se ven son reales aunque los clics no hayan madurado (y solo pueden crecer): se usa la
+    # mejor de las dos estimaciones para no ahogar lo que ya vende
+    p = max(catalogo.p_compra(asin, el.texto, el.coincidencia, series.maduro(el.clave, hoy)),
+            catalogo.p_compra(asin, el.texto, el.coincidencia, series.acumulado(el.clave, hoy)))
+    camp = cuenta.campanas[el.id_campana]
+    tope = p * prod.ticket * config.acos_equilibrio(asin)
+    maxima = pujas.limitar(camp, el.puja, tope)
+    if el.puja - maxima < max(config.CAMBIO_MINIMO_PUJA_EUR, config.CAMBIO_MINIMO_PUJA_PCT * el.puja):
+        return None
+    d.notas[el.clave] += f"; baja a {maxima:.2f} € (tope de equilibrio)"
+    return Cambio(tipo=PUJA, antes=el.puja, despues=maxima,
+                  motivo=(f"Tope de equilibrio: con P(compra|clic) {p:.1%} × ticket {prod.ticket:.2f} € × ACOS de "
+                          f"equilibrio {config.acos_equilibrio(asin):.0%} = {tope:.2f} €, pujar {el.puja:.2f} € pierde dinero "
+                          f"en cada venta (Amazon puede subirla ×{pujas.multiplicador(camp):.2f}). Se baja a {maxima:.2f} €; "
+                          "la puja óptima se decide cuando haya datos suficientes"),
+                  extra={"tope_rentable": round(tope, 4), "multiplicador": round(pujas.multiplicador(camp), 3)}, **comun)
 
 
 def _rellenar_huecos(cuenta, doc, series, catalogo, hoy, d, pausadas_ahora, no_elegibles, cosecha):
@@ -338,7 +364,7 @@ def _rellenar_huecos(cuenta, doc, series, catalogo, hoy, d, pausadas_ahora, no_e
                             f"limitada por el stop-loss. Fuente {c['fuente']}. {c['motivo']}") if c.get("prueba") else
                            (f"Hueco {n}/{config.MAX_KEYWORDS_POR_GRUPO}: ACOS "
                             f"{'real' if c['fuente'] == 'términos de búsqueda' else 'predicho'} {c['acos_pred']:.0%} "
-                            f"(≤ {config.ACOS_MAX_KEYWORD_NUEVA if c['fuente'] != 'términos de búsqueda' else config.ACOS_OBJETIVO_MAX:.0%}), "
+                            f"(≤ {config.acos_max_nueva(asin) if c['fuente'] != 'términos de búsqueda' else config.acos_max_cosecha(asin):.0%}), "
                             f"P(compra|clic) {c['p']:.1%}, fuente {c['fuente']}. {c['motivo']}"),
                     extra=extra | ({"grupo_origen": c["grupo_origen"]} if c.get("grupo_origen") else {})))
             activos.append(None)

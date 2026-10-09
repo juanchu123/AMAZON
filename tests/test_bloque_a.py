@@ -272,3 +272,40 @@ def test_veto_del_agente_quita_un_cambio(tmp_path, catalogo, monkeypatch):
     res, api, _ = _correr(tmp_path, cuenta, [], catalogo)
     assert not [l for l in api.llamadas if l[0] == "negativa"]
     assert any(m.startswith("vetado") for _, m in res["descartados"])
+
+
+# ---------------------------------------------------------------- tope de equilibrio sin esperar a la ronda
+def test_puja_por_encima_del_equilibrio_se_baja_aunque_toque_esperar(tmp_path, catalogo, monkeypatch):
+    monkeypatch.setattr(config, "MARGEN_UNITARIO", {PINZA: 3.67})
+    cuenta = cuenta_pinza(2)
+    cuenta.elementos["K0"].puja = 0.90            # muy por encima de p × 11,24 € × 32,7 %
+    cuenta.elementos["K1"].puja = 0.10            # por debajo: rentable aunque Amazon la suba
+    # 4 clics en 20 días: la ronda (≥ 10 clics nuevos) no toca, pero pagar 0,90 € pierde dinero en cada venta
+    diario = filas_diarias("K0", 20, 0.2, 0.05) + filas_diarias("K1", 20, 0.2, 0.05)
+    res, api, doc = _correr(tmp_path, cuenta, diario, catalogo)
+    pujas_k0 = [c for c in api.llamadas if c[0] == "puja" and c[1] == "K0"]
+    assert pujas_k0 and pujas_k0[0][2] < 0.5
+    assert not [c for c in api.llamadas if c[0] == "puja" and c[1] == "K1"]   # ya es rentable: no se toca (nunca sube)
+
+
+def test_tope_de_equilibrio_cuenta_las_ventas_aun_no_maduras(catalogo):
+    import analyzer
+    from analyzer import Decision
+    cuenta = cuenta_pinza(1)
+    el = cuenta.elementos["K0"]
+    el.puja = 2.0
+
+    class S:
+        def maduro(self, *_):
+            return Metricas()
+
+        def acumulado(self, *_):
+            return Metricas(clics=10, compras=3)
+
+    d = Decision()
+    d.notas["K0"] = ""
+    comun = dict(clave="K0", producto=PINZA, id_campana="C1", id_grupo="G1", campana="x", texto=el.texto,
+                 coincidencia=el.coincidencia)
+    c = analyzer._tope_equilibrio(el, cuenta, S(), catalogo, HOY, PINZA, comun, d)
+    sin_ventas = catalogo.p_compra(PINZA, el.texto, el.coincidencia, Metricas())
+    assert c and c.extra["tope_rentable"] > sin_ventas * catalogo.producto(PINZA).ticket * config.acos_equilibrio(PINZA)

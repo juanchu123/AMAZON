@@ -99,6 +99,8 @@ class FuenteSellerMate(FuenteBulk):
 
     @staticmethod
     def necesita_aprobacion(c):
+        if c.extra.get("ordenada"):          # Juan ya lo pidió por correo
+            return False
         return c.tipo in (CREAR_CAMPANA, REACTIVAR_CAMPANA) or (c.tipo == PRESUPUESTO and num(c.despues) > num(c.antes))
 
     def aplicar(self, cambio, cuenta):

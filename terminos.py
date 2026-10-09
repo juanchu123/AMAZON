@@ -133,7 +133,7 @@ def decidir(cuenta, doc, catalogo, hoy):
             continue
 
         # 2) cosecha
-        if m.compras >= 1 and m.acos is not None and m.acos <= config.ACOS_OBJETIVO_MAX:
+        if m.compras >= 1 and m.acos is not None and m.acos <= config.acos_max_cosecha(asin):
             if (asin, fi) in exactas or es_la_keyword and t.coincidencia == "Exacta":
                 r.notas[t.clave] = "Vende; ya es keyword en Exacta"
                 continue
@@ -145,7 +145,7 @@ def decidir(cuenta, doc, catalogo, hoy):
                 "texto": texto, "coincidencia": "Exacta", "p": p, "acos_pred": m.acos, "fuente": "términos de búsqueda",
                 "cpc_real": m.coste / m.clics if m.clics else None,
                 "motivo": (f"Término de búsqueda que vende: {m.clics:.0f} clics, {m.compras:.0f} compras, ACOS {m.acos:.0%} "
-                           f"(≤ {config.ACOS_OBJETIVO_MAX:.0%}), cazado por '{t.origen}' ({t.coincidencia})"),
+                           f"(≤ {config.acos_max_cosecha(asin):.0%}), cazado por '{t.origen}' ({t.coincidencia})"),
                 "grupo_origen": t.id_grupo})
             r.notas[t.clave] = "Cosecha: pasa a keyword en Exacta"
             continue

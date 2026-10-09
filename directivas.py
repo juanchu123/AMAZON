@@ -8,6 +8,11 @@ directivas.py — lo que Juan le ha dicho al Agente ADS (agente_ads/directivas.j
                        SellerMate no da la fecha de fin, así que se apuntan aquí
   no_reactivar         ids de campañas que Juan ha pausado a propósito
   palabras_ajenas_extra  {asin: [palabras]}: más vocabulario de cosas que el producto no es
+  margen_unitario_eur  {asin: €}: lo que Juan gana por unidad antes de publicidad (si no rellena la hoja Economía)
+  reactivar            {id campaña: €/día}: campañas que Juan ha pedido reactivar (van en bulk_cambios, sin propuesta)
+  limites              [{"asin", "max_gasto_sin_ganancia_eur", "desde", "accion"}]: si el producto gasta más que
+                       eso en anuncios desde esa fecha sin ganar dinero (margen de las ventas ≤ gasto), aviso para
+                       que el agente lo reestructure
   vetos                [{"tipo", "texto" o "clave", "hasta" (AAAA-MM-DD), "motivo"}]: cambios que el Agente
                        ADS (o Juan) no quiere aunque las reglas los propongan; "tipo" "*" vale para todos
 El agente edita este archivo cuando Juan le escribe (y lo apunta en "notas"); Python solo lo lee.
@@ -49,6 +54,9 @@ def aplicar(d):
     for asin, palabras in (d.get("palabras_ajenas_extra") or {}).items():
         config.PALABRAS_AJENAS[asin] = set(config.PALABRAS_AJENAS.get(asin, set())) | {kml.normalizar(w) for w in palabras}
     config.VETOS = list(d.get("vetos") or [])
+    config.MARGEN_UNITARIO = {str(k): float(v) for k, v in (d.get("margen_unitario_eur") or {}).items()}
+    config.REACTIVAR_ORDEN = {str(k): float(v) for k, v in (d.get("reactivar") or {}).items()}
+    config.LIMITES = list(d.get("limites") or [])
     return f"tope {tope:.0f} €/mes, modo {modo}, {len(config.NO_REACTIVAR)} campañas que no se reactivan"
 
 
@@ -68,3 +76,28 @@ def vetado(cambio, hoy):
             continue
         return f"vetado: {v.get('motivo') or 'sin motivo'}"
     return None
+
+
+def comprobar_limites(cuenta, series, hoy):
+    """Avisos (tipo, clave, mensaje) de los productos que han pasado su límite de gasto sin ganancia."""
+    from datetime import date as _d
+    out = []
+    for lim in config.LIMITES:
+        asin, maximo = str(lim.get("asin")), float(lim.get("max_gasto_sin_ganancia_eur") or 0)
+        desde = _d.fromisoformat(str(lim.get("desde"))[:10]) if lim.get("desde") else None
+        if not maximo or not desde:
+            continue
+        claves = [e.clave for e in cuenta.elementos.values() if cuenta.producto_de_grupo(e.id_grupo) == asin]
+        gasto = compras = 0.0
+        from datetime import timedelta
+        for k in claves:
+            m = series.acumulado(k, hoy) - series.acumulado(k, desde - timedelta(days=1))
+            gasto, compras = gasto + m.coste, compras + m.compras
+        ganancia = compras * config.MARGEN_UNITARIO.get(asin, 0.0) - gasto
+        estado = f"{gasto:.2f} € gastados desde el {desde:%d/%m}, {compras:.0f} ventas, ganancia {ganancia:+.2f} €"
+        if gasto > maximo and ganancia <= 0:
+            out.append(("limite", asin, f"LÍMITE DE JUAN SUPERADO ({asin}): {estado} (límite {maximo:.0f} € sin ganar "
+                        f"nada). {lim.get('accion') or 'Reestructurar'}"))
+        else:
+            out.append(("limite_estado", asin, f"Límite de Juan ({asin}): {estado}; límite {maximo:.0f} € sin ganancia"))
+    return out

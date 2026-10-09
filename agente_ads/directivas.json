@@ -1,13 +1,40 @@
 {
   "tope_mensual_eur": 840,
   "modo": "normal",
-  "campanas_terminadas": ["319935329473301", "562775822100105"],
-  "no_reactivar": ["43223318737411"],
+  "campanas_terminadas": [
+    "319935329473301",
+    "562775822100105"
+  ],
+  "no_reactivar": [],
   "notas": [
     "2026-10-09 Juan: nivel intermedio. Lo pequeño (pujas, negativas, pausas, keywords y pruebas dentro de campañas) va en la hoja masiva del día; crear o reactivar campañas y subir presupuestos, como propuesta aparte.",
     "2026-10-09 Juan: todo se lo manda el agente en Excel (hoja masiva) y lo sube él: nada se cambia en Amazon sin su aprobación.",
-    "2026-10-09 Juan: la pausa de 'Pinza - Principal V2' (43223318737411) es intencionada: no reactivarla.",
-    "2026-10-09 'Todo' (319935329473301) y 'Soporte móvil AC' (562775822100105) terminaron por fecha: no cuentan como activas."
+    "2026-10-09 'Todo' (319935329473301) y 'Soporte móvil AC' (562775822100105) terminaron por fecha: no cuentan como activas.",
+    "2026-10-09 Juan (correo): gana 3,67 €/unidad con la pinza y 3,03 € con la rejilla antes de publicidad. ACOS de equilibrio: pinza 32,7 %, rejilla 21,2 %.",
+    "2026-10-09 Juan (correo): 'cuanto antes, pero no quiero gastar mucho; si la pinza gasta más de 5 € en conjunto sin ganar nada, cámbialo todo como quieras'. Se reactiva Pinza - Principal V2 a 3 €/día (orden de Juan, sin propuesta).",
+    "2026-10-09 Juan (correo): 'gestiona tú los cupones'. El agente no tiene acceso a Seller Central: propone el cupón (producto, % y fechas) y Juan lo crea."
   ],
-  "actualizado": "2026-10-09"
+  "actualizado": "2026-10-09",
+  "margen_unitario_eur": {
+    "B0DCZS1NR6": 3.67,
+    "B0DHYBY6MS": 3.03
+  },
+  "reactivar": {
+    "43223318737411": 3.0
+  },
+  "limites": [
+    {
+      "asin": "B0DCZS1NR6",
+      "max_gasto_sin_ganancia_eur": 5,
+      "desde": "2026-10-09",
+      "accion": "Juan (09/10): si la pinza gasta más de 5 € en conjunto sin ganar nada, el agente la reestructura como quiera (pausar lo que no vende, cambiar pujas, palabras y segmentaciones)."
+    }
+  ],
+  "vetos": [
+    {
+      "tipo": "añadir_negativa",
+      "hasta": "2026-10-09",
+      "motivo": "las negativas de hoy ya van en la hoja manual bulk_cambios_2026-10-09.xlsx (no repetirlas)"
+    }
+  ]
 }
