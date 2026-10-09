@@ -1,6 +1,9 @@
 {
-  "mensajes_enviados": [],
+  "mensajes_enviados": [
+    "1a12127b5bba64d6"
+  ],
   "mensajes_procesados": [],
-  "ultimo_parte": null,
-  "ultimo_informe_semanal": null
+  "ultimo_parte": "2026-10-09",
+  "ultimo_informe_semanal": null,
+  "hilo_principal": "1a12127b5bba64d6"
 }
