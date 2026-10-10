@@ -27,3 +27,9 @@ números" es el aprendizaje de Python (hojas Tickets y Aprendizaje de la memoria
 - 09/10: la regla "nunca pagar más del equilibrio" no puede esperar a la ronda (≥ 3 días y ≥ 10 clics): con
   poco tráfico una puja ruinosa duraría semanas. Ahora se aplica en cada ronda (solo baja, nunca sube) y
   cuenta las ventas ya vistas aunque los clics no hayan madurado (si no, ahogaría lo único que vende).
+- 10/10: la cosecha calcula la conversión con el propio término y, con 1 clic y 1 venta, sale ~18 %: para una
+  búsqueda genérica ("soporte teléfono coche") eso daba 0,55 € en Exacta. Corregido a mano a 0,26 € (conversión
+  real de la rejilla en Exacta ~8,6 %). Pendiente: que el motor no fíe la conversión de la cosecha a 1-2 clics.
+- 10/10: una negativa de frase en un grupo bloquea las keywords de ese grupo que la contienen ("holder" habría
+  bloqueado "gravity phone holder ne5241"): revisar siempre negativas frente a keywords del mismo grupo.
+- 10/10: SellerMate atribuye ventas con retraso (la del 08/10 apareció el 10/10): bajar siempre los 8 días.

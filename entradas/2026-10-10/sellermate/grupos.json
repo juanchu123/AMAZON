@@ -1,0 +1,12 @@
+{"adGroups": [
+ {"adGroupId": "498431196919443", "name": "Ad group - 26/9/2026 16:55:45.017", "campaignId": "109312847405161", "state": "ENABLED", "defaultBid": 0.55},
+ {"adGroupId": "47605217986123", "name": "Pruebas - Competencia", "campaignId": "141825204081039", "state": "ENABLED", "defaultBid": 0.3},
+ {"adGroupId": "259407803744951", "name": "Pinza - Principal V2", "campaignId": "43223318737411", "state": "ENABLED", "defaultBid": 0.4},
+ {"adGroupId": "78232100921932", "name": "Rejilla - Principal V2", "campaignId": "92431837179431", "state": "ENABLED", "defaultBid": 0.4},
+ {"adGroupId": "496321543207095", "name": "Grupo de anuncios - 14/1/2025 9:40:23.358", "campaignId": "319935329473301", "state": "ENABLED", "defaultBid": 0.39},
+ {"adGroupId": "395913259484579", "name": "Fake pero no tanto xd", "campaignId": "562775822100105", "state": "ENABLED", "defaultBid": 0.3},
+ {"adGroupId": "356955715138397", "name": "Giratorio y baches", "campaignId": "562775822100105", "state": "ENABLED", "defaultBid": 0.3},
+ {"adGroupId": "400618403740562", "name": "Rejilla ventilación", "campaignId": "562775822100105", "state": "ENABLED", "defaultBid": 0.33},
+ {"adGroupId": "484665049195714", "name": "Sin ventosa y fácil instalación", "campaignId": "562775822100105", "state": "ENABLED", "defaultBid": 0.3},
+ {"adGroupId": "507817221297579", "name": "profesionales", "campaignId": "562775822100105", "state": "ENABLED", "defaultBid": 0.3}
+]}

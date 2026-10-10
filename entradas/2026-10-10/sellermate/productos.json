@@ -1,0 +1,44 @@
+{
+"data": [
+{
+"adAsin": "B0DHYBY6MS",
+"adGroupId": "498431196919443",
+"campaignId": "109312847405161",
+"spend": 31.46,
+"sales": 30.56,
+"impressions": 8580,
+"clicks": 61,
+"orders": 3
+},
+{
+"adAsin": "B0DCZS1NR6",
+"adGroupId": "259407803744951",
+"campaignId": "43223318737411",
+"spend": 5.5,
+"sales": 0,
+"impressions": 1816,
+"clicks": 14,
+"orders": 0
+},
+{
+"adAsin": "B0DHYBY6MS",
+"adGroupId": "78232100921932",
+"campaignId": "92431837179431",
+"spend": 1.87,
+"sales": 0,
+"impressions": 1040,
+"clicks": 7,
+"orders": 0
+},
+{
+"adAsin": "B0DCZS1NR6",
+"adGroupId": "47605217986123",
+"campaignId": "141825204081039",
+"spend": 1.15,
+"sales": 8.99,
+"impressions": 115,
+"clicks": 4,
+"orders": 1
+}
+]
+}
