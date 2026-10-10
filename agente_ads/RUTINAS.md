@@ -1,4 +1,16 @@
-# Rutinas del Agente ADS (para crearlas en claude.ai → Routines)
+# Rutinas del Agente ADS
+
+**Estado (10/10/2026): creadas por el propio agente y activas.** Se despiertan en la sesión de Claude Code
+`session_01D8zFsXd31MYxmY7hRPcJU8` (la que tiene conectados Gmail y sellermate), porque la organización no permite
+dar conectores a rutinas que abren sesiones nuevas:
+- `trig_01SMM2QAPmSpNmU2rekjzZ4e` — ronda diaria, 8:50 (Europe/Madrid).
+- `trig_01NiMM8oF8WRy4VFaHwQt7Sn` — correo, cada 2 horas de 9:55 a 21:55 (Europe/Madrid).
+Se ven, pausan o borran en claude.ai → Routines. Si algún día se pierde esa sesión, se crean a mano como se explica
+abajo (con los conectores Gmail y sellermate).
+
+---
+
+## Cómo crearlas a mano (solo si hace falta)
 
 Hay que crearlas **desde la web de Claude** (claude.ai/code → Routines → New routine), porque es ahí donde se
 eligen el repositorio y los conectores. En las dos:
