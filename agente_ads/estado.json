@@ -1,12 +1,13 @@
 {
   "mensajes_enviados": [
     "1a12127b5bba64d6",
-    "1a121399767781c8"
+    "1a121399767781c8",
+    "1a125f78e47ff085"
   ],
   "mensajes_procesados": [
     "1a1212c66c053735"
   ],
-  "ultimo_parte": "2026-10-09",
+  "ultimo_parte": "2026-10-10",
   "ultimo_informe_semanal": null,
   "hilo_principal": "1a12127b5bba64d6"
 }

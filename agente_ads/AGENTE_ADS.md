@@ -111,19 +111,27 @@ el porqué en LECCIONES.md. No vetes por gusto: el motor ya es prudente; veta cu
 Comprueba también que el Excel no repite nada que ya exista (una negativa o keyword repetida puede hacer que
 Amazon rechace la subida entera).
 
-### 6. Parte diario a Juan
-Gmail `send_message` a yubunama62@gmail.com. Asunto: `[Agente ADS] Parte del <DD/MM> — <lo más importante en 6 palabras>`.
-Cuerpo (texto plano, sin Markdown, corto):
-- **Cómo vamos:** gasto del mes y proyección frente al tope; ventas, ACOS y pedidos de ayer y de 7 días
-  (frente a los 7 anteriores); qué campaña o término destaca para bien y para mal.
-- **Qué te propongo hoy:** resumen de `bulk_cambios` (cuántas negativas, pujas, keywords, pruebas, con 2-3
-  ejemplos y su porqué) y el enlace para descargarlo:
-  `https://github.com/juanchu123/AMAZON/raw/claude/eager-pascal-g76q2i/salidas/<hoy>/bulk_cambios_<hoy>.xlsx`
-  ("súbelo en Amazon Ads → Operaciones en bloque").
-- **Necesito tu OK para:** cada propuesta de `propuestas_<hoy>.xlsx` con su porqué, su coste al día y el
-  enlace al archivo. "Si te parece bien, súbelo; si no, no hagas nada".
-- **Lo que he aprendido / lo que viene:** 1-3 líneas (LECCIONES, CALENDARIO).
-Si no hay cambios, el parte es de 4 líneas. Guarda el id del mensaje en `estado.json` → `mensajes_enviados`.
+### 6. Parte diario a Juan (TODOS los días, con el Excel adjunto)
+Juan (10/10): "el agente debería mandarme un bulk cada día de sus cambios y explicado". Modelo a seguir: el
+parte del 10/10 (hilo principal de `estado.json`).
+
+Gmail `send_message` a yubunama62@gmail.com, en el hilo principal (`replyThreadId` = `estado.json` →
+`hilo_principal`). Asunto: `[Agente ADS] Parte del <DD/MM> — <lo más importante en 6 palabras>`.
+- **Adjunta siempre** `salidas/<hoy>/bulk_cambios_<hoy>.xlsx` (campo `attachments`, base64 con `base64 -w0`,
+  mimeType `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`) y, si hay, `propuestas_<hoy>.xlsx`.
+  Di claramente cuál tiene que subir ("el único que tienes que subir hoy") y dónde (Amazon Ads → Operaciones en
+  bloque → Subir). Si no subió el anterior, el de hoy lo incluye y lo dices ("los anteriores ya no valen").
+- Cuerpo en **HTML** (`htmlBody`) + versión corta en texto (`body`):
+  1. **Cómo vamos:** gasto del mes y proyección frente al tope; ventas y ACOS de ayer y de 7 días; por producto,
+     ganancia o pérdida con los márgenes de Juan; el límite de la pinza; qué destaca para bien y para mal.
+  2. **Qué lleva el Excel y por qué**, agrupado (A, B, C…): campañas que se reactivan o presupuestos;
+     **tabla de pujas** (campaña, palabra, antes, ahora); emplazamientos; keywords nuevas con su porqué;
+     pruebas; **lista completa de negativas** por grupo con ejemplos de las búsquedas que las justifican.
+     Cada bloque, una o dos frases de porqué con el dato que lo apoya.
+  3. **Necesito tu OK para** (solo si hay `propuestas`): cada una con su coste al día.
+  4. **Lo que viene:** calendario y lo aprendido (1-3 líneas).
+- Si no hay cambios: parte de 4 líneas, sin adjunto.
+Guarda el id del mensaje en `estado.json` → `mensajes_enviados`.
 
 ### 7. Los lunes: informe de estrategia
 Además del parte, un correo aparte `[Agente ADS] Estrategia de la semana <DD/MM>`: cómo ha ido la semana por
