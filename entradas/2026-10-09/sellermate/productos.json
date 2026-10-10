@@ -1,0 +1,6 @@
+{"data": [
+ {"adAsin": "B0DHYBY6MS", "adGroupId": "498431196919443", "campaignId": "109312847405161", "spend": 27.23, "sales": 22.3, "impressions": 8008, "clicks": 53, "orders": 2},
+ {"adAsin": "B0DCZS1NR6", "adGroupId": "259407803744951", "campaignId": "43223318737411", "spend": 5.5, "sales": 0, "impressions": 1816, "clicks": 14, "orders": 0},
+ {"adAsin": "B0DHYBY6MS", "adGroupId": "78232100921932", "campaignId": "92431837179431", "spend": 1.87, "sales": 0, "impressions": 1002, "clicks": 7, "orders": 0},
+ {"adAsin": "B0DCZS1NR6", "adGroupId": "47605217986123", "campaignId": "141825204081039", "spend": 0.89, "sales": 0, "impressions": 101, "clicks": 3, "orders": 0}
+]}

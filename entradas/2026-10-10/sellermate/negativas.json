@@ -1,0 +1,214 @@
+{
+"negativeTargets": [
+{
+"id": "498431196919443-soporte coche movil",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "109312847405161",
+"adGroupId": "498431196919443",
+"state": "ENABLED",
+"matchType": "NEGATIVE_EXACT",
+"keywordText": "soporte coche movil"
+},
+{
+"id": "498431196919443-soporte movil coche",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "109312847405161",
+"adGroupId": "498431196919443",
+"state": "ENABLED",
+"matchType": "NEGATIVE_EXACT",
+"keywordText": "soporte movil coche"
+},
+{
+"id": "498431196919443-soporte para movil coche",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "109312847405161",
+"adGroupId": "498431196919443",
+"state": "ENABLED",
+"matchType": "NEGATIVE_EXACT",
+"keywordText": "soporte para movil coche"
+},
+{
+"id": "498431196919443-soporte móvil para coche",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "109312847405161",
+"adGroupId": "498431196919443",
+"state": "ENABLED",
+"matchType": "NEGATIVE_EXACT",
+"keywordText": "soporte móvil para coche"
+},
+{
+"id": "78232100921932-magnetico",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "92431837179431",
+"adGroupId": "78232100921932",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "magnetico"
+},
+{
+"id": "78232100921932-parabrisas",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "92431837179431",
+"adGroupId": "78232100921932",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "parabrisas"
+},
+{
+"id": "78232100921932-cargador",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "92431837179431",
+"adGroupId": "78232100921932",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "cargador"
+},
+{
+"id": "78232100921932-iman",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "92431837179431",
+"adGroupId": "78232100921932",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "iman"
+},
+{
+"id": "78232100921932-salpicadero",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "92431837179431",
+"adGroupId": "78232100921932",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "salpicadero"
+},
+{
+"id": "78232100921932-pinza",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "92431837179431",
+"adGroupId": "78232100921932",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "pinza"
+},
+{
+"id": "78232100921932-ventosa",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "92431837179431",
+"adGroupId": "78232100921932",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "ventosa"
+},
+{
+"id": "78232100921932-moto",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "92431837179431",
+"adGroupId": "78232100921932",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "moto"
+},
+{
+"id": "78232100921932-bicicleta",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "92431837179431",
+"adGroupId": "78232100921932",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "bicicleta"
+},
+{
+"id": "259407803744951-iman",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "43223318737411",
+"adGroupId": "259407803744951",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "iman"
+},
+{
+"id": "259407803744951-magnetico",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "43223318737411",
+"adGroupId": "259407803744951",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "magnetico"
+},
+{
+"id": "259407803744951-ventosa",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "43223318737411",
+"adGroupId": "259407803744951",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "ventosa"
+},
+{
+"id": "259407803744951-parabrisas",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "43223318737411",
+"adGroupId": "259407803744951",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "parabrisas"
+},
+{
+"id": "259407803744951-moto",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "43223318737411",
+"adGroupId": "259407803744951",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "moto"
+},
+{
+"id": "259407803744951-cargador",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "43223318737411",
+"adGroupId": "259407803744951",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "cargador"
+},
+{
+"id": "259407803744951-rejilla",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "43223318737411",
+"adGroupId": "259407803744951",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "rejilla"
+},
+{
+"id": "259407803744951-bicicleta",
+"type": "NegativeKeyword",
+"scope": "adGroup",
+"campaignId": "43223318737411",
+"adGroupId": "259407803744951",
+"state": "ENABLED",
+"matchType": "NEGATIVE_PHRASE",
+"keywordText": "bicicleta"
+}
+]
+}

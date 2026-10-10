@@ -1,0 +1,114 @@
+{
+"data": [
+{
+"targetingValue": "substitutes",
+"targetingType": "TARGETING_EXPRESSION_PREDEFINED",
+"adGroupId": "498431196919443",
+"campaignId": "109312847405161",
+"impressions": 1295,
+"clicks": 11,
+"spend": 4.89,
+"orders": 0,
+"sales": 0
+},
+{
+"targetingValue": "soporte para móvil en coche",
+"targetingType": "EXACT",
+"adGroupId": "78232100921932",
+"campaignId": "92431837179431",
+"impressions": 59,
+"clicks": 2,
+"spend": 0.48,
+"orders": 0,
+"sales": 0
+},
+{
+"targetingValue": "close-match",
+"targetingType": "TARGETING_EXPRESSION_PREDEFINED",
+"adGroupId": "498431196919443",
+"campaignId": "109312847405161",
+"impressions": 140,
+"clicks": 1,
+"spend": 0.35,
+"orders": 0,
+"sales": 0
+},
+{
+"targetingValue": "soporte teléfono para rejilla",
+"targetingType": "PHRASE",
+"adGroupId": "78232100921932",
+"campaignId": "92431837179431",
+"impressions": 14,
+"clicks": 1,
+"spend": 0.27,
+"orders": 0,
+"sales": 0
+},
+{
+"targetingValue": "B07H996QMD",
+"targetingType": "ASIN_SAME_AS",
+"adGroupId": "47605217986123",
+"campaignId": "141825204081039",
+"impressions": 3,
+"clicks": 0,
+"spend": 0,
+"orders": 0,
+"sales": 0
+},
+{
+"targetingValue": "B08N4KR6PK",
+"targetingType": "ASIN_SAME_AS",
+"adGroupId": "47605217986123",
+"campaignId": "141825204081039",
+"impressions": 6,
+"clicks": 0,
+"spend": 0,
+"orders": 0,
+"sales": 0
+},
+{
+"targetingValue": "B09P3SZB6P",
+"targetingType": "ASIN_SAME_AS",
+"adGroupId": "47605217986123",
+"campaignId": "141825204081039",
+"impressions": 22,
+"clicks": 0,
+"spend": 0,
+"orders": 0,
+"sales": 0
+},
+{
+"targetingValue": "rejilla móvil coche",
+"targetingType": "PHRASE",
+"adGroupId": "78232100921932",
+"campaignId": "92431837179431",
+"impressions": 18,
+"clicks": 0,
+"spend": 0,
+"orders": 0,
+"sales": 0
+},
+{
+"targetingValue": "soporte móvil coche ventilación",
+"targetingType": "PHRASE",
+"adGroupId": "78232100921932",
+"campaignId": "92431837179431",
+"impressions": 4,
+"clicks": 0,
+"spend": 0,
+"orders": 0,
+"sales": 0
+},
+{
+"targetingValue": "soporte teléfono de rejilla ventilación",
+"targetingType": "PHRASE",
+"adGroupId": "78232100921932",
+"campaignId": "92431837179431",
+"impressions": 4,
+"clicks": 0,
+"spend": 0,
+"orders": 0,
+"sales": 0
+}
+]
+}
