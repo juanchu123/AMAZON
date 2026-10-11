@@ -33,3 +33,7 @@ números" es el aprendizaje de Python (hojas Tickets y Aprendizaje de la memoria
 - 10/10: una negativa de frase en un grupo bloquea las keywords de ese grupo que la contienen ("holder" habría
   bloqueado "gravity phone holder ne5241"): revisar siempre negativas frente a keywords del mismo grupo.
 - 10/10: SellerMate atribuye ventas con retraso (la del 08/10 apareció el 10/10): bajar siempre los 8 días.
+- 11/10: Juan subió el Excel del 10/10 completo (comprobado en SellerMate). La negativa exacta de traslado solo
+  vale si la Exacta recoge el término tal cual: "soporte teléfono móvil coche" no lo recoge "soporte teléfono
+  coche" (vetado negarlo). Un ASIN recién creado no se juzga con la media del producto si su ficha ya vendió.
+- 11/10: Juan cambió a mano las ASIN de Pinza - Pruebas a 0,40 €: antes de deshacer un cambio suyo, preguntar.

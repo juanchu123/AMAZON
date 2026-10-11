@@ -2,12 +2,14 @@
   "mensajes_enviados": [
     "1a12127b5bba64d6",
     "1a121399767781c8",
-    "1a125f78e47ff085"
+    "1a125f78e47ff085",
+    "1a129c0bcfcafbf4"
   ],
   "mensajes_procesados": [
     "1a1212c66c053735"
   ],
-  "ultimo_parte": "2026-10-10",
+  "ultimo_parte": "2026-10-11",
   "ultimo_informe_semanal": null,
-  "hilo_principal": "1a12127b5bba64d6"
+  "hilo_principal": "1a12127b5bba64d6",
+  "pendiente_juan": "11/10: ¿subió él las ASIN de Pinza - Pruebas a 0,40 €? Propuesta: B09P3SZB6P 0,40 y las otras dos 0,28. Sin respuesta el martes 13/10 -> aplicarlo."
 }
