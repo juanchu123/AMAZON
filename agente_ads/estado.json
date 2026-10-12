@@ -3,13 +3,16 @@
     "1a12127b5bba64d6",
     "1a121399767781c8",
     "1a125f78e47ff085",
-    "1a129c0bcfcafbf4"
+    "1a129c0bcfcafbf4",
+    "1a12ee54c5cc8cb0",
+    "1a12ee5d5fba55a3"
   ],
   "mensajes_procesados": [
     "1a1212c66c053735"
   ],
-  "ultimo_parte": "2026-10-11",
-  "ultimo_informe_semanal": null,
+  "ultimo_parte": "2026-10-12",
+  "ultimo_informe_semanal": "2026-10-12",
   "hilo_principal": "1a12127b5bba64d6",
-  "pendiente_juan": "11/10: ¿subió él las ASIN de Pinza - Pruebas a 0,40 €? Propuesta: B09P3SZB6P 0,40 y las otras dos 0,28. Sin respuesta el martes 13/10 -> aplicarlo."
+  "pendiente_juan": "12/10: (1) ASIN Pinza - Pruebas a 0,40 € (propuesta: B09P3SZB6P 0,40; otras dos 0,28; sin respuesta el 13/10 -> aplicarlo). (2) ¿Oferta/cupón en Black Friday? (3) Plan pinza: decidir el lunes 19/10.",
+  "hilo_estrategia": "1a12ee5d5fba55a3"
 }

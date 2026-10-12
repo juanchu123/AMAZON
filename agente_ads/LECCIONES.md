@@ -37,3 +37,5 @@ números" es el aprendizaje de Python (hojas Tickets y Aprendizaje de la memoria
   vale si la Exacta recoge el término tal cual: "soporte teléfono móvil coche" no lo recoge "soporte teléfono
   coche" (vetado negarlo). Un ASIN recién creado no se juzga con la media del producto si su ficha ya vendió.
 - 11/10: Juan cambió a mano las ASIN de Pinza - Pruebas a 0,40 €: antes de deshacer un cambio suyo, preguntar.
+- 12/10: primera cosecha confirmada: "soporte teléfono coche" (Exacta 0,26 €) vendió al primer clic el 11/10 (ACOS 3 %).
+- 12/10: tras pujas al equilibrio (09-11/10) ACOS 26 % frente a ~100 % del 01/10; el CPC bajó de 0,52 € a 0,29 €.

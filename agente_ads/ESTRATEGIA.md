@@ -34,3 +34,7 @@ lo relee en cada ronda y lo respeta; cuando algo cambia, lo actualiza con la fec
 ## Pendiente de hablar con Juan
 - Rejilla: con su margen solo es rentable un clic de ~0,15-0,30 €. Si a esas pujas no hay tráfico, decidir
   con Juan: subir precio, bajar coste, o anunciarla solo donde vende (páginas de producto de la competencia).
+
+## Semana del 12/10 (informe enviado a Juan)
+- Desde las pujas al equilibrio (09-11/10): ACOS 26 %, CPC 0,29 € (antes 0,52 €). Vende desde fichas de competencia y Exactas cosechadas; no vende en genéricas en amplia.
+- Plan propuesto (pendiente de Juan): pinza -> decisión el lunes 19/10 (si la V2 no vende, solo Exactas específicas ~0,30 € y el dinero a fichas de competencia); rejilla -> solo fichas de competencia + Exactas (+2-3 ASIN de competidores a ~0,25 €); Black Friday -> como mucho cupón 5 % en la pinza 20/11-2/12.
