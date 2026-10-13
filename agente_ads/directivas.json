@@ -5,7 +5,9 @@
     "319935329473301",
     "562775822100105"
   ],
-  "no_reactivar": [],
+  "no_reactivar": [
+    "43223318737411"
+  ],
   "notas": [
     "2026-10-09 Juan: nivel intermedio. Lo pequeño (pujas, negativas, pausas, keywords y pruebas dentro de campañas) va en la hoja masiva del día; crear o reactivar campañas y subir presupuestos, como propuesta aparte.",
     "2026-10-09 Juan: todo se lo manda el agente en Excel (hoja masiva) y lo sube él: nada se cambia en Amazon sin su aprobación.",
@@ -15,16 +17,16 @@
     "2026-10-09 Juan (correo): 'gestiona tú los cupones'. El agente no tiene acceso a Seller Central: propone el cupón (producto, % y fechas) y Juan lo crea.",
     "2026-10-10 Juan: NO subió los Excel del 09/10. Se rehacen en uno solo, bulk_cambios_2026-10-10.xlsx (lo del 09/10 + lo nuevo); los del 09/10 quedan anulados.",
     "2026-10-11 Juan subió bulk_cambios_2026-10-10.xlsx el 10/10 (comprobado en SellerMate: pujas, negativas, grupo ASIN, Pinza V2 a 3 €). Cambió él mismo las ASIN de Pinza - Pruebas de 0,30 a 0,40 € (B08N4KR6PK, B09P3SZB6P, B07H996QMD).",
-    "2026-10-12 Agente ADS: 'vaso/portavasos' como vocabulario ajeno de la pinza (búsqueda 'soporte movil coche para hueco vaso' el 11/10, 0,31 € sin venta). Juan aún no subió el Excel del 11/10 (era domingo): se repite."
+    "2026-10-12 Agente ADS: 'vaso/portavasos' como vocabulario ajeno de la pinza (búsqueda 'soporte movil coche para hueco vaso' el 11/10, 0,31 € sin venta). Juan aún no subió el Excel del 11/10 (era domingo): se repite.",
+    "2026-10-13 Agente ADS: Pinza - Principal V2 apareció EN PAUSA (ayer gastó 1,60 € y estaba activa; no lo hizo el agente ni ningún Excel, que Juan no subió). Se respeta como decisión de Juan: fuera de 'reactivar', dentro de 'no_reactivar' hasta que él diga otra cosa. Pinza desde el 09/10: 4,80 € gastados, 1 venta (-1,13 € con 3,67 €/ud).",
+    "2026-10-13 Agente ADS: sin respuesta de Juan sobre las ASIN de Pinza - Pruebas: se aplica lo propuesto el 12/10 (B09P3SZB6P sigue a 0,40 €, la única que ha vendido; B08N4KR6PK y B07H996QMD a 0,28 €)."
   ],
-  "actualizado": "2026-10-12",
+  "actualizado": "2026-10-13",
   "margen_unitario_eur": {
     "B0DCZS1NR6": 3.67,
     "B0DHYBY6MS": 3.03
   },
-  "reactivar": {
-    "43223318737411": 3.0
-  },
+  "reactivar": {},
   "limites": [
     {
       "asin": "B0DCZS1NR6",
@@ -45,18 +47,6 @@
       "clave": "269607841776502",
       "hasta": "2026-10-24",
       "motivo": "ASIN B0F3J3QHD7 creado el 10/10 como prueba; desde su ficha la rejilla convirtió 1 de 5 clics (20 %): con esa conversión 0,30 € es rentable. Bajarlo a 0,14 € con la media del producto mataría la prueba antes de empezar"
-    },
-    {
-      "tipo": "puja",
-      "clave": "204950122881357",
-      "hasta": "2026-10-13",
-      "motivo": "Juan subió él mismo las ASIN de Pinza - Pruebas a 0,40 €: se le pregunta antes de bajarlas"
-    },
-    {
-      "tipo": "puja",
-      "clave": "229694114919441",
-      "hasta": "2026-10-13",
-      "motivo": "Juan subió él mismo las ASIN de Pinza - Pruebas a 0,40 €: se le pregunta antes de bajarlas"
     },
     {
       "tipo": "añadir_keyword",

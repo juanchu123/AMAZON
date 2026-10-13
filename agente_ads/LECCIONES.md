@@ -39,3 +39,7 @@ números" es el aprendizaje de Python (hojas Tickets y Aprendizaje de la memoria
 - 11/10: Juan cambió a mano las ASIN de Pinza - Pruebas a 0,40 €: antes de deshacer un cambio suyo, preguntar.
 - 12/10: primera cosecha confirmada: "soporte teléfono coche" (Exacta 0,26 €) vendió al primer clic el 11/10 (ACOS 3 %).
 - 12/10: tras pujas al equilibrio (09-11/10) ACOS 26 % frente a ~100 % del 01/10; el CPC bajó de 0,52 € a 0,29 €.
+- 13/10: una campaña que aparece en pausa sin que la pausara el agente ni un Excel es decisión de Juan: va a
+  `no_reactivar`, se quita de `reactivar` y se le pregunta; sus cambios pendientes salen del Excel. La pinza en
+  búsquedas genéricas (Principal V2) gastó 3,47 € en 2 días, 12 clics, sin ventas; su única venta vino de una ficha
+  de la competencia (B09P3SZB6P).
