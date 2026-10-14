@@ -43,3 +43,6 @@ números" es el aprendizaje de Python (hojas Tickets y Aprendizaje de la memoria
   `no_reactivar`, se quita de `reactivar` y se le pregunta; sus cambios pendientes salen del Excel. La pinza en
   búsquedas genéricas (Principal V2) gastó 3,47 € en 2 días, 12 clics, sin ventas; su única venta vino de una ficha
   de la competencia (B09P3SZB6P).
+- 14/10: con todas las pujas al equilibrio (rejilla 21 %) la cuenta casi no sale: 0,21 € y 193 impresiones el 13/10.
+  No pierde dinero, pero tampoco vende. Hay que buscar alcance donde la conversión es alta (fichas de la
+  competencia que ya vendieron, exactas concretas) en vez de subir pujas genéricas.
