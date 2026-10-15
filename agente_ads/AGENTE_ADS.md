@@ -76,6 +76,8 @@ está en el histórico).
   campaignId, adGroupId, state, matchType, keywordText`; métricas `impressions, clicks, spend, orders, sales`
   más sus agrupaciones.
 - Con varias páginas: `targets_2.json`, etc. (el motor junta todos los `targets*.json`).
+- **Al terminar de guardar:** `python fuente_sellermate.py --compactar entradas/<hoy>` (un registro por línea y
+  sin campos que el motor no usa). Sin esto cada día suma ~5.000 líneas de JSON al repo (Juan, 15/10: "+18k líneas").
 - Comprueba el total: la suma de `spend` de los 8 diarios tiene que cuadrar con `get_campaign_performance`
   de esos días. Si no cuadra, falta algo: vuelve a pedirlo.
 

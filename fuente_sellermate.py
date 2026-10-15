@@ -251,3 +251,36 @@ class FuenteSellerMate(FuenteBulk):
 
     def acumulados(self, cuenta, series, hoy):
         return {k: series.acumulado(k, hoy - timedelta(days=1)) for k in cuenta.elementos}
+
+
+# Campos que SellerMate devuelve y el motor no usa (se recalculan o son descriptivos). Fuera, para que los
+# JSON del repo no crezcan miles de líneas al día (Juan, 15/10/2026: "+18k líneas").
+SOBRAN = {"acos", "roas", "ctr", "cpc", "cvr", "marketplace", "country", "campaignName", "adGroupName",
+          "createdAt", "updatedAt", "sponsoredType", "baseBid", "scope", "campaignState", "budgetType",
+          "basePlacement", "biddingStrategyName", "targetingType_", "chatAssistantUrl"}
+
+
+def compactar(carpeta):
+    """Reescribe los JSON de entradas/<día>/sellermate/ con un registro por línea y sin campos sobrantes."""
+    carpeta = Path(carpeta)
+    if (carpeta / "sellermate").is_dir():
+        carpeta = carpeta / "sellermate"
+    for ruta in sorted(list(carpeta.glob("*.json")) + list((carpeta / "diario").glob("*.json"))):
+        datos = json.loads(ruta.read_text(encoding="utf-8"))
+        bloques = []
+        for d in datos if isinstance(datos, list) else [datos]:
+            for clave, filas in (d.items() if isinstance(d, dict) else []):
+                if isinstance(filas, list):
+                    filas = [{k: v for k, v in f.items() if k not in SOBRAN} if isinstance(f, dict) else f
+                             for f in filas]
+                    lineas = ",\n".join(json.dumps(f, ensure_ascii=False, separators=(",", ":")) for f in filas)
+                    bloques.append(f'"{clave}":[\n{lineas}\n]')
+        ruta.write_text("{" + ",\n".join(bloques) + "}\n", encoding="utf-8")
+
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) == 3 and sys.argv[1] == "--compactar":
+        compactar(sys.argv[2])
+    else:
+        print("Uso: python fuente_sellermate.py --compactar entradas/AAAA-MM-DD")
