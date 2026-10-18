@@ -15,6 +15,11 @@ directivas.py — lo que Juan le ha dicho al Agente ADS (agente_ads/directivas.j
                        que el agente lo reestructure
   vetos                [{"tipo", "texto" o "clave", "hasta" (AAAA-MM-DD), "motivo"}]: cambios que el Agente
                        ADS (o Juan) no quiere aunque las reglas los propongan; "tipo" "*" vale para todos
+  visibilidad          {"desde", "hasta", "tope_perdida_semana_eur", "pujas": {id elemento: €}, "motivo"}: plan
+                       que Juan elige para comprar alcance por encima del equilibrio (plan B, 18/10/2026). Mientras
+                       la pérdida de la semana (lunes a hoy) de esos elementos (gasto − ventas × margen) no llegue
+                       al tope, sus pujas se fijan a esas cifras y el motor no las baja; al llegar, el plan se para
+                       hasta el lunes y vuelven las reglas normales (que las bajan al equilibrio)
 El agente edita este archivo cuando Juan le escribe (y lo apunta en "notas"); Python solo lo lee.
 """
 
@@ -57,6 +62,7 @@ def aplicar(d):
     config.MARGEN_UNITARIO = {str(k): float(v) for k, v in (d.get("margen_unitario_eur") or {}).items()}
     config.REACTIVAR_ORDEN = {str(k): float(v) for k, v in (d.get("reactivar") or {}).items()}
     config.LIMITES = list(d.get("limites") or [])
+    config.VISIBILIDAD = dict(d.get("visibilidad") or {})
     return f"tope {tope:.0f} €/mes, modo {modo}, {len(config.NO_REACTIVAR)} campañas que no se reactivan"
 
 
@@ -100,4 +106,53 @@ def comprobar_limites(cuenta, series, hoy):
                         f"nada). {lim.get('accion') or 'Reestructurar'}"))
         else:
             out.append(("limite_estado", asin, f"Límite de Juan ({asin}): {estado}; límite {maximo:.0f} € sin ganancia"))
+    return out
+
+
+def visibilidad(cuenta, series, hoy):
+    """Plan de visibilidad de Juan: ({id elemento: puja} vigentes hoy, aviso (tipo, clave, mensaje) o None)."""
+    from datetime import date as _d, timedelta
+    v = config.VISIBILIDAD
+    pujas = {str(k): float(x) for k, x in (v.get("pujas") or {}).items()}
+    if not pujas:
+        return {}, None
+    desde = _d.fromisoformat(str(v.get("desde"))[:10]) if v.get("desde") else hoy
+    hasta = _d.fromisoformat(str(v.get("hasta"))[:10]) if v.get("hasta") else None
+    if hoy < desde:
+        return {}, None
+    if hasta and hoy > hasta:
+        return {}, ("visibilidad", "plan", f"Plan de visibilidad terminado el {hasta:%d/%m}: vuelven las pujas de equilibrio")
+    tope = float(v.get("tope_perdida_semana_eur") or 0)
+    inicio = max(desde, hoy - timedelta(days=hoy.weekday()))     # lunes de esta semana (o el día que empezó)
+    gasto = margen = 0.0
+    for k in pujas:
+        el = cuenta.elementos.get(k)
+        asin = cuenta.producto_de_grupo(el.id_grupo) if el else None
+        m = series.acumulado(k, hoy) - series.acumulado(k, inicio - timedelta(days=1))
+        gasto += m.coste
+        margen += m.compras * config.MARGEN_UNITARIO.get(asin, 0.0)
+    perdida = gasto - margen
+    estado = (f"desde el {inicio:%d/%m}: {gasto:.2f} € gastados, {margen:.2f} € de margen de las ventas, "
+              f"pérdida {perdida:.2f} € (tope {tope:.0f} €/semana)")
+    if tope and perdida >= tope:
+        return {}, ("visibilidad", "plan", f"PLAN DE VISIBILIDAD PARADO hasta el lunes: {estado}. Vuelven las pujas de equilibrio")
+    return pujas, ("visibilidad_estado", "plan", f"Plan de visibilidad activo, {estado}")
+
+
+def cambios_visibilidad(cuenta, pujas):
+    """Cambios de puja para llevar cada elemento del plan a su puja fijada."""
+    from modelo import ACTIVO, PUJA, Cambio
+    motivo = config.VISIBILIDAD.get("motivo") or "Plan de visibilidad de Juan"
+    out = []
+    for k, puja in sorted(pujas.items()):
+        el = cuenta.elementos.get(k)
+        if el is None or el.estado != ACTIVO or el.puja is None or abs(el.puja - puja) < 0.01:
+            continue
+        camp = cuenta.campanas.get(el.id_campana)
+        out.append(Cambio(tipo=PUJA, clave=el.clave, producto=cuenta.producto_de_grupo(el.id_grupo),
+                          id_campana=el.id_campana, id_grupo=el.id_grupo, campana=camp.nombre if camp else "",
+                          texto=el.texto, coincidencia=el.coincidencia, antes=el.puja, despues=puja,
+                          motivo=f"{motivo}: puja fijada a {puja:.2f} € (por encima del equilibrio, con tope de pérdida "
+                                 f"semanal {float(config.VISIBILIDAD.get('tope_perdida_semana_eur') or 0):.0f} €)",
+                          extra={"visibilidad": True}))
     return out

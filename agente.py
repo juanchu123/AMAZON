@@ -402,6 +402,13 @@ def ejecutar(fuente, doc, catalogo, hoy, ahora, simular=False, investigar="auto"
         if c.tipo == CREAR_CAMPANA:
             c.despues = eur
     cambios = pujas.proponer_estrategias(cuenta) + cambios_empl + res_t.negativas + decision.cambios + nuevas + cambios_pres
+    # plan de visibilidad de Juan: sus pujas fijadas sustituyen a las que proponga el motor para esos elementos
+    vis, aviso_vis = directivas.visibilidad(cuenta, series, hoy)
+    if aviso_vis:
+        decision.alertas.append(aviso_vis)
+        resumen.append(("Plan de visibilidad", aviso_vis[2]))
+    if vis:
+        cambios = [c for c in cambios if not (c.tipo == PUJA and str(c.clave) in vis)] + directivas.cambios_visibilidad(cuenta, vis)
     vetados = [(c, directivas.vetado(c, hoy)) for c in cambios]
     cambios = [c for c, v in vetados if not v]
     aprobados, descartados = safety.filtrar(cambios, cuenta, hoy, gasto_mes,

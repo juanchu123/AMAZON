@@ -110,6 +110,10 @@ cambio pregúntate si un buen gestor lo haría **con estos datos y en estas fech
 el porqué en LECCIONES.md. No vetes por gusto: el motor ya es prudente; veta cuando sepas algo que él no sabe
 (un evento, el producto, una venta que no ha visto).
 
+**Plan de visibilidad** (`directivas.json` → `visibilidad`, plan B de Juan desde el 18/10): el motor fija esas pujas
+y para el plan solo si la pérdida de la semana llega al tope; di en el parte cuánto lleva perdido la semana
+(línea "Plan de visibilidad" del Resumen).
+
 Comprueba también que el Excel no repite nada que ya exista (una negativa o keyword repetida puede hacer que
 Amazon rechace la subida entera).
 

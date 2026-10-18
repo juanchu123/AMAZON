@@ -87,6 +87,7 @@ def acos_max_cosecha(asin=None):
 
 MARGEN_UNITARIO = {}                # {asin: € de margen por unidad antes de publicidad} dado por Juan (directivas)
 LIMITES = []                        # límites de gasto sin ganancia por producto (directivas)
+VISIBILIDAD = {}                    # plan de visibilidad de Juan: pujas fijadas con tope de pérdida semanal (directivas)
 REACTIVAR_ORDEN = {}                # {id campaña: presupuesto €/día} que Juan ha pedido reactivar (directivas)
 
 # Ajustes de emplazamiento (emplazamientos.py; gestionados por el agente, Juan 30/09/2026)

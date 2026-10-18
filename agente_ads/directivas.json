@@ -21,7 +21,10 @@
     "2026-10-13 Agente ADS: Pinza - Principal V2 apareció EN PAUSA (ayer gastó 1,60 € y estaba activa; no lo hizo el agente ni ningún Excel, que Juan no subió). Se respeta como decisión de Juan: fuera de 'reactivar', dentro de 'no_reactivar' hasta que él diga otra cosa. Pinza desde el 09/10: 4,80 € gastados, 1 venta (-1,13 € con 3,67 €/ud).",
     "2026-10-13 Agente ADS: sin respuesta de Juan sobre las ASIN de Pinza - Pruebas: se aplica lo propuesto el 12/10 (B09P3SZB6P sigue a 0,40 €, la única que ha vendido; B08N4KR6PK y B07H996QMD a 0,28 €).",
     "2026-10-16 Agente ADS: Juan subió bulk_cambios_2026-10-14 (B08N4KR6PK 0,29 €, B07H996QMD 0,27 €, 2 negativas exactas en la automática). Límite de 5 € de la pinza superado (5,12 € desde el 09/10, 1 venta, -1,45 €): lo perdido son las keywords de Pinza - Principal V2 (3,47 € sin venta), ya en pausa; lo que queda (ASIN de Pinza - Pruebas) es lo que vendió. Se mantiene así y se veta bajar B09P3SZB6P.",
-    "2026-10-18 Agente ADS: se quita el veto a la puja de B09P3SZB6P (puesto el 16/10): desde entonces 1,37 € y 4 clics más sin venta; ya va 3,53 € / 11 clics / 1 venta (ACOS 39 %, por encima del equilibrio 33 %). El motor decide su puja."
+    "2026-10-18 Agente ADS: se quita el veto a la puja de B09P3SZB6P (puesto el 16/10): desde entonces 1,37 € y 4 clics más sin venta; ya va 3,53 € / 11 clics / 1 venta (ACOS 39 %, por encima del equilibrio 33 %). El motor decide su puja.",
+    "2026-10-18 Juan (correo): 'Hagamos el plan B' (comprar visibilidad con tope de pérdida). No dio cifra: se usa la del ejemplo del correo, 10 €/semana, hasta que diga otra. Pujas a 0,40 € en lo que ha vendido: automática 'substitutes' (rejilla), exacta 'soporte teléfono coche' (rejilla), ASIN B0F3J3QHD7 (rejilla), B08N4KR6PK y B09P3SZB6P (pinza). Si la pérdida de la semana llega a 10 €, el plan se para solo hasta el lunes. Se quita el veto a B0F3J3QHD7 (lo cubre el plan).",
+    "2026-10-18 Juan (correo): 'Yo pausé pinza V2'. Sigue en no_reactivar.",
+    "2026-10-18 Juan (correo): 'Haz el cupón'. Se le manda la ficha del cupón para crearlo en Seller Central (el agente no tiene acceso)."
   ],
   "actualizado": "2026-10-18",
   "margen_unitario_eur": {
@@ -43,12 +46,6 @@
       "texto": "soporte teléfono móvil coche",
       "hasta": "2026-12-31",
       "motivo": "vendió el 10/10 en la automática y la exacta 'soporte teléfono coche' NO lo captura (tiene una palabra más): negarlo cortaría una búsqueda que vende"
-    },
-    {
-      "tipo": "puja",
-      "clave": "269607841776502",
-      "hasta": "2026-10-24",
-      "motivo": "ASIN B0F3J3QHD7 creado el 10/10 como prueba; desde su ficha la rejilla convirtió 1 de 5 clics (20 %): con esa conversión 0,30 € es rentable. Bajarlo a 0,14 € con la media del producto mataría la prueba antes de empezar"
     },
     {
       "tipo": "puja",
@@ -74,5 +71,18 @@
       "vaso",
       "portavasos"
     ]
+  },
+  "visibilidad": {
+    "desde": "2026-10-18",
+    "hasta": "2026-12-02",
+    "tope_perdida_semana_eur": 10,
+    "pujas": {
+      "62059747158919": 0.4,
+      "215456534285610": 0.4,
+      "269607841776502": 0.4,
+      "204950122881357": 0.4,
+      "119898984861471": 0.4
+    },
+    "motivo": "Plan B de Juan (18/10): comprar alcance en lo que ya ha vendido, perdiendo como mucho 10 € a la semana"
   }
 }
