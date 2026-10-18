@@ -46,3 +46,9 @@ números" es el aprendizaje de Python (hojas Tickets y Aprendizaje de la memoria
 - 14/10: con todas las pujas al equilibrio (rejilla 21 %) la cuenta casi no sale: 0,21 € y 193 impresiones el 13/10.
   No pierde dinero, pero tampoco vende. Hay que buscar alcance donde la conversión es alta (fichas de la
   competencia que ya vendieron, exactas concretas) en vez de subir pujas genéricas.
+
+## 18/10 — Los clics recientes sin venta no cuentan para el motor, pero sí para el dinero
+B09P3SZB6P: el motor proponía subir de 0,40 a 0,43 € porque solo ve 2 clics maduros (más de 7 días) y 1 venta.
+Pero los 9 clics de los últimos días (2,47 €) no han vendido, y la pinza ya pasó el límite de 5 € de Juan.
+Hay que esperar a que maduren antes de subir: se veta la subida hasta el 25/10. Al revés, el 16/10 se vetó
+bajarla con 1 venta en 5 clics; dos días después ya no se sostenía. Con tan pocos clics, los vetos deben ser cortos.
