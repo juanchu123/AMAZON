@@ -11,20 +11,22 @@
     "1a1437f6a850c1f7",
     "1a148a2a0bd406c8",
     "1a14dc8f51e69d15",
-    "1a1509d1084ea832"
+    "1a1509d1084ea832",
+    "1a152f49c649f69a",
+    "1a152f53bdfa4700"
   ],
   "mensajes_procesados": [
     "1a1212c66c053735",
     "1a15046c9bd872f2"
   ],
-  "ultimo_parte": "2026-10-18",
-  "ultimo_informe_semanal": "2026-10-12",
+  "ultimo_parte": "2026-10-19",
+  "ultimo_informe_semanal": "2026-10-19",
   "hilo_principal": "1a12127b5bba64d6",
   "pendiente_juan": [
-    "18/10: subir bulk_cambios_2026-10-18.xlsx (plan B, 4 pujas a 0,40 €)",
-    "Confirmar el tope del plan B (se usa 10 €/semana, la cifra del ejemplo)",
-    "Crear el cupón de la pinza (5 %, 20/11-02/12, 20 €) antes del 30/10 y decir la tarifa que pide Amazon",
-    "Lunes 19/10: informe semanal + más ASIN de competencia para segmentar"
+    "Subir bulk_cambios_2026-10-19.xlsx (plan B, 4 pujas a 0,40 €)",
+    "Confirmar el tope del plan B (10 €/semana) y si sube para la semana de Black Friday (¿20 €?)",
+    "¿Subir 1 € el precio de la rejilla o bajar su coste?",
+    "Crear el cupón de la pinza (5 %, 20/11-02/12, 20 €) antes del 30/10"
   ],
   "hilo_estrategia": "1a12ee5d5fba55a3"
 }

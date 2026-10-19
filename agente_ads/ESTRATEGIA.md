@@ -53,3 +53,9 @@ lo relee en cada ronda y lo respeta; cuando algo cambia, lo actualiza con la fec
 ## Cupón de Black Friday (Juan, 18/10/2026: "Haz el cupón")
 - Propuesta enviada: pinza B0DCZS1NR6, 5 %, del 20/11 al 02/12/2026, un canje por cliente, presupuesto 20 €.
   Rejilla sin cupón (5 % se come 0,71 € de 3,03 €). Lo crea Juan en Seller Central antes del 30/10.
+
+## Semana del 19/10 (informe enviado a Juan)
+- 12-18/10: 5,93 € y 0 ventas por anuncios (semana anterior 23,11 € y 5 ventas): las pujas al equilibrio cortaron gasto y ventas.
+- Propuesto: plan B en marcha (pendiente de que Juan suba el Excel); la automática a 0,40 € para descubrir fichas de
+  competencia que vendan y pasarlas a segmentación por ASIN; 0,50 € en lo que venda la semana de Black Friday; preguntar
+  a Juan por subir 1 € el precio de la rejilla (margen 3,03 € → ~4 €, clic rentable de ~0,26 € a ~0,35 €).
