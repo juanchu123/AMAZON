@@ -52,3 +52,10 @@ B09P3SZB6P: el motor proponía subir de 0,40 a 0,43 € porque solo ve 2 clics m
 Pero los 9 clics de los últimos días (2,47 €) no han vendido, y la pinza ya pasó el límite de 5 € de Juan.
 Hay que esperar a que maduren antes de subir: se veta la subida hasta el 25/10. Al revés, el 16/10 se vetó
 bajarla con 1 venta en 5 clics; dos días después ya no se sostenía. Con tan pocos clics, los vetos deben ser cortos.
+
+## 22/10 — Un Excel bien hecho puede llegar roto: comprobar lo que llega, no lo que se manda
+El bulk del 19/10 estaba bien en disco, pero el adjunto copiado a mano en base64 llegó con bytes cambiados (desde el
+3036) y Amazon lo rechazó entero («archivo no válido o dañado»). Juan acabó poniendo las pujas del plan B a mano. Desde
+hoy el bulk lleva solo la hoja de Sponsored Products (la mitad de caracteres que copiar) y cada envío se verifica
+releyendo el correo (RAW) con `agente_ads/comprobar_adjunto.py`. Si Juan dice «error» y adjunta un `report.xlsx`,
+es el informe de errores de Amazon: leerlo antes de nada.

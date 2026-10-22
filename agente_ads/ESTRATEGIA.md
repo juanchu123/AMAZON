@@ -59,3 +59,6 @@ lo relee en cada ronda y lo respeta; cuando algo cambia, lo actualiza con la fec
 - Propuesto: plan B en marcha (pendiente de que Juan suba el Excel); la automática a 0,40 € para descubrir fichas de
   competencia que vendan y pasarlas a segmentación por ASIN; 0,50 € en lo que venda la semana de Black Friday; preguntar
   a Juan por subir 1 € el precio de la rejilla (margen 3,03 € → ~4 €, clic rentable de ~0,26 € a ~0,35 €).
+- 22/10: el Excel del plan B llegó dañado (base64 mal copiado) y Juan puso las 5 pujas a 0,40 € a mano (~19-20/10).
+  Primera venta del plan: rejilla 10,74 € el 20/10 en la automática, desde la ficha B0C1NK79FK (candidata a ASIN
+  propio si vuelve a vender). Pérdida de la semana: 0,79 € de 10 €.

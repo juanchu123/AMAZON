@@ -310,6 +310,9 @@ class FuenteBulk:
                         "Tipo de coincidencia": kw["coincidencia"]})
         for base in filas:
             ws.append([base.get(c) for c in cols])
+        # Solo la hoja con cambios: Amazon procesa las que vienen y el adjunto pesa la mitad.
+        for otra in [h for h in wb.worksheets if h is not ws]:
+            wb.remove(otra)
         self.salida_dir.mkdir(parents=True, exist_ok=True)
         salida = self.salida_dir / f"{nombre}_{hoy:%Y-%m-%d}.xlsx"
         n = 1

@@ -137,6 +137,10 @@ Gmail `send_message` a yubunama62@gmail.com, en el hilo principal (`replyThreadI
   3. **Necesito tu OK para** (solo si hay `propuestas`): cada una con su coste al día.
   4. **Lo que viene:** calendario y lo aprendido (1-3 líneas).
 - Si no hay cambios: parte de 4 líneas, sin adjunto.
+- **Comprueba el adjunto que llegó** (el 19/10 una letra mal copiada del base64 dañó el Excel y Amazon lo rechazó):
+  `get_message` del mensaje enviado con `messageFormat` RAW y después
+  `python agente_ads/comprobar_adjunto.py salidas/<hoy>/bulk_cambios_<hoy>.xlsx` (y lo mismo con `propuestas`).
+  Si dice MAL, reenvía el Excel en el mismo hilo («el anterior llegó dañado, este es el bueno») y vuelve a comprobar.
 Guarda el id del mensaje en `estado.json` → `mensajes_enviados`.
 
 ### 7. Los lunes: informe de estrategia
