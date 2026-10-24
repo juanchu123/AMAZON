@@ -1,0 +1,129 @@
+{
+  "asin": "B0DCZS1NR6",
+  "informe_datos": {
+    "fuente": "./FreshFinder_Amazon_Ads_historico.xlsx",
+    "grupos": [
+      {
+        "palabras": "Campaña con ajustes preestablecidos - B0DCZS1NR6 - 27/9/2024 19:18:30 / Grupo de anuncios - 27/9/2024 19:18:30",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Campaign - 13/4/2025 9:51:56.744 / Promoción mala",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Nuevo producto - B0DCZS1NR6 - 21/10/2024 9:39:18 / Grupo de anuncios - 21/10/2024 9:39:18",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "SP Campaign Recommendation - Suggested Products - 04/03/2025 ded33a / Genérico - Car Electronics Other",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte pinza bruh / Grupo de anuncios - 11/1/2025 0:00:19.292",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Campaña - 2/5/2025 11:00:04.617 / el malo va bien :(",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte pinza a ver / Pinza",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte móvil pinza / Pinza",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 0.992,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte móvil AC / Básico",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 0.793,
+        "usado": false
+      },
+      {
+        "palabras": "Soporte móvil pinza / Salpicadero sin ventosa",
+        "asin": "B0DCZS1NR6",
+        "producto": "Soporte Móvil para Coche con Pinza Ajustable 360° para Salpicadero/Par",
+        "cuota_gasto": 0.679,
+        "usado": false
+      }
+    ]
+  },
+  "validacion": {
+    "logloss_modelo": 0.2923824948032551,
+    "logloss_media": 0.3509926923763333,
+    "mejora_pct": 16.698409638180312
+  },
+  "ticket_medio_eur": 11.24,
+  "cpc_medio_eur": 0.61,
+  "candidatas_generadas": 263,
+  "coeficientes_conversion": {
+    "b=coche_pinza": 0.658,
+    "w=pinza": 0.54,
+    "b=soporte_movil": 0.305,
+    "match=amplia|especifica=si": 0.298,
+    "b=movil_coche": 0.249,
+    "w=soporte": 0.228,
+    "match=frase": 0.169,
+    "n_palabras": 0.133,
+    "match=exacta|especifica=si": 0.131,
+    "w=movil": 0.117,
+    "match=frase|especifica=si": 0.111,
+    "w=coche": 0.091,
+    "match=frase|especifica=no": 0.059,
+    "b=pinza_salpicadero": 0.033,
+    "w=salpicadero": -0.003,
+    "b=car_mount": -0.012,
+    "w=car": -0.012,
+    "w=mount": -0.012,
+    "b=soport_movil": -0.013,
+    "w=soport": -0.013,
+    "b=telefono_360": -0.014,
+    "w=360": -0.014,
+    "b=moviles_coche": -0.019,
+    "b=sujeta_moviles": -0.019,
+    "w=moviles": -0.019,
+    "b=telefono_coche": -0.031,
+    "b=soporte_coche": -0.034,
+    "b=coche_salpicadero": -0.036,
+    "b=soporte_telefono": -0.044,
+    "w=telefono": -0.044,
+    "match=exacta": -0.047,
+    "b=sujetar_movil": -0.057,
+    "w=sujetar": -0.057,
+    "b=pinza_coche": -0.067,
+    "b=movil_pinza": -0.118,
+    "b=sujeta_movil": -0.118,
+    "match=amplia": -0.121,
+    "w=sujeta": -0.137,
+    "match=exacta|especifica=no": -0.178,
+    "match=amplia|especifica=no": -0.419
+  },
+  "acos_objetivo_pct": 35.0
+}

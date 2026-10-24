@@ -1,0 +1,12 @@
+{"data":[
+{"targetingValue":"substitutes","targetingType":"TARGETING_EXPRESSION_PREDEFINED","adGroupId":"498431196919443","campaignId":"109312847405161","spend":2.39,"sales":0,"impressions":464,"clicks":5,"orders":0},
+{"targetingValue":"B08N4KR6PK","targetingType":"ASIN_SAME_AS","adGroupId":"47605217986123","campaignId":"141825204081039","spend":0.3,"sales":0,"impressions":4,"clicks":1,"orders":0},
+{"targetingValue":"B09P3SZB6P","targetingType":"ASIN_SAME_AS","adGroupId":"47605217986123","campaignId":"141825204081039","spend":0.26,"sales":8.99,"impressions":7,"clicks":1,"orders":1},
+{"targetingValue":"B07H996QMD","targetingType":"ASIN_SAME_AS","adGroupId":"47605217986123","campaignId":"141825204081039","spend":0,"sales":0,"impressions":1,"clicks":0,"orders":0},
+{"targetingValue":"rejilla móvil coche","targetingType":"PHRASE","adGroupId":"78232100921932","campaignId":"92431837179431","spend":0,"sales":0,"impressions":4,"clicks":0,"orders":0},
+{"targetingValue":"soporte coche para teléfono móvil","targetingType":"EXACT","adGroupId":"78232100921932","campaignId":"92431837179431","spend":0,"sales":0,"impressions":1,"clicks":0,"orders":0},
+{"targetingValue":"soporte móvil coche ventilación","targetingType":"PHRASE","adGroupId":"78232100921932","campaignId":"92431837179431","spend":0,"sales":0,"impressions":1,"clicks":0,"orders":0},
+{"targetingValue":"soporte para móvil en coche","targetingType":"EXACT","adGroupId":"78232100921932","campaignId":"92431837179431","spend":0,"sales":0,"impressions":29,"clicks":0,"orders":0},
+{"targetingValue":"soporte rejilla móvil","targetingType":"PHRASE","adGroupId":"78232100921932","campaignId":"92431837179431","spend":0,"sales":0,"impressions":1,"clicks":0,"orders":0},
+{"targetingValue":"soporte teléfono para rejilla","targetingType":"PHRASE","adGroupId":"78232100921932","campaignId":"92431837179431","spend":0,"sales":0,"impressions":0,"clicks":0,"orders":0}
+]}

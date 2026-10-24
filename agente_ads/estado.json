@@ -1,0 +1,36 @@
+{
+  "mensajes_enviados": [
+    "1a12127b5bba64d6",
+    "1a121399767781c8",
+    "1a125f78e47ff085",
+    "1a129c0bcfcafbf4",
+    "1a12ee54c5cc8cb0",
+    "1a12ee5d5fba55a3",
+    "1a1340f64ef2eaf7",
+    "1a13932b642b25d9",
+    "1a1437f6a850c1f7",
+    "1a148a2a0bd406c8",
+    "1a14dc8f51e69d15",
+    "1a1509d1084ea832",
+    "1a152f49c649f69a",
+    "1a152f53bdfa4700",
+    "1a164c89391f991c",
+    "1a16789230c9d4c4",
+    "1a16cb12ba9be2d8"
+  ],
+  "mensajes_procesados": [
+    "1a1212c66c053735",
+    "1a15046c9bd872f2",
+    "1a15419e42a1854a"
+  ],
+  "ultimo_parte": "2026-10-24",
+  "ultimo_informe_semanal": "2026-10-19",
+  "hilo_principal": "1a12127b5bba64d6",
+  "pendiente_juan": [
+    "Subir bulk_cambios_2026-10-24.xlsx (negativa de frase «carro» en Rejilla ASIN competencia; verificado)",
+    "Confirmar el tope del plan B (10 €/semana) y si sube para la semana de Black Friday (¿20 €?)",
+    "¿Subir 1 € el precio de la rejilla o bajar su coste?",
+    "Crear el cupón de la pinza (5 %, 20/11-02/12, 20 €) antes del 30/10"
+  ],
+  "hilo_estrategia": "1a12ee5d5fba55a3"
+}
