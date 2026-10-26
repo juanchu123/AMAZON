@@ -62,3 +62,11 @@ lo relee en cada ronda y lo respeta; cuando algo cambia, lo actualiza con la fec
 - 22/10: el Excel del plan B llegó dañado (base64 mal copiado) y Juan puso las 5 pujas a 0,40 € a mano (~19-20/10).
   Primera venta del plan: rejilla 10,74 € el 20/10 en la automática, desde la ficha B0C1NK79FK (candidata a ASIN
   propio si vuelve a vender). Pérdida de la semana: 0,79 € de 10 €.
+
+## Semana del 26/10 (informe enviado a Juan)
+- 19-25/10 (1.ª semana del plan B): 9,45 €, 26 clics, 1 venta (rejilla, automática, desde la ficha B0C1NK79FK). Rejilla −4,92 €,
+  pinza −1,50 €; pérdida del plan ≈6 € de 10 €. Octubre hasta el 25: 60,95 € y 9 ventas.
+- B09P3SZB6P sale del plan B (≈10 clics sin venta desde el 16/10; la pinza pasó el límite de 5 €): vuelve a 0,29 €.
+- Propuesto: 2.ª semana del plan; si el 01/11 la exacta «soporte teléfono coche» y B0F3J3QHD7 siguen sin vender con ~20 clics,
+  vuelven al equilibrio y el plan queda solo en la automática. Idea: B0C1NK79FK como segmentación de producto a 0,30 € (prueba).
+

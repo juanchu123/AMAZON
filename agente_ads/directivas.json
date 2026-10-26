@@ -24,7 +24,9 @@
     "2026-10-18 Agente ADS: se quita el veto a la puja de B09P3SZB6P (puesto el 16/10): desde entonces 1,37 € y 4 clics más sin venta; ya va 3,53 € / 11 clics / 1 venta (ACOS 39 %, por encima del equilibrio 33 %). El motor decide su puja.",
     "2026-10-18 Juan (correo): 'Hagamos el plan B' (comprar visibilidad con tope de pérdida). No dio cifra: se usa la del ejemplo del correo, 10 €/semana, hasta que diga otra. Pujas a 0,40 € en lo que ha vendido: automática 'substitutes' (rejilla), exacta 'soporte teléfono coche' (rejilla), ASIN B0F3J3QHD7 (rejilla), B08N4KR6PK y B09P3SZB6P (pinza). Si la pérdida de la semana llega a 10 €, el plan se para solo hasta el lunes. Se quita el veto a B0F3J3QHD7 (lo cubre el plan).",
     "2026-10-18 Juan (correo): 'Yo pausé pinza V2'. Sigue en no_reactivar.",
-    "2026-10-18 Juan (correo): 'Haz el cupón'. Se le manda la ficha del cupón para crearlo en Seller Central (el agente no tiene acceso)."
+    "2026-10-18 Juan (correo): 'Haz el cupón'. Se le manda la ficha del cupón para crearlo en Seller Central (el agente no tiene acceso).",
+    "2026-10-26: 'posavasos'/'portavasos' son ajenas también para la rejilla (búsqueda 'posavasos coche rejilla ventilacion' en la automática, 0,40 € sin venta)",
+    "2026-10-26: B09P3SZB6P sale del plan B (≈10 clics desde el 16/10 sin venta; la pinza pasó el límite de 5 € de Juan, que delega reestructurarla): vuelve a la puja de equilibrio"
   ],
   "actualizado": "2026-10-18",
   "margen_unitario_eur": {
@@ -48,12 +50,6 @@
       "motivo": "vendió el 10/10 en la automática y la exacta 'soporte teléfono coche' NO lo captura (tiene una palabra más): negarlo cortaría una búsqueda que vende"
     },
     {
-      "tipo": "puja",
-      "clave": "119898984861471",
-      "hasta": "2026-10-25",
-      "motivo": "B09P3SZB6P: el motor quiere subir a 0,43 € porque solo cuenta 2 clics maduros, pero los 9 recientes no han vendido (3,53 € / 11 clics / 1 venta, ACOS 39 % > equilibrio 33 %) y la pinza ya pasó el límite de 5 € de Juan. No se sube hasta que maduren (25/10)"
-    },
-    {
       "tipo": "añadir_keyword",
       "texto": "soporte movil coche pinza fuerte",
       "hasta": "2026-10-18",
@@ -68,7 +64,12 @@
   ],
   "palabras_ajenas_extra": {
     "B0DCZS1NR6": [
-      "vaso",
+      "portavasos",
+      "posavasos",
+      "vaso"
+    ],
+    "B0DHYBY6MS": [
+      "posavasos",
       "portavasos"
     ]
   },
@@ -80,8 +81,7 @@
       "62059747158919": 0.4,
       "215456534285610": 0.4,
       "269607841776502": 0.4,
-      "204950122881357": 0.4,
-      "119898984861471": 0.4
+      "204950122881357": 0.4
     },
     "motivo": "Plan B de Juan (18/10): comprar alcance en lo que ya ha vendido, perdiendo como mucho 10 € a la semana"
   }
