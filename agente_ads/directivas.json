@@ -26,9 +26,12 @@
     "2026-10-18 Juan (correo): 'Yo pausé pinza V2'. Sigue en no_reactivar.",
     "2026-10-18 Juan (correo): 'Haz el cupón'. Se le manda la ficha del cupón para crearlo en Seller Central (el agente no tiene acceso).",
     "2026-10-26: 'posavasos'/'portavasos' son ajenas también para la rejilla (búsqueda 'posavasos coche rejilla ventilacion' en la automática, 0,40 € sin venta)",
-    "2026-10-26: B09P3SZB6P sale del plan B (≈10 clics desde el 16/10 sin venta; la pinza pasó el límite de 5 € de Juan, que delega reestructurarla): vuelve a la puja de equilibrio"
+    "2026-10-26: B09P3SZB6P sale del plan B (≈10 clics desde el 16/10 sin venta; la pinza pasó el límite de 5 € de Juan, que delega reestructurarla): vuelve a la puja de equilibrio",
+    "2026-10-30 Juan (correo): 'Plan B 10 euros': segunda semana (y siguientes, también Black Friday) con tope de pérdida de 10 €/semana.",
+    "2026-10-30 Juan (correo): 'Haz la prueba': B0C1NK79FK (de su ficha vino la venta de la rejilla del 20/10) como segmentación por ASIN a 0,30 € en Rejilla - ASIN competencia (174206214857167), en el bulk del 30/10. Cuando exista su id, entra en visibilidad.pujas a 0,30 € (dentro del tope de 10 €/semana); stop-loss normal.",
+    "2026-10-30 Juan (correo): 'sube 1 euros la rejilla, sí'. El precio se cambia en Seller Central (el agente no tiene acceso): lo hace Juan. Cuando el nuevo precio se vea en las ventas, margen_unitario_eur de B0DHYBY6MS ≈ 3,03 + 0,68 = 3,71 € (1 € con IVA = 0,83 € sin IVA menos ~15 % de comisión) → ACOS de equilibrio ≈ 24 %."
   ],
-  "actualizado": "2026-10-18",
+  "actualizado": "2026-10-30",
   "margen_unitario_eur": {
     "B0DCZS1NR6": 3.67,
     "B0DHYBY6MS": 3.03

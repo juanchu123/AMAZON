@@ -70,3 +70,9 @@ lo relee en cada ronda y lo respeta; cuando algo cambia, lo actualiza con la fec
 - Propuesto: 2.ª semana del plan; si el 01/11 la exacta «soporte teléfono coche» y B0F3J3QHD7 siguen sin vender con ~20 clics,
   vuelven al equilibrio y el plan queda solo en la automática. Idea: B0C1NK79FK como segmentación de producto a 0,30 € (prueba).
 
+
+### 30/10 — Juan decide
+- Plan B: segunda semana con tope de 10 €/semana (también la de Black Friday).
+- Prueba B0C1NK79FK a 0,30 € en Rejilla - ASIN competencia (bulk del 30/10). Se juzga a los 14 días o con el stop-loss.
+- Rejilla +1 € de precio (lo cambia Juan en Seller Central). Con el nuevo precio, margen ≈ 3,71 € y equilibrio ≈ 24 %.
+- Cupón de la pinza: sin respuesta el último día (30/10); sin cupón, Black Friday solo con pujas.

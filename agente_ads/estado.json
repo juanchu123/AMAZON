@@ -21,22 +21,23 @@
     "1a17737b7bca5043",
     "1a17738bb9223dc7",
     "1a1890a9c315ab3d",
-    "1a18bccfee683025"
+    "1a18bccfee683025",
+    "1a18d866b72f4a7d"
   ],
   "mensajes_procesados": [
     "1a1212c66c053735",
     "1a15046c9bd872f2",
-    "1a15419e42a1854a"
+    "1a15419e42a1854a",
+    "1a18d81dbff15cfe"
   ],
   "ultimo_parte": "2026-10-30",
   "ultimo_informe_semanal": "2026-10-26",
   "hilo_principal": "1a12127b5bba64d6",
   "pendiente_juan": [
-    "Subir bulk_cambios_2026-10-29.xlsx (sustituye al del 26/10: B09P3SZB6P a 0,27 € y negativa «posavasos»; verificado)",
-    "¿Segunda semana del plan B con tope 10 €? ¿20 € en la semana de Black Friday?",
-    "¿Añadir B0C1NK79FK como prueba en Rejilla - ASIN competencia a 0,30 €?",
-    "¿Subir 1 € el precio de la rejilla?",
-    "Crear el cupón de la pinza (5 %, 20/11-02/12, 20 €) antes del 30/10"
+    "Subir bulk_cambios_2026-10-30.xlsx (sustituye a los del 26 y 29: prueba B0C1NK79FK a 0,30 €, B09P3SZB6P a 0,27 €, negativa «posavasos»; verificado)",
+    "Subir 1 € el precio de la rejilla en Seller Central (cuando se vea, margen B0DHYBY6MS ≈ 3,71 €)",
+    "Cupón de la pinza: plazo de Black Friday vencido el 30/10 sin respuesta",
+    "Cuando exista el id de B0C1NK79FK: meterlo en visibilidad.pujas a 0,30 €"
   ],
   "hilo_estrategia": "1a12ee5d5fba55a3"
 }
