@@ -76,3 +76,8 @@ lo relee en cada ronda y lo respeta; cuando algo cambia, lo actualiza con la fec
 - Prueba B0C1NK79FK a 0,30 € en Rejilla - ASIN competencia (bulk del 30/10). Se juzga a los 14 días o con el stop-loss.
 - Rejilla +1 € de precio (lo cambia Juan en Seller Central). Con el nuevo precio, margen ≈ 3,71 € y equilibrio ≈ 24 %.
 - Cupón de la pinza: sin respuesta el último día (30/10); sin cupón, Black Friday solo con pujas.
+
+### 01/11 — revisión del plan B
+- B0F3J3QHD7 sale del plan: 13 clics y 4,60 € sin venta (pasa el stop-loss de 4 €). Puja de equilibrio (0,10 €), sin pausar.
+- La exacta «soporte teléfono coche» sigue a 0,40 € (9 clics, 1 venta, ACOS 39 %).
+- En el plan: automática de la rejilla, exacta, B08N4KR6PK y la prueba B0C1NK79FK (0,30 €). Tope 10 €/semana.

@@ -23,7 +23,8 @@
     "1a1890a9c315ab3d",
     "1a18bccfee683025",
     "1a18d866b72f4a7d",
-    "1a190f1ef1940c86"
+    "1a190f1ef1940c86",
+    "1a196191ef58807c"
   ],
   "mensajes_procesados": [
     "1a1212c66c053735",
@@ -31,10 +32,11 @@
     "1a15419e42a1854a",
     "1a18d81dbff15cfe"
   ],
-  "ultimo_parte": "2026-10-31",
+  "ultimo_parte": "2026-11-01",
   "ultimo_informe_semanal": "2026-10-26",
   "hilo_principal": "1a12127b5bba64d6",
   "pendiente_juan": [
+    "Subir bulk_cambios_2026-11-01.xlsx (B0F3J3QHD7 a 0,10 €; verificado)",
     "Subir 1 € el precio de la rejilla en Seller Central (cuando se vea, margen B0DHYBY6MS ≈ 3,71 €)",
     "Cupón de la pinza: plazo de Black Friday vencido el 30/10 sin respuesta"
   ],
