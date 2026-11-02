@@ -81,3 +81,8 @@ lo relee en cada ronda y lo respeta; cuando algo cambia, lo actualiza con la fec
 - B0F3J3QHD7 sale del plan: 13 clics y 4,60 € sin venta (pasa el stop-loss de 4 €). Puja de equilibrio (0,10 €), sin pausar.
 - La exacta «soporte teléfono coche» sigue a 0,40 € (9 clics, 1 venta, ACOS 39 %).
 - En el plan: automática de la rejilla, exacta, B08N4KR6PK y la prueba B0C1NK79FK (0,30 €). Tope 10 €/semana.
+
+### Semana del 02/11
+- 26/10-01/11: 7,74 € de gasto, 1 venta (pinza, B09P3SZB6P a 0,24 €). Pinza +1,33 € la semana; rejilla −5,40 €. Plan B −5,80 € de 10 €.
+- Propuesto: plan B en Black Friday sin la automática de la rejilla (exacta, B08N4KR6PK y B0C1NK79FK); revisar la puja de B07H996QMD y B0BS1TQJH2; cupón de Navidad de la pinza (03/12-24/12).
+- Preguntado: precio nuevo de la rejilla.
