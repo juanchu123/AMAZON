@@ -1,0 +1,14 @@
+{"placements":[
+{"campaignId":"109312847405161","placement":"Rest of Search","biddingStrategy":"LEGACY_FOR_SALES","spend":26.1,"sales":28.91,"impressions":6101,"clicks":53,"orders":3,"bidAdjustments":[]},
+{"campaignId":"109312847405161","placement":"Top of Search","biddingStrategy":"LEGACY_FOR_SALES","spend":5.27,"sales":0,"impressions":392,"clicks":8,"orders":0,"bidAdjustments":[]},
+{"campaignId":"109312847405161","placement":"Product Page","biddingStrategy":"LEGACY_FOR_SALES","spend":2.53,"sales":9.91,"impressions":2529,"clicks":7,"orders":1,"bidAdjustments":[]},
+{"campaignId":"43223318737411","placement":"Product Page","biddingStrategy":"LEGACY_FOR_SALES","spend":6.55,"sales":0,"impressions":2858,"clicks":18,"orders":0,"bidAdjustments":[]},
+{"campaignId":"43223318737411","placement":"Top of Search","biddingStrategy":"LEGACY_FOR_SALES","spend":1.57,"sales":0,"impressions":50,"clicks":4,"orders":0,"bidAdjustments":[]},
+{"campaignId":"43223318737411","placement":"Rest of Search","biddingStrategy":"LEGACY_FOR_SALES","spend":0.85,"sales":0,"impressions":58,"clicks":3,"orders":0,"bidAdjustments":[]},
+{"campaignId":"92431837179431","placement":"Rest of Search","biddingStrategy":"LEGACY_FOR_SALES","spend":1.83,"sales":0,"impressions":478,"clicks":7,"orders":0,"bidAdjustments":[]},
+{"campaignId":"92431837179431","placement":"Product Page","biddingStrategy":"LEGACY_FOR_SALES","spend":1.77,"sales":8.26,"impressions":1196,"clicks":7,"orders":1,"bidAdjustments":[]},
+{"campaignId":"92431837179431","placement":"Top of Search","biddingStrategy":"LEGACY_FOR_SALES","spend":0,"sales":0,"impressions":15,"clicks":0,"orders":0,"bidAdjustments":[]},
+{"campaignId":"141825204081039","placement":"Product Page","biddingStrategy":"LEGACY_FOR_SALES","spend":1.68,"sales":0,"impressions":231,"clicks":5,"orders":0,"bidAdjustments":[]},
+{"campaignId":"141825204081039","placement":"Top of Search","biddingStrategy":"LEGACY_FOR_SALES","spend":0.56,"sales":8.99,"impressions":11,"clicks":2,"orders":1,"bidAdjustments":[]},
+{"campaignId":"141825204081039","placement":"Rest of Search","biddingStrategy":"LEGACY_FOR_SALES","spend":0.3,"sales":0,"impressions":97,"clicks":1,"orders":0,"bidAdjustments":[]}
+]}

@@ -1,0 +1,14 @@
+{"placements":[
+{"campaignId":"109312847405161","placement":"Rest of Search","state":"ENABLED","targetingType":"AUTO","biddingStrategy":"LEGACY_FOR_SALES","spend":22.73,"sales":28.91,"impressions":9287,"clicks":51,"orders":3,"bidAdjustments":[]},
+{"campaignId":"92431837179431","placement":"Product Page","state":"ENABLED","targetingType":"MANUAL","biddingStrategy":"LEGACY_FOR_SALES","spend":6.12,"sales":8.26,"impressions":4571,"clicks":19,"orders":1,"bidAdjustments":[]},
+{"campaignId":"43223318737411","placement":"Product Page","state":"PAUSED","targetingType":"MANUAL","biddingStrategy":"LEGACY_FOR_SALES","spend":5.92,"sales":0,"impressions":2631,"clicks":16,"orders":0,"bidAdjustments":[]},
+{"campaignId":"92431837179431","placement":"Rest of Search","state":"ENABLED","targetingType":"MANUAL","biddingStrategy":"LEGACY_FOR_SALES","spend":5.89,"sales":0,"impressions":3589,"clicks":18,"orders":0,"bidAdjustments":[]},
+{"campaignId":"109312847405161","placement":"Product Page","state":"ENABLED","targetingType":"AUTO","biddingStrategy":"LEGACY_FOR_SALES","spend":4.12,"sales":20.65,"impressions":5002,"clicks":11,"orders":2,"bidAdjustments":[]},
+{"campaignId":"141825204081039","placement":"Product Page","state":"ENABLED","targetingType":"MANUAL","biddingStrategy":"LEGACY_FOR_SALES","spend":3.48,"sales":9.99,"impressions":560,"clicks":10,"orders":1,"bidAdjustments":[]},
+{"campaignId":"141825204081039","placement":"Rest of Search","state":"ENABLED","targetingType":"MANUAL","biddingStrategy":"LEGACY_FOR_SALES","spend":2.62,"sales":0,"impressions":214,"clicks":9,"orders":0,"bidAdjustments":[]},
+{"campaignId":"141825204081039","placement":"Top of Search","state":"ENABLED","targetingType":"MANUAL","biddingStrategy":"LEGACY_FOR_SALES","spend":2.52,"sales":8.99,"impressions":35,"clicks":8,"orders":1,"bidAdjustments":[]},
+{"campaignId":"109312847405161","placement":"Top of Search","state":"ENABLED","targetingType":"AUTO","biddingStrategy":"LEGACY_FOR_SALES","spend":1.67,"sales":0,"impressions":231,"clicks":5,"orders":0,"bidAdjustments":[]},
+{"campaignId":"43223318737411","placement":"Top of Search","state":"PAUSED","targetingType":"MANUAL","biddingStrategy":"LEGACY_FOR_SALES","spend":1.16,"sales":0,"impressions":31,"clicks":3,"orders":0,"bidAdjustments":[]},
+{"campaignId":"43223318737411","placement":"Rest of Search","state":"PAUSED","targetingType":"MANUAL","biddingStrategy":"LEGACY_FOR_SALES","spend":0.85,"sales":0,"impressions":54,"clicks":3,"orders":0,"bidAdjustments":[]},
+{"campaignId":"92431837179431","placement":"Top of Search","state":"ENABLED","targetingType":"MANUAL","biddingStrategy":"LEGACY_FOR_SALES","spend":0,"sales":0,"impressions":34,"clicks":0,"orders":0,"bidAdjustments":[]}
+]}

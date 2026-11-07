@@ -1,0 +1,196 @@
+{
+  "asin": "B0DHYBY6MS",
+  "informe_datos": {
+    "fuente": "./FreshFinder_Amazon_Ads_historico.xlsx",
+    "grupos": [
+      {
+        "palabras": "Nuevo producto - B0DHYBY6MS - 21/10/2024 9:39:18 / Grupo de anuncios - 21/10/2024 9:39:18",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Campaña - 27/6/2025 18:41:26.479 / Auto",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Misión Imposible 6 / A0348505C3IFE75YXSJS",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte móvil AC / Rejilla ventilación",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Campaign - 10/4/2025 19:39:07.204 / Ad group - 10/4/2025 19:39:07.202",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "SP Campaign Recommendation - Suggested Products - 04/03/2025 ded33a / Generic - Car Electronics Other",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte móvil AC / Fake pero no tanto xd",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte bueno / A0444883LVT71KKSDPP0",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "A ver que onda / A10239221WS23WX2DD06X",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte móvil AC / Giratorio y baches",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Campaña - 27/6/2025 16:52:58.905 / Soporte a ver a ver a ver",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 1.0,
+        "usado": true
+      },
+      {
+        "palabras": "Soporte móvil pinza / Pinza",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 0.008,
+        "usado": false
+      },
+      {
+        "palabras": "Todo / Grupo de anuncios - 14/1/2025 9:40:23.358",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 0.334,
+        "usado": false
+      },
+      {
+        "palabras": "Soporte móvil AC / Básico",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 0.207,
+        "usado": false
+      },
+      {
+        "palabras": "Soporte móvil pinza / Salpicadero sin ventosa",
+        "asin": "B0DHYBY6MS",
+        "producto": "Soporte Movil Coche Universal Ajustable 360° para Rejilla Ventilación ",
+        "cuota_gasto": 0.321,
+        "usado": false
+      }
+    ]
+  },
+  "validacion": {
+    "logloss_modelo": 0.19475042302978726,
+    "logloss_media": 0.1955713719058075,
+    "mejora_pct": 0.4197694519500694
+  },
+  "ticket_medio_eur": 14.25,
+  "cpc_medio_eur": 0.97,
+  "candidatas_generadas": 261,
+  "coeficientes_conversion": {
+    "match=exacta|especifica=no": 0.567,
+    "match=frase|especifica=si": 0.317,
+    "w=telefono": 0.296,
+    "match=exacta": 0.246,
+    "b=soporte_telefono": 0.22,
+    "b=telefono_rejilla": 0.22,
+    "b=phone_holder": 0.213,
+    "w=phone": 0.213,
+    "w=movil": 0.188,
+    "b=movil_coche": 0.172,
+    "b=telefono_movil": 0.144,
+    "b=sujeta_moviles": 0.114,
+    "b=coche_ventilacion": 0.11,
+    "w=ventilacion": 0.11,
+    "b=coche_telefono": 0.075,
+    "b=soporte_coche": 0.069,
+    "b=moviles_coche": 0.065,
+    "w=moviles": 0.065,
+    "b=sujetar_movil": 0.053,
+    "w=sujetar": 0.053,
+    "w=rejilla": 0.035,
+    "b=holder_car": -0.011,
+    "w=car": -0.011,
+    "w=holder": -0.011,
+    "match=amplia|especifica=no": -0.015,
+    "b=movil_viajes": -0.017,
+    "b=viajes_coche": -0.017,
+    "w=viajes": -0.017,
+    "b=celular_coche": -0.018,
+    "b=soporte_celular": -0.018,
+    "w=celular": -0.018,
+    "b=aire_acondicionado": -0.04,
+    "w=acondicionado": -0.04,
+    "b=soporte_moviles": -0.05,
+    "b=soporte_telemovel": -0.056,
+    "b=pinza_coche": -0.071,
+    "w=coche": -0.073,
+    "b=suporte_telemovel": -0.074,
+    "w=suporte": -0.074,
+    "b=coche_gancho": -0.078,
+    "w=gancho": -0.078,
+    "b=portamoviles_coche": -0.094,
+    "w=portamoviles": -0.094,
+    "w=soporte": -0.102,
+    "b=coche_salpicadero": -0.103,
+    "w=salpicadero": -0.103,
+    "b=movil_pinza": -0.111,
+    "b=porta_movil": -0.114,
+    "w=porta": -0.114,
+    "b=telemovel_carro": -0.13,
+    "w=carro": -0.13,
+    "w=telemovel": -0.13,
+    "match=frase": -0.132,
+    "match=amplia|especifica=si": -0.133,
+    "b=coche_giratorio": -0.138,
+    "w=giratorio": -0.138,
+    "match=amplia": -0.148,
+    "b=coche_pinza": -0.155,
+    "w=sujeta": -0.16,
+    "b=accesorios_coche": -0.18,
+    "w=accesorios": -0.18,
+    "b=coche_rejilla": -0.185,
+    "b=coche_aire": -0.204,
+    "w=aire": -0.204,
+    "b=mobile_holder": -0.224,
+    "w=mobile": -0.224,
+    "n_palabras": -0.241,
+    "w=pinza": -0.265,
+    "b=soporte_movil": -0.268,
+    "b=sujeta_movil": -0.274,
+    "match=exacta|especifica=si": -0.321,
+    "match=frase|especifica=no": -0.449
+  },
+  "acos_objetivo_pct": 35.0
+}

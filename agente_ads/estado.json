@@ -1,0 +1,52 @@
+{
+  "mensajes_enviados": [
+    "1a12127b5bba64d6",
+    "1a121399767781c8",
+    "1a125f78e47ff085",
+    "1a129c0bcfcafbf4",
+    "1a12ee54c5cc8cb0",
+    "1a12ee5d5fba55a3",
+    "1a1340f64ef2eaf7",
+    "1a13932b642b25d9",
+    "1a1437f6a850c1f7",
+    "1a148a2a0bd406c8",
+    "1a14dc8f51e69d15",
+    "1a1509d1084ea832",
+    "1a152f49c649f69a",
+    "1a152f53bdfa4700",
+    "1a164c89391f991c",
+    "1a16789230c9d4c4",
+    "1a16cb12ba9be2d8",
+    "1a1720b7da9279a8",
+    "1a17737b7bca5043",
+    "1a17738bb9223dc7",
+    "1a1890a9c315ab3d",
+    "1a18bccfee683025",
+    "1a18d866b72f4a7d",
+    "1a190f1ef1940c86",
+    "1a196191ef58807c",
+    "1a19b44575a39b1a",
+    "1a19b448e3e0fb09",
+    "1a1a0648433b2931",
+    "1a1ad16b24155370",
+    "1a1afd761d57eb27",
+    "1a1b4fe35744b3ca"
+  ],
+  "mensajes_procesados": [
+    "1a1212c66c053735",
+    "1a15046c9bd872f2",
+    "1a15419e42a1854a",
+    "1a18d81dbff15cfe"
+  ],
+  "ultimo_parte": "2026-11-07",
+  "ultimo_informe_semanal": "2026-11-02",
+  "hilo_principal": "1a12127b5bba64d6",
+  "pendiente_juan": [
+    "Subir bulk_cambios_2026-11-05.xlsx (B0F3J3QHD7 a 0,09 €; verificado; sustituye al del 01/11)",
+    "Subir 1 € el precio de la rejilla en Seller Central (cuando se vea, margen B0DHYBY6MS ≈ 3,71 €)",
+    "¿Plan B en Black Friday sin la automática de la rejilla? (propuesta b del 02/11)",
+    "¿Cupón de Navidad de la pinza 03/12-24/12?",
+    "Revisar en SellerMate la sincronización con Amazon Ads (informes parados desde el 03/11; las campañas sí gastan)"
+  ],
+  "hilo_estrategia": "1a12ee5d5fba55a3"
+}
