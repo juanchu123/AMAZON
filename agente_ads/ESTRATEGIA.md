@@ -86,3 +86,8 @@ lo relee en cada ronda y lo respeta; cuando algo cambia, lo actualiza con la fec
 - 26/10-01/11: 7,74 € de gasto, 1 venta (pinza, B09P3SZB6P a 0,24 €). Pinza +1,33 € la semana; rejilla −5,40 €. Plan B −5,80 € de 10 €.
 - Propuesto: plan B en Black Friday sin la automática de la rejilla (exacta, B08N4KR6PK y B0C1NK79FK); revisar la puja de B07H996QMD y B0BS1TQJH2; cupón de Navidad de la pinza (03/12-24/12).
 - Preguntado: precio nuevo de la rejilla.
+
+### Semana del 09/11
+- Informes de Amazon parados desde el 03/11 (SellerMate no sincroniza; las campañas sí gastan: rejilla ~0,80 € el 05/11 y ~0,94 € el 07/11). Semana 02-08/11 con datos solo del 02-03: 1,60 € y ninguna venta. Juan aún no ha subido el Excel del 05/11 (B0F3J3QHD7 a 0,09 €).
+- Propuesto para Black Friday (20/11-02/12): B09P3SZB6P de 0,27 € a 0,35 € (equilibrio con 2/21 clics × 11,24 € × 33 %) y plan B de la rejilla sin la automática (exacta 0,40 € y B0C1NK79FK 0,30 €). Si el 16/11 sigue sin datos, entrar con las pujas tal cual.
+- Preguntado: Data Sync de SellerMate, propuestas de Black Friday, cupón de Navidad de la pinza, precio nuevo de la rejilla.
