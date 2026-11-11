@@ -34,7 +34,8 @@
     "1a1ba2437ffd7bdd",
     "1a1bf4b830e59726",
     "1a1bf4b8579622df",
-    "1a1c4711b8f87686"
+    "1a1c4711b8f87686",
+    "1a1c996dbc15faa6"
   ],
   "mensajes_procesados": [
     "1a1212c66c053735",
@@ -42,7 +43,7 @@
     "1a15419e42a1854a",
     "1a18d81dbff15cfe"
   ],
-  "ultimo_parte": "2026-11-10",
+  "ultimo_parte": "2026-11-11",
   "ultimo_informe_semanal": "2026-11-09",
   "hilo_principal": "1a12127b5bba64d6",
   "pendiente_juan": [
@@ -52,5 +53,6 @@
     "Revisar en SellerMate la sincronización con Amazon Ads (informes parados desde el 03/11; las campañas sí gastan)",
     "¿Black Friday 20/11-02/12: B09P3SZB6P a 0,35 € y plan B sin la automática de la rejilla? (propuestas 3 y 4 del 09/11; Excel el 16/11 si dice que sí)"
   ],
-  "hilo_estrategia": "1a12ee5d5fba55a3"
+  "hilo_estrategia": "1a12ee5d5fba55a3",
+  "nota_partes": "11/11: dicho a Juan que no se le escribe más hasta que lleguen datos de Amazon (o conteste o pase algo). Excepción: el lunes 16/11, decisión de Black Friday."
 }
