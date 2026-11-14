@@ -91,3 +91,9 @@ lo relee en cada ronda y lo respeta; cuando algo cambia, lo actualiza con la fec
 - Informes de Amazon parados desde el 03/11 (SellerMate no sincroniza; las campañas sí gastan: rejilla ~0,80 € el 05/11 y ~0,94 € el 07/11). Semana 02-08/11 con datos solo del 02-03: 1,60 € y ninguna venta. Juan aún no ha subido el Excel del 05/11 (B0F3J3QHD7 a 0,09 €).
 - Propuesto para Black Friday (20/11-02/12): B09P3SZB6P de 0,27 € a 0,35 € (equilibrio con 2/21 clics × 11,24 € × 33 %) y plan B de la rejilla sin la automática (exacta 0,40 € y B0C1NK79FK 0,30 €). Si el 16/11 sigue sin datos, entrar con las pujas tal cual.
 - Preguntado: Data Sync de SellerMate, propuestas de Black Friday, cupón de Navidad de la pinza, precio nuevo de la rejilla.
+
+### 14/11 — cuenta parada
+Rejilla - Principal V2, Pinza - Pruebas y la automática de la rejilla aparecen en pausa (último gasto visto el
+11/11 por la tarde); no las pausó el agente. Regla de cuenta parada: aviso a Juan y no se propone nada hasta que
+conteste o se reactiven. Black Friday queda en espera. Aparte (fuera de anuncios): Amazon desactivó el Pou
+(B0CPHXXHRQ) en Amazon.ie el 12/11 por documentación de seguridad de juguetes.
