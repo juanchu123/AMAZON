@@ -36,7 +36,8 @@
     "1a1bf4b8579622df",
     "1a1c4711b8f87686",
     "1a1c996dbc15faa6",
-    "1a1d90b2e1eabb1f"
+    "1a1d90b2e1eabb1f",
+    "1a1e35790aba4fe1"
   ],
   "mensajes_procesados": [
     "1a1212c66c053735",
@@ -44,8 +45,8 @@
     "1a15419e42a1854a",
     "1a18d81dbff15cfe"
   ],
-  "ultimo_parte": "2026-11-14",
-  "ultimo_informe_semanal": "2026-11-09",
+  "ultimo_parte": "2026-11-16",
+  "ultimo_informe_semanal": "2026-11-16",
   "hilo_principal": "1a12127b5bba64d6",
   "pendiente_juan": [
     "URGENTE: ¿pausaste tú las tres campañas (desde el 11-12/11)? Si no, revisar Facturación de Amazon Ads. Hasta que conteste: no se propone nada.",
@@ -56,7 +57,7 @@
     "¿Black Friday 20/11-02/12: B09P3SZB6P a 0,35 € y plan B sin la automática de la rejilla? (propuestas 3 y 4 del 09/11; Excel el 16/11 si dice que sí)"
   ],
   "hilo_estrategia": "1a12ee5d5fba55a3",
-  "nota_partes": "14/11: cuenta parada (las tres campañas en pausa sin que lo pidiera el agente). Avisado; no se propone nada ni se manda Excel hasta que Juan conteste o se reactiven. El lunes 16/11 solo se comprueba si se reactivaron.",
+  "nota_partes": "16/11: cuenta parada sigue (tres campañas en pausa, sin informes desde el 03/11, Juan sin contestar). Recordatorio de Black Friday enviado; no se le escribe más hasta que se reactiven las campañas o conteste.",
   "cuenta_parada": {
     "desde": "2026-11-14",
     "detectado": "Rejilla - Principal V2, Pinza - Pruebas y la automática de la rejilla en PAUSED; último gasto visto 11/11 tarde. No las pausó el agente.",
